@@ -6,6 +6,7 @@ import json
 import gradio as gr
 from groq import Groq
 from dotenv import load_dotenv
+import sqlparse
 
 # ------------------ ENV + DB ------------------
 load_dotenv()  # expects DB_USER, DB_PASSWORD, DB_HOST, DB_NAME, GROQ_API_KEY in .env
@@ -54,7 +55,7 @@ valid_columns = {c["column_name"] for t in schema["tables"] for c in t["columns"
 
 # ------------------ CORE FUNCTIONS ------------------
 def groq_generate(question: str) -> str:
-    """Generate SQL from natural language using Groq."""
+    """Generate SQL from natural language using Groq and format it."""
     chat_completion = client.chat.completions.create(
         messages=[
             {
@@ -72,7 +73,15 @@ def groq_generate(question: str) -> str:
     )
     sql = chat_completion.choices[0].message.content.strip()
     sql = re.sub(r"```sql|```", "", sql).strip()
-    return sql
+
+    # ---------- Pretty format ----------
+    sql_formatted = sqlparse.format(
+        sql,
+        reindent=True,          # add newlines and indentation
+        keyword_case="upper",   # make SQL keywords uppercase
+        identifier_case="lower" # optional: lowercase table/column names
+    )
+    return sql_formatted
 
 # def validate_sql(sql: str) -> bool:
 #     """Check if SQL only uses valid schema tables and columns."""

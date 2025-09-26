@@ -97,3 +97,6 @@ List employees earning more than the average salary in their department.
 Compute total order revenue per customer.
 
 Display orders with more than 3 items and total value over $1000.
+
+### 6. Demo
+[![Watch the video](https://img.youtube.com/vi/3njaLWPuj8Y/0.jpg)](https://www.youtube.com/watch?v=3njaLWPuj8Y)

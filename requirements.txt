@@ -1,0 +1,19 @@
+# app.py
+mysql-connector-python
+pandas
+gradio
+groq
+python-dotenv
+sqlparse
+
+# llama3_3_70b.ipynb / llama4_scout_test.ipynb
+numpy
+requests
+nltk
+spacy
+scikit-learn
+evaluate
+
+# (groq, pandas, python-dotenv already listed above)
+
+# after installing run python -m spacy download en_core_web_sm

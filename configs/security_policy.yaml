@@ -1,0 +1,13 @@
+version: 1
+mode: design-only
+allowed_statement_types:
+  - SELECT
+  - WITH_SELECT
+max_statements: 1
+statement_timeout_seconds: 10
+max_result_rows: 1000
+deny_system_schemas: true
+deny_comments: true
+deny_multiple_statements: true
+note: Enforcement starts in Phase 5. Phase 0 never executes generated SQL.
+

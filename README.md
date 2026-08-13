@@ -1,102 +1,74 @@
-# text2sql
+# Text-to-SQL research project
 
-**Natural Language to SQL Translation Engine**
+Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
-`text2sql` is a framework for converting natural language queries into SQL statements. It leverages large language models (LLMs) along with structured database schema understanding to allow querying relational databases in plain English.
+This Phase 0 version deliberately uses a deterministic mock provider and a small SQLite fixture. It validates the project structure, schema inspection, prompt construction, CLI and JSONL audit trail without requiring API keys or access to a real database.
 
-## Features
+## Requirements
 
-- Translate natural language queries into SQL.
-- Supports Groq and LLaMA models for context-aware query generation.
-- Reads database schemas including tables, columns, and foreign keys.
-- Optional validation to ensure SQL only references valid tables and columns.
-- Execute SQL on MySQL databases and return results as Pandas DataFrames.
-- Interactive web interface using Gradio.
-- Extensible for preprocessing, postprocessing, and evaluation metrics.
+- Python 3.11 or newer
+- No runtime dependencies for Phase 0
 
-## Architecture
-
-The system consists of four main modules:
-
-1. **Schema Loader**: Parses the database schema from JSON and converts it into an LLM prompt.
-2. **Text-to-SQL Generator**: Uses Groq/LLM models to generate SQL queries from natural language input.
-3. **SQL Executor**: Executes SQL queries on a MySQL database and returns results as Pandas DataFrames.
-4. **Gradio Frontend**: Provides a web-based interface for users to input questions and view results.
-
-## Installation
-
-Clone the repository:
+## Quick start
 
 ```bash
-git clone https://github.com/SinhroLK/text2sql.git
-cd text2sql
+python scripts/create_fixture_db.py
+PYTHONPATH=src python -m text2sql.cli \
+  --question "List customer names" \
+  --database data/fixtures/demo.sqlite \
+  --output artifacts/reports/phase0-demo.jsonl
 ```
-## Configuration
 
-Create a `.env` file in the root directory with your database credentials and API key:
+The command prints one JSON result and appends the same structured record to the requested JSONL file. The generated SQL is **not executed** in Phase 0. Safe execution and AST validation are planned for Phase 5.
 
-```env
-DB_USER=your_database_user
-DB_PASSWORD=your_database_password
-DB_HOST=your_database_host
-DB_NAME=your_database_name
-GROQ_API_KEY=your_groq_api_key
-```
-## Usage
-
-Follow these steps to run the text2sql application and interact with your database.
-
-### 1. Start the Application
-
-Run the main script:
+## Run tests
 
 ```bash
-python app.py
+PYTHONPATH=src python -m unittest discover -s tests -v
 ```
 
-### 2. Open the Web Interface
+## Optional editable install
 
-Open your browser and navigate to:
+```bash
+python -m pip install --no-build-isolation -e .
+text2sql --question "List customer names" --database data/fixtures/demo.sqlite
+```
 
-http://127.0.0.1:7860
+## Current scope
 
-You will see a simple interface with:
+Implemented:
 
-A textbox to enter your natural language query.
+- stable domain models;
+- SQLite schema inspection;
+- deterministic schema serialization for the baseline prompt;
+- provider protocol and deterministic mock provider;
+- end-to-end pipeline;
+- JSONL audit output;
+- unit and integration tests;
+- versioned configuration placeholders;
+- preserved legacy notebooks.
 
-A panel showing the generated SQL.
+Not implemented yet:
 
-A table displaying the query results.
+- official Spider/Spider 2.0 loaders and evaluator;
+- Groq or another real LLM provider;
+- M-Schema;
+- retrieval and DSPy optimization;
+- SQL AST validation and sandbox execution;
+- security evaluation;
+- Gradio application built on the new pipeline.
 
-### 3. Enter a Query
+## Security
 
-Type a question in plain English, for example:
+Do not copy active API keys, database passwords or production databases into this repository. The future runtime will use a read-only sandbox user and AST-based SQL validation. The Phase 0 CLI generates SQL but does not execute it.
 
-List all customers who placed orders over $500 in September 2025
+## Repository map
 
-### 4. Generate and Execute SQL
+- `src/text2sql/` - reusable pipeline code;
+- `configs/` - versioned experiment and security configuration;
+- `tests/` - tests that run without external services;
+- `data/fixtures/` - small synthetic test resources;
+- `notebooks/legacy/` - original proof-of-concept experiments;
+- `docs/` - architecture, experiment and decision records;
+- `artifacts/` - generated results, excluded from Git by default.
 
-Click the Generate & Run SQL button. The workflow will:
-
-Convert your English question into an SQL query using the LLM.
-
-Execute the SQL query on the connected MySQL database.
-
-Display the generated SQL in the left panel.
-
-Show the query results in the right panel as a table.
-
-### 5. Example Queries
-
-Find all customers who have never placed an order.
-
-Show top-selling products by category.
-
-List employees earning more than the average salary in their department.
-
-Compute total order revenue per customer.
-
-Display orders with more than 3 items and total value over $1000.
-
-### 6. Demo
-[![Watch the video](https://img.youtube.com/vi/3njaLWPuj8Y/0.jpg)](https://www.youtube.com/watch?v=3njaLWPuj8Y)

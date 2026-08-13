@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "text2sql-research"
+version = "0.1.0"
+description = "Reproducible Text-to-SQL research pipeline for a master thesis"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.scripts]
+text2sql = "text2sql.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

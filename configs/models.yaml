@@ -1,0 +1,21 @@
+version: 1
+default_provider: mock
+models:
+  mock:
+    provider: mock
+    model_id: mock-schema-aware-v1
+    temperature: 0
+    max_candidates: 1
+  llama_3_3_70b:
+    provider: groq
+    model_id: llama-3.3-70b-versatile
+    enabled: false
+    temperature: 0
+    max_candidates: 1
+  llama_4_scout:
+    provider: groq
+    model_id: meta-llama/llama-4-scout-17b-16e-instruct
+    enabled: false
+    temperature: 0
+    max_candidates: 1
+

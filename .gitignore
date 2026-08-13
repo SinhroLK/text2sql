@@ -1,6 +1,40 @@
+# Secrets
 .env
-*.env
-.json
-*.json
-.venv
-*.venv
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local data and generated artifacts
+data/raw/
+data/processed/
+data/fixtures/*.sqlite
+data/fixtures/*.db
+artifacts/**/*.jsonl
+artifacts/**/*.csv
+artifacts/**/*.log
+artifacts/**/*.json
+!artifacts/**/.gitkeep
+
+# Distribution
+build/
+dist/
+

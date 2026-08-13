@@ -1,0 +1,11 @@
+experiment_id: phase0-smoke-v1
+description: Deterministic end-to-end smoke test without an external LLM.
+dataset: fixture-demo
+split: fixture
+provider: mock
+model_id: mock-schema-aware-v1
+schema_representation: simple
+few_shot_strategy: none
+execute_sql: false
+seed: 42
+

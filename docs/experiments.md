@@ -2,9 +2,23 @@
 
 ## Current state
 
-`phase0-smoke-v1` remains an infrastructure smoke test, not a research result. `DATA-001` freezes the benchmark protocol before a real model, dataset loader or evaluator is introduced.
+`phase0-smoke-v1` remains an infrastructure smoke test, not a research result. `DATA-001` freezes the benchmark protocol and `DATA-003` implements its metadata-only loader. A real model and execution evaluator are still absent.
 
-The machine-readable source of truth is `configs/datasets/spider2-lite-sqlite-v1.toml`; the exact database and instance assignment is in `configs/datasets/spider2-lite-sqlite-split-v1.json`.
+The machine-readable source of truth is `configs/datasets/spider2-lite-sqlite-v1.toml`; the exact database and instance assignment is in `configs/datasets/spider2-lite-sqlite-split-v1.json`; the deterministic normalized-output contract is in `configs/datasets/spider2-lite-sqlite-metadata-manifest-v1.json`.
+
+## DATA-003: metadata ingestion contract
+
+The loader verifies the pinned source SHA-256 before JSON parsing, validates all
+547 upstream IDs/platform counts and selects exactly the 135 SQLite IDs already
+frozen by DATA-001. It returns standard `Text2SQLExample` objects and writes a
+deterministic `examples.jsonl` plus `dataset-manifest.json` when explicitly run.
+
+The normalized metadata contains the original question, database ID, dialect,
+frozen split, source ID/commit and optional `external_knowledge` reference. It
+contains no gold SQL, result files or database bytes. Fields resembling gold SQL
+are rejected, and the generated manifest must exactly match the version-controlled
+DATA-003 manifest. Therefore this loader enables reproducible metadata ingestion
+but does not yet make execution-based evaluation available.
 
 ## DATA-001: frozen benchmark decision
 

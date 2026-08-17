@@ -1,0 +1,4 @@
+{"instance_id":"bq001","db":"cloud_a","question":"Count cloud rows.","external_knowledge":null}
+{"instance_id":"sf001","db":"cloud_b","question":"List cloud values.","external_knowledge":null}
+{"instance_id":"local001","db":"fixture_dev","question":"List customer names.","external_knowledge":"customers.md"}
+{"instance_id":"local002","db":"fixture_test","question":"Count all orders.","external_knowledge":null}

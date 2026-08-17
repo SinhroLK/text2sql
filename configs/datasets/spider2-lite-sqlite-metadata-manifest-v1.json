@@ -1,0 +1,92 @@
+{
+  "artifacts": {
+    "examples_filename": "examples.jsonl",
+    "examples_sha256": "9951e147543c819597dec0336c486612171e36c73ddc5b7e8b387e6f20b6c9f0",
+    "record_format": "JSON Lines; UTF-8; keys sorted; compact separators; trailing newline"
+  },
+  "counts": {
+    "development_databases": 6,
+    "development_examples": 31,
+    "selected_total": 135,
+    "test_databases": 24,
+    "test_examples": 104,
+    "upstream_by_platform": {
+      "bigquery": 205,
+      "snowflake": 207,
+      "sqlite": 135
+    },
+    "upstream_total": 547
+  },
+  "database_ids": {
+    "development": [
+      "Airlines",
+      "city_legislation",
+      "electronic_sales",
+      "f1",
+      "music",
+      "oracle_sql"
+    ],
+    "test": [
+      "AdventureWorks",
+      "Baseball",
+      "BowlingLeague",
+      "Brazilian_E_Commerce",
+      "California_Traffic_Collision",
+      "Db-IMDB",
+      "EU_soccer",
+      "E_commerce",
+      "EntertainmentAgency",
+      "IPL",
+      "Pagila",
+      "WWE",
+      "bank_sales_trading",
+      "chinook",
+      "complex_oracle",
+      "delivery_center",
+      "education_business",
+      "imdb_movies",
+      "log",
+      "modern_data",
+      "northwind",
+      "school_scheduling",
+      "sqlite-sakila",
+      "stacking"
+    ]
+  },
+  "dataset_id": "spider2-lite-sqlite-metadata-v1",
+  "fields": [
+    "example_id",
+    "db_id",
+    "question",
+    "dialect",
+    "split",
+    "metadata"
+  ],
+  "metadata_fields": [
+    "external_knowledge",
+    "source_instance_id",
+    "source_commit"
+  ],
+  "policies": {
+    "gold_sql_allowed": false,
+    "spider2_examples_allowed_in_retrieval": false,
+    "test_examples_visible_during_development": false
+  },
+  "protocol_id": "spider2-lite-sqlite-data001-v1",
+  "schema_version": 1,
+  "scope": {
+    "contains_database_files": false,
+    "contains_gold_sql": false,
+    "dialect": "sqlite",
+    "label": "Spider2-Lite SQLite custom DB-disjoint test split",
+    "name": "Spider 2.0-Lite",
+    "oracle_tables": false,
+    "split_type": "custom database-disjoint development/test split"
+  },
+  "source": {
+    "commit": "cafb867313aab4e674652054198f383cf4018943",
+    "data_path": "spider2-lite/spider2-lite.jsonl",
+    "data_sha256": "4ba48916576fbd60311a2478c6d4550b5d8cf3fcbc512457ea493b5941ca009d",
+    "repository_url": "https://github.com/xlang-ai/Spider2"
+  }
+}

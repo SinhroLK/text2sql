@@ -1,10 +1,21 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela  
-**Verzija plana:** 1.4  
-**Datum:** 13. avgust 2026.  
-**Status projekta:** Faza 1 je u toku; `DATA-001` je završen, slede `DATA-003` i `EVAL-001`  
-**Poslednja provera:** 8/8 testova, offline editable instalacija i CLI smoke run prolaze
+**Verzija plana:** 1.5  
+**Datum:** 17. avgust 2026.  
+**Status projekta:** Faza 1 je u toku; `DATA-001` i `DATA-003` su završeni, sledeći prioritet je `EVAL-001`  
+**Poslednja provera:** 17. avgust 2026. - 14/14 testova i puni pinned DATA-003 metadata CLI prolaze
+
+### Istorija verzija
+
+| Verzija | Datum | Promena |
+|---|---|---|
+| 1.0 | 13. avgust 2026. | Početna arhitektura, roadmap i backlog |
+| 1.1 | 13. avgust 2026. | Evidentirana implementacija Faze 0, ažurirani statusi i dodat dnevnik napretka |
+| 1.2 | 13. avgust 2026. | Zatvoren `SEC-000`: potvrđeno da `.env` nije verzionisan i da su ključevi i kredencijali zamenjeni |
+| 1.3 | 13. avgust 2026. | Verifikovani testovi i CLI demo, dodato uputstvo za pokretanje aktuelne Phase 0 verzije |
+| 1.4 | 13. avgust 2026. | Završen `DATA-001`: zamrznut Spider2-Lite SQLite protokol, DB-disjoint split 31/104, checksumovi i leakage validacija |
+| 1.5 | 17. avgust 2026. | Završen `DATA-003`: checksum-gated metadata loader, deterministički manifest/JSONL, runtime split firewall i 14 testova |
 
 ## 1. Svrha dokumenta
 
@@ -312,13 +323,13 @@ Zadaci:
 
 Zadaci:
 
-- preuzeti originalne podatke sa `db_id` i šemama;
+- `DONE` - učitati originalne pinned metapodatke sa `db_id`; SQLite baze i šeme ostaju za evaluator okruženje;
 - `DONE` - definisati razvojni skup i zaključani evaluacioni skup;
-- implementirati Spider 1.0/BIRD razvojni loader;
-- implementirati Spider2-Lite loader, prvo za SQLite podskup;
-- napraviti mali fixture skup za brze testove;
+- implementirati Spider 1.0 razvojni loader tek kada počne train-only retrieval faza;
+- `DONE` - implementirati Spider2-Lite SQLite metadata loader (`DATA-003`);
+- `DONE` - napraviti mali fixture skup za brze testove;
 - implementirati zvanično execution-based ocenjivanje;
-- `IN PROGRESS` - protokol i leakage testovi su gotovi; runtime firewall se završava kroz loader i evaluator.
+- `IN PROGRESS` - metadata firewall je završen u loaderu; evaluator coverage i gold-result izolacija slede u `EVAL-001`.
 
 **Definition of Done:** jedan CLI poziv učitava primer, pronalazi bazu, izvršava gold SQL gde je dostupan i vraća očekivanu zvaničnu metriku.
 
@@ -478,7 +489,7 @@ Zadaci:
 
 Ova tabela predstavlja početni backlog. Ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 8 zadataka je završeno; nema blokiranih zadataka. Slede `DATA-003`, `EVAL-001` i `LLM-002`.
+**Sažetak stanja:** 9 zadataka je završeno; nema blokiranih zadataka. Sledeći implementacioni prioritet je `EVAL-001`; Groq, M-Schema, retrieval i DSPy nisu započeti.
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
@@ -489,7 +500,7 @@ Ova tabela predstavlja početni backlog. Ažurira se pri svakom značajnom radu 
 | SEC-000 | Rotirati ranije korišćene API ključeve/DB lozinke | 0 | P0 | DONE | - | `.env` nikad nije verzionisan; tajne su zamenjene |
 | DATA-001 | Izabrati i dokumentovati benchmark/split | 1 | P0 | DONE | REPO-001 | TOML protokol, 31/104 split manifest, ADR-003 i leakage testovi |
 | DATA-002 | Implementirati standardni `Text2SQLExample` | 1 | P0 | DONE | REPO-001 | `domain/models.py` i unit test |
-| DATA-003 | Implementirati loader za pinned Spider2-Lite SQLite 135 metadata/ID-jeve | 1 | P0 | NOT STARTED | DATA-001, DATA-002 | checksum provera i integration test |
+| DATA-003 | Implementirati loader za pinned Spider2-Lite SQLite 135 metadata/ID-jeve | 1 | P0 | DONE | DATA-001, DATA-002 | checksum pre parsiranja, metadata manifest, normalizovani hash `9951e147...b6c9f0`, 6 loader testova |
 | EVAL-001 | Implementirati execution evaluator | 1 | P0 | NOT STARTED | DATA-003 | evaluator test nad fixture bazom |
 | LLM-001 | Implementirati provider interfejs | 2 | P0 | DONE | REPO-002 | provider protokol, deterministički mock i pipeline test |
 | LLM-002 | Implementirati realni LLM/Groq adapter | 2 | P0 | NOT STARTED | LLM-001, EVAL-001 | adapter test i evidentirani parametri modela |
@@ -638,6 +649,21 @@ Odluke:
 
 Sledeće:
 
-1. `DATA-003`: implementirati loader za pinned Spider2-Lite SQLite metadata;
-2. `EVAL-001`: implementirati official execution-result comparator wrapper;
-3. `LLM-002`: povezati realni Groq adapter nakon evaluatora.
+1. `EVAL-001`: implementirati official execution-result comparator wrapper;
+2. `LLM-002`: povezati realni Groq adapter tek nakon evaluatora.
+
+### 2026-08-17 - Završen DATA-003
+
+- implementiran je checksum-gated Spider2-Lite loader koji pre parsiranja proverava pinned JSONL;
+- potvrđeni su 547 upstream zapisa i platform totals 205 BigQuery / 207 Snowflake / 135 SQLite;
+- izdvojeno je tačno 135 SQLite primera uz runtime DB firewall 31 development / 104 test;
+- normalizovani metadata JSONL ne sadrži gold SQL, a gold-like polja se eksplicitno odbijaju;
+- dodat je verzionisani dataset manifest i CLI `text2sql-prepare-spider2`;
+- normalizovani `examples.jsonl` ima SHA-256 `9951e147543c819597dec0336c486612171e36c73ddc5b7e8b387e6f20b6c9f0`;
+- ažurirani su ADR-004, dokumentacija i registar izvora;
+- 14/14 testova i puni pinned metadata CLI prolaze bez tajni i mrežnih servisa;
+- Groq, M-Schema, retrieval i DSPy nisu menjani.
+
+Sledeće:
+
+1. `EVAL-001`: official execution-result comparator wrapper, exact-ID coverage i fixture evaluator test.

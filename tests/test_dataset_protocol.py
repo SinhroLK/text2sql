@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import unittest
 from pathlib import Path
 
@@ -32,6 +33,17 @@ class DatasetProtocolTest(unittest.TestCase):
         decisions = (PROJECT_ROOT / "docs/decisions.md").read_text(encoding="utf-8")
         self.assertIn("spider2-lite-sqlite-v1.toml", experiments)
         self.assertIn("ADR-003", decisions)
+
+    def test_data003_metadata_manifest_is_frozen(self) -> None:
+        path = PROJECT_ROOT / "configs/datasets/spider2-lite-sqlite-metadata-manifest-v1.json"
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+
+        self.assertEqual(manifest["dataset_id"], "spider2-lite-sqlite-metadata-v1")
+        self.assertEqual(manifest["counts"]["selected_total"], 135)
+        self.assertEqual(manifest["counts"]["development_examples"], 31)
+        self.assertEqual(manifest["counts"]["test_examples"], 104)
+        self.assertFalse(manifest["scope"]["contains_gold_sql"])
+        self.assertFalse(manifest["policies"]["spider2_examples_allowed_in_retrieval"])
 
 
 if __name__ == "__main__":

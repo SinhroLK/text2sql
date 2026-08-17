@@ -1,0 +1,82 @@
+schema_version = 1
+protocol_id = "spider2-lite-sqlite-data001-v1"
+status = "frozen"
+frozen_at = "2026-08-13"
+
+[benchmark]
+name = "Spider 2.0-Lite"
+scope = "SQLite custom database-disjoint research split"
+dialect = "sqlite"
+expected_upstream_total = 547
+expected_scope_total = 135
+expected_development_total = 31
+expected_test_total = 104
+official_split_available = false
+official_leaderboard_comparable = false
+oracle_tables = false
+
+[source]
+repository_url = "https://github.com/xlang-ai/Spider2"
+commit = "cafb867313aab4e674652054198f383cf4018943"
+data_path = "spider2-lite/spider2-lite.jsonl"
+data_sha256 = "4ba48916576fbd60311a2478c6d4550b5d8cf3fcbc512457ea493b5941ca009d"
+evaluator_path = "spider2-lite/evaluation_suite/evaluate.py"
+evaluator_sha256 = "e93624e4ffa00e51c67bdee1d9e42b534630087cb453270c0dedc0c73e618480"
+evaluator_utils_path = "spider2-lite/evaluation_suite/evaluate_utils.py"
+evaluator_utils_sha256 = "d740984e9097b29aa8d9d01e1b978ae71163309dce1954eaff84cdf2e9834053"
+evaluation_manifest_path = "spider2-lite/evaluation_suite/gold/spider2lite_eval.jsonl"
+evaluation_manifest_sha256 = "5113ddaea6107492c08a898241a9f69ec99b03bc60d014e9f0b12ec59fa28970"
+pinned_bigquery_total = 205
+pinned_snowflake_total = 207
+pinned_sqlite_total = 135
+
+[split]
+manifest_path = "configs/datasets/spider2-lite-sqlite-split-v1.json"
+manifest_sha256 = "36cbd3a18c359ad3e23662c73b0e9976af9f7a77e6174183c70c855a7b766518"
+unit = "db"
+algorithm = "sha256-ranked database prefix nearest to 20 percent"
+salt = "text2sql-master-data001-v1"
+development_fraction_target = 0.20
+development_uses = ["prompt_selection", "dspy_optimization", "threshold_selection", "error_analysis"]
+test_uses = ["one_time_final_evaluation"]
+
+[development_corpus]
+retrieval_source = "Spider 1.0 official train split"
+retrieval_source_status = "selected; checksum is recorded during RET-001 ingestion"
+retrieval_contains_spider2_examples = false
+dspy_labels = "execution result correctness on the 31-instance Spider2-Lite SQLite development split"
+
+[leakage_policy]
+gold_sql_in_prompt = false
+gold_sql_in_training = false
+gold_sql_in_retrieval = false
+test_questions_in_retrieval = false
+test_results_visible_during_development = false
+target_schema_allowed = true
+target_documentation_allowed = true
+target_external_knowledge_allowed = true
+manual_per_test_prompt_edits = false
+
+[evaluation]
+primary_metric = "official execution-result comparison restricted to the frozen 104-instance test manifest"
+official_evaluator_mode = "exec_result"
+require_exact_id_coverage = true
+missing_or_extra_predictions_fail_run = true
+read_only_execution = true
+outer_timeout_seconds = 60
+headline_label = "Spider2-Lite SQLite custom DB-disjoint test split"
+
+[reporting]
+required_fields = [
+  "source_commit",
+  "source_data_sha256",
+  "split_manifest_sha256",
+  "evaluator_sha256",
+  "code_commit",
+  "model_id",
+  "model_parameters",
+  "prompt_hash",
+  "retrieval_index_hash",
+  "oracle_tables",
+  "execution_timestamp",
+]

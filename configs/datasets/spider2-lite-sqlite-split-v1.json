@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "protocol_id": "spider2-lite-sqlite-data001-v1",
+  "source_commit": "cafb867313aab4e674652054198f383cf4018943",
+  "source_data_sha256": "4ba48916576fbd60311a2478c6d4550b5d8cf3fcbc512457ea493b5941ca009d",
+  "split_method": {
+    "unit": "db",
+    "salt": "text2sql-master-data001-v1",
+    "algorithm": "Sort database IDs by SHA-256(salt + '|' + db_id), then take the prefix whose example count is nearest to 20% for development."
+  },
+  "development_db_ids": ["oracle_sql", "Airlines", "music", "f1", "electronic_sales", "city_legislation"],
+  "test_db_ids": ["northwind", "EntertainmentAgency", "sqlite-sakila", "IPL", "complex_oracle", "delivery_center", "chinook", "bank_sales_trading", "BowlingLeague", "school_scheduling", "log", "stacking", "education_business", "Pagila", "Brazilian_E_Commerce", "Baseball", "California_Traffic_Collision", "WWE", "modern_data", "EU_soccer", "imdb_movies", "AdventureWorks", "E_commerce", "Db-IMDB"],
+  "development_instance_ids": ["local009", "local010", "local068", "local070", "local071", "local072", "local167", "local168", "local169", "local170", "local171", "local202", "local244", "local269", "local270", "local272", "local273", "local274", "local275", "local277", "local279", "local286", "local309", "local310", "local311", "local335", "local336", "local344", "local354", "local355", "local356"],
+  "test_instance_ids": ["local002", "local003", "local004", "local007", "local008", "local015", "local017", "local018", "local019", "local020", "local021", "local022", "local023", "local024", "local025", "local026", "local028", "local029", "local030", "local031", "local032", "local034", "local035", "local037", "local038", "local039", "local040", "local041", "local049", "local050", "local054", "local055", "local056", "local058", "local059", "local060", "local061", "local062", "local063", "local064", "local065", "local066", "local067", "local073", "local074", "local075", "local077", "local078", "local081", "local085", "local096", "local097", "local098", "local099", "local100", "local114", "local128", "local130", "local131", "local132", "local133", "local141", "local152", "local156", "local157", "local163", "local193", "local194", "local195", "local196", "local197", "local198", "local199", "local201", "local209", "local210", "local212", "local218", "local219", "local220", "local221", "local228", "local229", "local230", "local253", "local258", "local259", "local262", "local263", "local264", "local283", "local284", "local285", "local297", "local298", "local299", "local300", "local301", "local302", "local329", "local330", "local331", "local358", "local360"]
+}

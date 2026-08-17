@@ -1,20 +1,82 @@
 # Experiment protocol
 
-## Current experiment
+## Current state
 
-`phase0-smoke-v1` is an infrastructure smoke test, not a research result. It uses a deterministic mock provider and a synthetic SQLite database.
+`phase0-smoke-v1` remains an infrastructure smoke test, not a research result. `DATA-001` freezes the benchmark protocol before a real model, dataset loader or evaluator is introduced.
 
-## Frozen-evaluation rules for future phases
+The machine-readable source of truth is `configs/datasets/spider2-lite-sqlite-v1.toml`; the exact database and instance assignment is in `configs/datasets/spider2-lite-sqlite-split-v1.json`.
 
-1. Keep train, development and evaluation databases disjoint.
-2. Build retrieval indexes only from the training split.
-3. Never optimize prompts on final evaluation answers.
-4. Persist model ID, parameters, prompt hash, schema hash and dataset version.
-5. Use execution-based evaluation as the primary correctness metric.
-6. Treat network errors separately from semantic errors.
-7. Run every compared configuration over exactly the same example IDs.
+## DATA-001: frozen benchmark decision
 
-## Pending decision
+### Scope
 
-The Phase 1 decision record must select the exact Spider2-Lite scope and development dataset before a real model is called.
+The primary master-thesis benchmark is the **SQLite portion of Spider 2.0-Lite at pinned commit `cafb867313aab4e674652054198f383cf4018943`**. The pinned `spider2-lite.jsonl` contains 547 examples, of which 135 are local SQLite instances. Its SHA-256 checksum and the checksums of the official evaluator inputs are stored in the TOML protocol.
 
+The official project currently describes Spider2-Lite as a 547-example, multi-dialect benchmark. The pinned snapshot contains 205 BigQuery, 207 Snowflake and 135 SQLite IDs according to the evaluator's routing rules. This differs from older/public summary counts, which is exactly why the commit and hashes are mandatory.
+
+This project does **not** call its result a full Spider2-Lite score. The headline is always:
+
+> Spider2-Lite SQLite custom DB-disjoint test split
+
+BigQuery and Snowflake are optional later extensions. Spider2-Snow is not part of the MVP.
+
+### Researcher-defined split
+
+Spider2-Lite publishes no official train/development/test split. We therefore create a deterministic research split only inside the 135 SQLite examples:
+
+- split unit: database ID, never individual questions;
+- ranking: `SHA-256("text2sql-master-data001-v1|" + db_id)`;
+- development: the ranked database prefix whose example count is nearest to 20% of 135;
+- result: 31 development examples from 6 databases;
+- test: 104 examples from the remaining 24 databases.
+
+Database-level grouping is the firewall: a schema/database visible during development cannot appear in the test set. The explicit IDs are versioned rather than recalculated at runtime.
+
+### Allowed uses
+
+| Data | Allowed | Forbidden |
+|---|---|---|
+| Spider 1.0 official train | future retrieval/few-shot corpus after its ingestion checksum is frozen | headline evaluation |
+| Spider2-Lite SQLite development (31) | prompt selection, DSPy optimization, thresholds, development error analysis | retrieval index, final score |
+| Spider2-Lite SQLite test (104) | one final evaluation after configuration lock | prompt editing, DSPy, threshold selection, retrieval, exploratory error-driven changes |
+| Target-specific schema/docs/external knowledge | context for that same target, because it is part of the benchmark task | use as examples for another target |
+| Spider2 gold SQL | evaluator internals/diagnostics only | prompt, retrieval, training or DSPy demonstrations |
+
+All Spider2 inputs are public, so the test set is held out from **our pipeline**, not guaranteed unseen in the LLM provider's pretraining. This limitation must appear in the thesis.
+
+### Oracle tables
+
+Ground-truth table selection is disabled. If it is ever tested, it must be a separate ablation explicitly labelled `oracle tables`, never the primary result.
+
+## Evaluation contract
+
+The primary correctness metric is the official execution-result comparator restricted to the frozen 104-ID test manifest. `EVAL-001` will wrap the upstream evaluator rather than reimplement its comparison semantics.
+
+Before evaluation, the wrapper must fail if there is any missing or extra prediction ID. The official command mode is `exec_result`; generated SQL will be executed with read-only access and an outer 60-second per-task timeout before its CSV result is compared. No score may be reported until all expected IDs are covered.
+
+Every result must record:
+
+- upstream dataset and evaluator commit/checksums;
+- split-manifest hash;
+- project Git commit and dependency lock;
+- model ID, generation parameters and seed where supported;
+- prompt, schema and retrieval-index hashes;
+- whether oracle tables were used (default `false`);
+- execution timestamp and database snapshot identifier.
+
+## Frozen-evaluation rules
+
+1. Keep development and test databases disjoint.
+2. Build retrieval indexes only from an external training split; never from Spider2-Lite.
+3. Never optimize prompts, examples or thresholds on test answers.
+4. Run every compared configuration over exactly the same frozen IDs.
+5. Treat environment/network failures separately from semantic failures.
+6. Do not inspect test results until the configuration is locked.
+7. Any later protocol change requires a new protocol ID, manifest and documented ADR; the v1 files are immutable.
+
+## Primary sources
+
+- Spider 2.0 official site: <https://spider2-sql.github.io/>
+- Spider 2.0 official repository: <https://github.com/xlang-ai/Spider2>
+- Spider 2.0 paper (ICLR 2025 Oral): <https://arxiv.org/abs/2411.07763>
+- Official Spider2-Lite evaluator instructions: <https://github.com/xlang-ai/Spider2/tree/main/spider2-lite/evaluation_suite>

@@ -1,4 +1,3 @@
-# Phase 0 runtime intentionally uses only the Python standard library.
+# Phase 1 DATA-001 runtime intentionally uses only the Python standard library.
 # Future phases will replace this file with a generated lock after adding
 # the official evaluator, LLM provider, M-Schema, DSPy and SQL parser.
-

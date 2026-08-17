@@ -1,9 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela  
-**Verzija plana:** 1.1  
+**Verzija plana:** 1.4  
 **Datum:** 13. avgust 2026.  
-**Status projekta:** Faza 0 je završena; sledeća je Faza 1 - podaci i zvanična evaluacija
+**Status projekta:** Faza 1 je u toku; `DATA-001` je završen, slede `DATA-003` i `EVAL-001`  
+**Poslednja provera:** 8/8 testova, offline editable instalacija i CLI smoke run prolaze
 
 ## 1. Svrha dokumenta
 
@@ -307,17 +308,17 @@ Zadaci:
 
 **Trajanje:** 1 nedelja  
 **Zavisnost:** Faza 0  
-**Status:** `NOT STARTED`
+**Status:** `IN PROGRESS`
 
 Zadaci:
 
 - preuzeti originalne podatke sa `db_id` i šemama;
-- definisati razvojni skup i zaključani evaluacioni skup;
+- `DONE` - definisati razvojni skup i zaključani evaluacioni skup;
 - implementirati Spider 1.0/BIRD razvojni loader;
 - implementirati Spider2-Lite loader, prvo za SQLite podskup;
 - napraviti mali fixture skup za brze testove;
 - implementirati zvanično execution-based ocenjivanje;
-- sprečiti curenje između treninga, developmenta i testa.
+- `IN PROGRESS` - protokol i leakage testovi su gotovi; runtime firewall se završava kroz loader i evaluator.
 
 **Definition of Done:** jedan CLI poziv učitava primer, pronalazi bazu, izvršava gold SQL gde je dostupan i vraća očekivanu zvaničnu metriku.
 
@@ -452,7 +453,7 @@ Zadaci:
 
 | Odluka | Rok | Podrazumevana preporuka |
 |---|---|---|
-| Glavni evaluacioni benchmark | kraj Faze 1 | Spider2-Lite SQLite podskup; razvoj na odvojenom skupu |
+| Glavni evaluacioni benchmark | DONE u `DATA-001` | pinned Spider2-Lite SQLite; custom DB-disjoint split 31 development / 104 test; nije puni leaderboard score |
 | SQL dijalekt prve verzije | kraj Faze 1 | SQLite za benchmark, MySQL samo za demo ako je potrebno |
 | Retriever | sredina Faze 4 | embedding retrieval kao baseline, skeleton retrieval kao proširenje |
 | DSPy optimizer | početak Faze 4 | MIPROv2 sa execution-based metrikom |
@@ -477,18 +478,22 @@ Zadaci:
 
 Ova tabela predstavlja početni backlog. Ažurira se pri svakom značajnom radu na projektu.
 
+**Sažetak stanja:** 8 zadataka je završeno; nema blokiranih zadataka. Slede `DATA-003`, `EVAL-001` i `LLM-002`.
+
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
 | PLAN-001 | Arhitektura i roadmap | 0 | P0 | DONE | - | ovaj dokument |
 | REPO-001 | Kreirati novu strukturu repozitorijuma | 0 | P0 | DONE | PLAN-001 | `text2sql/` struktura i 5 testova |
 | REPO-002 | Zaključati zavisnosti i dodati `.env.example` | 0 | P0 | DONE | REPO-001 | offline editable instalacija prolazi; Phase 0 nema runtime zavisnosti |
 | REPO-003 | Premestiti stare notebookove u legacy | 0 | P1 | DONE | REPO-001 | `notebooks/legacy/` sa notebookovima i starim demo kodom |
-| DATA-001 | Izabrati i dokumentovati benchmark/split | 1 | P0 | NOT STARTED | REPO-001 | `docs/experiments.md` |
-| DATA-002 | Implementirati standardni `Text2SQLExample` | 1 | P0 | DONE | DATA-001 | `domain/models.py` i unit test |
-| DATA-003 | Implementirati Spider2-Lite SQLite loader | 1 | P0 | NOT STARTED | DATA-002 | integration test |
+| SEC-000 | Rotirati ranije korišćene API ključeve/DB lozinke | 0 | P0 | DONE | - | `.env` nikad nije verzionisan; tajne su zamenjene |
+| DATA-001 | Izabrati i dokumentovati benchmark/split | 1 | P0 | DONE | REPO-001 | TOML protokol, 31/104 split manifest, ADR-003 i leakage testovi |
+| DATA-002 | Implementirati standardni `Text2SQLExample` | 1 | P0 | DONE | REPO-001 | `domain/models.py` i unit test |
+| DATA-003 | Implementirati loader za pinned Spider2-Lite SQLite 135 metadata/ID-jeve | 1 | P0 | NOT STARTED | DATA-001, DATA-002 | checksum provera i integration test |
 | EVAL-001 | Implementirati execution evaluator | 1 | P0 | NOT STARTED | DATA-003 | evaluator test nad fixture bazom |
-| LLM-001 | Implementirati provider interfejs | 2 | P0 | IN PROGRESS | REPO-002 | protokol i mock su gotovi; real-provider test ostaje za Fazu 2 |
-| EXP-001 | Implementirati B0 i B1 | 2 | P0 | NOT STARTED | EVAL-001, LLM-001 | rezultat JSONL |
+| LLM-001 | Implementirati provider interfejs | 2 | P0 | DONE | REPO-002 | provider protokol, deterministički mock i pipeline test |
+| LLM-002 | Implementirati realni LLM/Groq adapter | 2 | P0 | NOT STARTED | LLM-001, EVAL-001 | adapter test i evidentirani parametri modela |
+| EXP-001 | Implementirati B0 i B1 | 2 | P0 | NOT STARTED | EVAL-001, LLM-002 | rezultat JSONL |
 | SCHEMA-001 | Implementirati kanonski model šeme | 3 | P0 | NOT STARTED | DATA-003 | unit test |
 | SCHEMA-002 | Implementirati M-Schema | 3 | P0 | NOT STARTED | SCHEMA-001 | B2 rezultat |
 | RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | NOT STARTED | DATA-001 | leakage test |
@@ -561,6 +566,8 @@ Task je `DONE` samo ako:
 
 ## 16. Prvi sprint
 
+**Status sprinta:** `DONE`
+
 Prvi sprint treba da traje najviše jednu nedelju i da se završi pre razvoja M-Schema ili DSPy dela.
 
 ### Cilj sprinta
@@ -569,14 +576,14 @@ Dobiti čistu, instalabilnu osnovu projekta i jedan mali end-to-end eksperiment 
 
 ### Obavezni zadaci
 
-1. `REPO-001` - nova struktura repozitorijuma;
-2. `REPO-002` - zavisnosti, `.env.example` i ispravljen `.gitignore`;
-3. `REPO-003` - arhiviranje trenutnih notebookova;
-4. `DATA-001` - odluka o glavnom benchmarku i splitu;
-5. `DATA-002` - standardni model jednog primera;
-6. mali fixture dataset i SQLite baza;
-7. minimalni CLI: pitanje + šema -> model -> SQL -> JSONL zapis;
-8. unit testovi bez pozivanja plaćenog API-ja.
+1. `DONE` - `REPO-001`: nova struktura repozitorijuma;
+2. `DONE` - `REPO-002`: zavisnosti, `.env.example` i ispravljen `.gitignore`;
+3. `DONE` - `REPO-003`: arhiviranje trenutnih notebookova;
+4. `DONE` - `DATA-001`: pinned benchmark, DB-disjoint split i leakage pravila;
+5. `DONE` - `DATA-002`: standardni model jednog primera;
+6. `DONE` - mali fixture dataset i SQLite baza;
+7. `DONE` - minimalni CLI: pitanje + šema -> model -> SQL -> JSONL zapis;
+8. `DONE` - 8/8 testova bez pozivanja plaćenog API-ja.
 
 ### Rezultat sprinta
 
@@ -620,8 +627,17 @@ Odluke:
 - zvanični B0/B1 eksperimenti neće početi pre Faze 1 i execution-based evaluatora;
 - trenutni mock rezultat je infrastrukturna provera i ne predstavlja rezultat master rada.
 
+### 2026-08-13 - Završen DATA-001
+
+- Spider2-Lite je zamrznut na commit `cafb867313aab4e674652054198f383cf4018943` sa checksumovima;
+- 135 SQLite primera podeljeno je po bazama na 31 development i 104 test primera;
+- test skup i gold SQL su zabranjeni u retrieval-u, prompt optimizaciji i DSPy toku;
+- `oracle tables` je isključen iz primarnog protokola;
+- dodati su TOML protokol, JSON manifest, ADR-003, dokumentacija i validator;
+- 8/8 testova prolazi.
+
 Sledeće:
 
-1. `DATA-001`: zaključati benchmark i podelu podataka;
-2. `DATA-003`: implementirati Spider2-Lite SQLite loader;
-3. `EVAL-001`: implementirati execution-based evaluator nad fixture bazom, zatim zvaničnim podacima.
+1. `DATA-003`: implementirati loader za pinned Spider2-Lite SQLite metadata;
+2. `EVAL-001`: implementirati official execution-result comparator wrapper;
+3. `LLM-002`: povezati realni Groq adapter nakon evaluatora.

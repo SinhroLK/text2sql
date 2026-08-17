@@ -9,3 +9,4 @@
 | Guardrails and sandbox | Security | S0/S1 and adversarial evaluation |
 | Experiment runner/evaluator | Results | frozen configs, raw JSONL and generated tables |
 
+`DATA-001` evidence is the pinned Spider2-Lite protocol, the database-disjoint split manifest, ADR-003 and `tests/test_dataset_protocol.py`. The methodology chapter must state that the score covers a custom 104-instance SQLite holdout, not the full 547-instance leaderboard setting.

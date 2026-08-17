@@ -2,12 +2,12 @@
 
 Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
-This Phase 1 foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol and `DATA-003` provides its checksum-gated metadata loader and deterministic dataset manifest.
+This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, and `EVAL-001` provides a structured SQLite execution evaluator.
 
 ## Requirements
 
 - Python 3.11 or newer
-- No runtime dependencies for the current Phase 1 DATA-003 foundation
+- No runtime dependencies for the current EVAL-001 foundation
 
 ## Quick start
 
@@ -19,7 +19,7 @@ PYTHONPATH=src python -m text2sql.cli \
   --output artifacts/reports/data001-smoke.jsonl
 ```
 
-The command prints one JSON result and appends the same structured record to the requested JSONL file. The generated SQL is **not executed** in Phase 0. Safe execution and AST validation are planned for Phase 5.
+The command prints one JSON result and appends the same structured record to the requested JSONL file. The Phase 0 pipeline does **not** execute generated SQL. EVAL-001 provides a separate evaluation-only SQLite executor; production pipeline execution and AST validation remain planned for Phase 5.
 
 ## Run tests
 
@@ -46,20 +46,24 @@ Implemented:
 - JSONL audit output;
 - unit and integration tests;
 - versioned configuration placeholders;
-- preserved legacy notebooks.
+- preserved legacy notebooks;
 - pinned Spider2-Lite source/evaluator checksums;
 - deterministic database-disjoint SQLite split (31 development / 104 test);
 - executable protocol validation and leakage-policy tests;
-- documented benchmark, evaluation and reporting contract.
+- documented benchmark, evaluation and reporting contract;
 - pinned Spider2-Lite SQLite metadata loader;
 - checksum validation before JSON parsing;
 - deterministic normalized metadata and dataset manifest generation;
 - strict 31-development / 104-test ID and database firewall;
-- rejection of gold-like SQL fields during metadata ingestion.
+- rejection of gold-like SQL fields during metadata ingestion;
+- isolated read-only execution of generated and reference SQLite SQL;
+- Spider2-Lite-compatible result comparison with order, condition-column,
+  NULL and numeric-tolerance handling;
+- structured evaluation results and exact-ID Execution Accuracy aggregation;
+- local evaluator CLI and fixture-backed integration tests.
 
 Not implemented yet:
 
-- official execution-result evaluator wrapper (`EVAL-001`);
 - Spider2 SQLite database archive ingestion and execution;
 - Groq or another real LLM provider;
 - M-Schema;
@@ -70,7 +74,7 @@ Not implemented yet:
 
 ## Security
 
-Do not copy active API keys, database passwords or production databases into this repository. The future runtime will use a read-only sandbox user and AST-based SQL validation. The Phase 0 CLI generates SQL but does not execute it.
+Do not copy active API keys, database passwords or production databases into this repository. The evaluation-only executor works on isolated in-memory SQLite copies. The future production runtime will additionally use a read-only sandbox user and AST-based SQL validation; the Phase 0 generation CLI still does not execute SQL.
 
 ## Dataset protocol
 
@@ -87,6 +91,23 @@ manifest before writing `examples.jsonl` and `dataset-manifest.json` under
 `data/processed/spider2-lite-sqlite-v1/`. It does not read or emit gold SQL and
 does not execute database queries.
 
+## Execution evaluator
+
+Create the fixture database and compare two SQL statements:
+
+```bash
+python3 scripts/create_fixture_db.py
+PYTHONPATH=src python3 -m text2sql.evaluation.cli \
+  --database data/fixtures/demo.sqlite \
+  --generated-sql "SELECT first_name FROM customers ORDER BY customer_id DESC" \
+  --reference-sql "SELECT first_name FROM customers ORDER BY customer_id ASC" \
+  --ignore-order
+```
+
+The evaluator runs each statement in a separate read-only in-memory copy and
+prints a structured JSON result. See `docs/evaluation.md` for comparison rules,
+exit codes and limitations.
+
 ## Repository map
 
 - `src/text2sql/` - reusable pipeline code;
@@ -99,4 +120,5 @@ does not execute database queries.
 - `docs/` - architecture, experiment, decision and source records;
 - `docs/sources-and-references.md` - living register of every paper, dataset,
   repository, documentation source and legacy input used by the project;
+- `docs/evaluation.md` - EVAL-001 execution and comparison contract;
 - `artifacts/` - generated results, excluded from Git by default.

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "text2sql-research"
-version = "0.3.0"
+version = "0.4.0"
 description = "Reproducible Text-to-SQL research pipeline for a master thesis"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,6 +13,7 @@ dependencies = []
 [project.scripts]
 text2sql = "text2sql.cli:main"
 text2sql-prepare-spider2 = "text2sql.datasets.cli:main"
+text2sql-evaluate = "text2sql.evaluation.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

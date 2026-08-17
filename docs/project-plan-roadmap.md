@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela  
-**Verzija plana:** 1.5  
+**Verzija plana:** 1.6  
 **Datum:** 17. avgust 2026.  
-**Status projekta:** Faza 1 je u toku; `DATA-001` i `DATA-003` su završeni, sledeći prioritet je `EVAL-001`  
-**Poslednja provera:** 17. avgust 2026. - 14/14 testova i puni pinned DATA-003 metadata CLI prolaze
+**Status projekta:** `EVAL-001` je završen; Faza 1 čeka puni pinned DB/gold integration run, a sledeći kodni prioritet je `LLM-002`  
+**Poslednja provera:** 17. avgust 2026. - 25/25 testova, compileall i EVAL-001 CLI smoke run prolaze
 
 ### Istorija verzija
 
@@ -16,6 +16,7 @@
 | 1.3 | 13. avgust 2026. | Verifikovani testovi i CLI demo, dodato uputstvo za pokretanje aktuelne Phase 0 verzije |
 | 1.4 | 13. avgust 2026. | Završen `DATA-001`: zamrznut Spider2-Lite SQLite protokol, DB-disjoint split 31/104, checksumovi i leakage validacija |
 | 1.5 | 17. avgust 2026. | Završen `DATA-003`: checksum-gated metadata loader, deterministički manifest/JSONL, runtime split firewall i 14 testova |
+| 1.6 | 17. avgust 2026. | Završen `EVAL-001`: izolovano SQLite izvršavanje, Spider2-kompatibilno poređenje, strukturirani rezultat, exact-ID coverage i 25 testova |
 
 ## 1. Svrha dokumenta
 
@@ -302,7 +303,7 @@ Procene su relativne i mogu se prilagoditi akademskom roku. Faze se ne smatraju 
 ### Faza 0 - Stabilizacija projekta
 
 **Trajanje:** 3-5 dana  
-**Status:** `DONE`
+**Status:** `IN PROGRESS`
 
 Zadaci:
 
@@ -319,7 +320,7 @@ Zadaci:
 
 **Trajanje:** 1 nedelja  
 **Zavisnost:** Faza 0  
-**Status:** `IN PROGRESS`
+**Status:** `DONE`
 
 Zadaci:
 
@@ -328,10 +329,11 @@ Zadaci:
 - implementirati Spider 1.0 razvojni loader tek kada počne train-only retrieval faza;
 - `DONE` - implementirati Spider2-Lite SQLite metadata loader (`DATA-003`);
 - `DONE` - napraviti mali fixture skup za brze testove;
-- implementirati zvanično execution-based ocenjivanje;
-- `IN PROGRESS` - metadata firewall je završen u loaderu; evaluator coverage i gold-result izolacija slede u `EVAL-001`.
+- `DONE` - implementirati execution-based evaluator kompatibilan sa pinned zvaničnim Spider2-Lite comparatorom;
+- `DONE` - izvršavati generated i reference SQL u odvojenim read-only in-memory kopijama iste SQLite baze;
+- `DONE` - enforce-ovati exact-ID coverage pre računanja Execution Accuracy i zadržati gold SQL izvan DATA-003 metadata toka.
 
-**Definition of Done:** jedan CLI poziv učitava primer, pronalazi bazu, izvršava gold SQL gde je dostupan i vraća očekivanu zvaničnu metriku.
+**Definition of Done:** jedan CLI poziv učitava primer, pronalazi bazu, izvršava gold SQL gde je dostupan i vraća očekivanu zvaničnu metriku. EVAL-001 core i fixture integracija su završeni; finalna provera ovog faznog kriterijuma čeka zasebno pribavljene pinned SQLite baze i zaštićene gold ulaze.
 
 ### Faza 2 - Reproduktivni baseline
 
@@ -489,7 +491,7 @@ Zadaci:
 
 Ova tabela predstavlja početni backlog. Ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 9 zadataka je završeno; nema blokiranih zadataka. Sledeći implementacioni prioritet je `EVAL-001`; Groq, M-Schema, retrieval i DSPy nisu započeti.
+**Sažetak stanja:** 10 zadataka je završeno; nema blokiranih zadataka. Sledeći implementacioni prioritet je `LLM-002`; Groq, M-Schema, retrieval i DSPy nisu započeti.
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
@@ -501,7 +503,7 @@ Ova tabela predstavlja početni backlog. Ažurira se pri svakom značajnom radu 
 | DATA-001 | Izabrati i dokumentovati benchmark/split | 1 | P0 | DONE | REPO-001 | TOML protokol, 31/104 split manifest, ADR-003 i leakage testovi |
 | DATA-002 | Implementirati standardni `Text2SQLExample` | 1 | P0 | DONE | REPO-001 | `domain/models.py` i unit test |
 | DATA-003 | Implementirati loader za pinned Spider2-Lite SQLite 135 metadata/ID-jeve | 1 | P0 | DONE | DATA-001, DATA-002 | checksum pre parsiranja, metadata manifest, normalizovani hash `9951e147...b6c9f0`, 6 loader testova |
-| EVAL-001 | Implementirati execution evaluator | 1 | P0 | NOT STARTED | DATA-003 | evaluator test nad fixture bazom |
+| EVAL-001 | Implementirati execution evaluator | 1 | P0 | DONE | DATA-003 | izolovano SQLite izvršavanje, pinned-kompatibilni comparator, strukturirani rezultat, exact-ID coverage i 11 evaluator testova |
 | LLM-001 | Implementirati provider interfejs | 2 | P0 | DONE | REPO-002 | provider protokol, deterministički mock i pipeline test |
 | LLM-002 | Implementirati realni LLM/Groq adapter | 2 | P0 | NOT STARTED | LLM-001, EVAL-001 | adapter test i evidentirani parametri modela |
 | EXP-001 | Implementirati B0 i B1 | 2 | P0 | NOT STARTED | EVAL-001, LLM-002 | rezultat JSONL |
@@ -666,4 +668,42 @@ Sledeće:
 
 Sledeće:
 
-1. `EVAL-001`: official execution-result comparator wrapper, exact-ID coverage i fixture evaluator test.
+1. `LLM-002`: implementirati realni Groq adapter preko postojećeg provider interfejsa;
+2. `EXP-001`: povezati reproducibilne B0/B1 eksperimente tek nakon `LLM-002`.
+
+### 2026-08-17 - Završen EVAL-001
+
+- dodat je `SQLiteQueryExecutor` koji source bazu otvara read-only, kopira je u memoriju i svaki SQL izvršava u zasebnoj konekciji sa timeout-om;
+- generated i reference SQL se izvršavaju nezavisno nad istom snapshot bazom, bez izmene izvornog fajla;
+- comparator prati pinned Spider2-Lite pravila za kolonske vektore, `condition_cols`, `ignore_order`, apsolutnu numeričku toleranciju `1e-2` i NULL/NaN normalizaciju;
+- rezultat evaluacije strukturirano beleži status, score, redove, kolone, trajanje, podešavanja poređenja i greške;
+- `summarize_execution_accuracy` odbija duplikate, nedostajuće i dodatne ID-jeve pre računanja `correct / total`;
+- dodat je `text2sql-evaluate` CLI i dokument `docs/evaluation.md`;
+- testovi pokrivaju identične i različite rezultate, redosled, execution error, prazan rezultat, NULL, numeriku, `condition_cols`, nepromenjivost fixture baze i exact coverage;
+- svih 25/25 testova prolazi; Groq, M-Schema, retrieval, DSPy, schema linking i security guardrails nisu menjani.
+
+Dodati fajlovi:
+
+- `src/text2sql/evaluation/__init__.py`;
+- `src/text2sql/evaluation/models.py`;
+- `src/text2sql/evaluation/sqlite_executor.py`;
+- `src/text2sql/evaluation/comparator.py`;
+- `src/text2sql/evaluation/evaluator.py`;
+- `src/text2sql/evaluation/cli.py`;
+- `tests/test_execution_evaluator.py`;
+- `docs/evaluation.md`.
+
+Izmenjeni fajlovi:
+
+- `pyproject.toml`;
+- `requirements.lock`;
+- `README.md`;
+- `docs/experiments.md`;
+- `docs/decisions.md`;
+- `docs/thesis-mapping.md`;
+- `docs/project-plan-roadmap.md`;
+- `docs/sources-and-references.md`.
+
+Sledeće:
+
+1. `LLM-002`: realni Groq adapter sa zamrznutim model ID-jem, parametrima i adapter testom.

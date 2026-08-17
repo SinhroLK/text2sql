@@ -2,7 +2,7 @@
 
 ## Current state
 
-`phase0-smoke-v1` remains an infrastructure smoke test, not a research result. `DATA-001` freezes the benchmark protocol and `DATA-003` implements its metadata-only loader. A real model and execution evaluator are still absent.
+`phase0-smoke-v1` remains an infrastructure smoke test, not a research result. `DATA-001` freezes the benchmark protocol, `DATA-003` implements its metadata-only loader, and `EVAL-001` implements the SQLite execution/comparison core. A real model and final benchmark run are still absent.
 
 The machine-readable source of truth is `configs/datasets/spider2-lite-sqlite-v1.toml`; the exact database and instance assignment is in `configs/datasets/spider2-lite-sqlite-split-v1.json`; the deterministic normalized-output contract is in `configs/datasets/spider2-lite-sqlite-metadata-manifest-v1.json`.
 
@@ -17,8 +17,9 @@ The normalized metadata contains the original question, database ID, dialect,
 frozen split, source ID/commit and optional `external_knowledge` reference. It
 contains no gold SQL, result files or database bytes. Fields resembling gold SQL
 are rejected, and the generated manifest must exactly match the version-controlled
-DATA-003 manifest. Therefore this loader enables reproducible metadata ingestion
-but does not yet make execution-based evaluation available.
+DATA-003 manifest. The loader itself remains metadata-only; EVAL-001 consumes its
+standard `Text2SQLExample` objects while protected reference SQL and database
+paths are supplied through the separate evaluation boundary.
 
 ## DATA-001: frozen benchmark decision
 
@@ -64,9 +65,9 @@ Ground-truth table selection is disabled. If it is ever tested, it must be a sep
 
 ## Evaluation contract
 
-The primary correctness metric is the official execution-result comparator restricted to the frozen 104-ID test manifest. `EVAL-001` will wrap the upstream evaluator rather than reimplement its comparison semantics.
+The primary correctness metric is the official execution-result comparator restricted to the frozen 104-ID test manifest. `EVAL-001` mirrors the pinned upstream comparator semantics in a standard-library compatibility layer: column-vector matching, optional `condition_cols`, optional row-order ignoring, numeric tolerance `1e-2` and official NULL-to-zero normalization. Generated and reference SQL execute independently in read-only in-memory copies of the same SQLite database.
 
-Before evaluation, the wrapper must fail if there is any missing or extra prediction ID. The official command mode is `exec_result`; generated SQL will be executed with read-only access and an outer 60-second per-task timeout before its CSV result is compared. No score may be reported until all expected IDs are covered.
+Before aggregation, `summarize_execution_accuracy` fails if there is any duplicate, missing or extra prediction ID. The official command mode remains `exec_result`; the local compatibility layer returns structured results that can later be exported to official CSV input. No final score may be reported until all expected frozen IDs are covered.
 
 Every result must record:
 

@@ -35,6 +35,29 @@ class GroqProviderTest(unittest.TestCase):
         self.assertEqual(captured["payload"]["model"], "test-model")
         self.assertEqual(captured["headers"]["Authorization"], "Bearer test-secret")
 
+    def test_default_transport_uses_official_sdk(self) -> None:
+        raw_response = json.dumps(
+            {
+                "id": "request-1",
+                "model": "test-model",
+                "choices": [{"message": {"content": "SELECT 1"}}],
+                "usage": {"prompt_tokens": 4, "completion_tokens": 2},
+            }
+        )
+        with patch("text2sql.providers.groq.groq.Groq") as client_type:
+            completion = client_type.return_value.chat.completions.create
+            completion.return_value.model_dump_json.return_value = raw_response
+
+            response = GroqProvider(
+                model_id="test-model", api_key="test-secret", max_retries=0
+            ).generate(INPUT)
+
+        self.assertEqual(response.candidates, ("SELECT 1",))
+        self.assertEqual((response.input_tokens, response.output_tokens), (4, 2))
+        self.assertEqual(client_type.call_args.kwargs["max_retries"], 0)
+        self.assertEqual(client_type.call_args.kwargs["base_url"], "https://api.groq.com")
+        self.assertEqual(completion.call_args.kwargs["model"], "test-model")
+
     def test_requires_api_key(self) -> None:
         with patch.dict("os.environ", {}, clear=True):
             provider = GroqProvider(model_id="test-model", transport=lambda *_: b"")

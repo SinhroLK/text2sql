@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 1.9
+**Verzija plana:** 2.1
 **Datum:** 18. avgust 2026.
-**Status projekta:** `EVAL-002` kod je implementiran, ali je task `BLOCKED`; Faza 1 nije završena. `LLM-002` napreduje offline, dok benchmark scoring ostaje blokiran.
-**Poslednja provera:** 18. avgust 2026. - 49/49 testova, compileall i pinned preflight prolaze; preflight potvrđuje 6 nedostajućih baza i 30 reference SQL fajlova
+**Status projekta:** Faza 1 i `LLM-002` su završeni; official Groq SDK live smoke sa `openai/gpt-oss-120b` je uspešan. Sledeći aktivni zadatak je `EXP-001` za B0/B1 development predikcije.
+**Poslednja provera:** 18. avgust 2026. - 55/55 testova prolazi; EVAL-003 preflight je `ready` 31/31; Groq SDK smoke je uspešan (224 input, 124 output tokena, 697 ms)
 
 ### Istorija verzija
 
@@ -19,7 +19,9 @@
 | 1.6 | 17. avgust 2026. | Završen `EVAL-001`: izolovano SQLite izvršavanje, Spider2-kompatibilno poređenje, strukturirani rezultat, exact-ID coverage i 25 testova |
 | 1.7 | 18. avgust 2026. | Dodat `EVAL-002` resolver/protected-reference/preflight/batch runner i 43 testa; ispravljen status Faze 1 na BLOCKED nakon resource audita pinned snapshot-a |
 | 1.8 | 18. avgust 2026. | Dozvoljen paralelni offline rad na LLM-002; dodat standard-library Groq adapter i 4 offline testa; realni scoring ostaje blokiran EVAL-002 resursima |
-| 1.9 | 18. avgust 2026. | Završen offline deo LLM-002: Groq CLI, audit metadata, bounded retry, aktivni model config i 49 testova; live smoke blokiran nedostajućim ključem |
+| 1.9 | 18. avgust 2026. | Završen offline deo LLM-002: Groq CLI, audit metadata, bounded retry, aktivni model config i 49 testova |
+| 2.0 | 18. avgust 2026. | Dodat primarni EVAL-003 nad official execution-result CSV-ovima; 31/31 preflight je ready i strict SQL putanja je opciona |
+| 2.1 | 18. avgust 2026. | `urllib` zamenjen official Groq SDK 1.6.0 transportom; uspešan `openai/gpt-oss-120b` live smoke i 55/55 testova |
 
 ## 1. Svrha dokumenta
 
@@ -322,7 +324,7 @@ Zadaci:
 
 **Trajanje:** 1 nedelja
 **Zavisnost:** Faza 0
-**Status:** `BLOCKED`
+**Status:** `DONE`
 
 Zadaci:
 
@@ -334,14 +336,15 @@ Zadaci:
 - `DONE` - implementirati execution-based evaluator kompatibilan sa pinned zvaničnim Spider2-Lite comparatorom;
 - `DONE` - izvršavati generated i reference SQL u odvojenim read-only in-memory kopijama iste SQLite baze;
 - `DONE` - enforce-ovati exact-ID coverage pre računanja Execution Accuracy i zadržati gold SQL izvan DATA-003 metadata toka;
-- `BLOCKED` - `EVAL-002`: povezati realne pinned SQLite baze, protected reference SQL i 31-example development batch run; kod i fixture testovi su završeni, ali realni resursi nisu kompletni.
+- `DONE` - `EVAL-003`: povezati svih šest realnih SQLite baza sa official gold-result CSV varijantama za svih 31 development primera;
+- `OPTIONAL` - `EVAL-002`: zadržati protected reference-SQL runner za audit kada dodatni SQL postane dostupan.
 
-**Definition of Done:** jedan CLI poziv učitava primer, pronalazi bazu, izvršava gold SQL gde je dostupan i vraća očekivanu zvaničnu metriku. EVAL-001 core i EVAL-002 runner/fixture integracija su završeni. Faza ostaje blokirana dok se lokalno ne obezbede šest official development SQLite baza, svih 31 protected reference SQL fajlova i ne prođe realni development batch run. Pinned javni Git trenutno pokriva samo `local309.sql`; 30 reference SQL fajlova nedostaje.
+**Definition of Done:** default CLI učitava frozen primer, pronalazi bazu, izvršava generated SQL i poredi rezultat sa svim official gold-result varijantama. Preflight potvrđuje 31/31 ID-jeva i 6/6 baza; missing reference SQL više nije blocker.
 
 ### Faza 2 - Reproduktivni baseline
 
 **Trajanje:** 1 nedelja
-**Zavisnost:** Faza 0 za provider/runner infrastrukturu; EVAL-002 za realno development bodovanje
+**Zavisnost:** Faza 0 za provider/runner infrastrukturu; EVAL-003 za realno development bodovanje
 **Status:** `IN PROGRESS`
 
 Zadaci:
@@ -495,7 +498,7 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 10 zadataka je završeno; `EVAL-002` je `BLOCKED`, a `LLM-002` je `IN PROGRESS`. Paralelni prioriteti su pribavljanje evaluation resursa i završetak offline provider integracije; M-Schema, retrieval i DSPy nisu započeti.
+**Sažetak stanja:** 12 zadataka je završeno; `EVAL-003` i `LLM-002` su `DONE`. Development evaluator ima svih 31 gold rezultata i 6 baza, a official SDK live smoke je uspešan; `EXP-001` je sledeći prioritet.
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
 | PLAN-001 | Arhitektura i roadmap | 0 | P0 | DONE | - | ovaj dokument |
@@ -507,10 +510,11 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | DATA-002 | Implementirati standardni `Text2SQLExample` | 1 | P0 | DONE | REPO-001 | `domain/models.py` i unit test |
 | DATA-003 | Implementirati loader za pinned Spider2-Lite SQLite 135 metadata/ID-jeve | 1 | P0 | DONE | DATA-001, DATA-002 | checksum pre parsiranja, metadata manifest, normalizovani hash `9951e147...b6c9f0`, 6 loader testova |
 | EVAL-001 | Implementirati execution evaluator | 1 | P0 | DONE | DATA-003 | izolovano SQLite izvršavanje, pinned-kompatibilni comparator, strukturirani rezultat, exact-ID coverage i 11 evaluator testova |
-| EVAL-002 | Integracija pinned Spider2-Lite evaluation runner-a | 1 | P0 | BLOCKED | DATA-003, EVAL-001 | resolver, protected store, preflight, strict coverage, batch/CLI i 18 novih testova postoje; nedostaju 6 DB fajlova i 30/31 development reference SQL fajlova |
+| EVAL-002 | Strict reference-SQL Spider2-Lite runner | 1 | P1 | OPTIONAL | DATA-003, EVAL-001 | SQL audit putanja je očuvana; 30/31 reference SQL fajlova nije javno dostupno i nije potrebno za glavno bodovanje |
+| EVAL-003 | Official gold-result Spider2-Lite runner | 1 | P0 | DONE | DATA-003, EVAL-001 | svih 31 development ID-jeva i 6 baza prolaze preflight; CSV varijante, checksum manifest, default CLI i 5 novih testova |
 | LLM-001 | Implementirati provider interfejs | 2 | P0 | DONE | REPO-002 | provider protokol, deterministički mock i test pipeline-a |
-| LLM-002 | Implementirati realni LLM/Groq adapter | 2 | P0 | IN PROGRESS | LLM-001 | CLI integracija, auditable provider metadata, bounded retry, aktivni `openai/gpt-oss-120b` config i 6 offline testa postoje; autorizovani smoke run čeka `GROQ_API_KEY` |
-| EXP-001 | Implementirati B0 i B1 | 2 | P0 | NOT STARTED | LLM-002; EVAL-002 samo za scoring | fixture dry-run može pre EVAL-002; realno development bodovanje čeka resurse |
+| LLM-002 | Implementirati realni LLM/Groq adapter | 2 | P0 | DONE | LLM-001 | official Groq SDK 1.6.0, bounded retry, audit metadata, 7 offline testova i uspešan `openai/gpt-oss-120b` live smoke |
+| EXP-001 | Implementirati B0 i B1 | 2 | P0 | NOT STARTED | LLM-002, EVAL-003 | svi infrastrukturni uslovi su spremni; slede generisanje i scoring 31 development predikcije |
 | SCHEMA-001 | Implementirati kanonski model šeme | 3 | P0 | NOT STARTED | DATA-003 | unit test |
 | SCHEMA-002 | Implementirati M-Schema | 3 | P0 | NOT STARTED | SCHEMA-001 | B2 rezultat |
 | RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | NOT STARTED | DATA-001 | leakage test |
@@ -713,8 +717,8 @@ Izmenjeni fajlovi:
 
 Sledeće:
 
-1. `EVAL-002`: nabaviti pinned baze/reference SQL i dokazati realni 31-example development run;
-2. `LLM-002`: paralelno završiti offline integraciju; scoring ostaje iza EVAL-002.
+1. `EXP-001`: generisati i bodovati B0/B1 predikcije kroz spremni EVAL-003 runner;
+2. `SCHEMA-001`: nakon baseline-a implementirati kanonski model šeme.
 
 ### 2026-08-18 - Implementiran EVAL-002 kod; task blokiran resursima
 
@@ -733,7 +737,7 @@ Resource audit pinned commit-a:
 
 - official evaluation metadata i execution-result CSV pokrivaju svih 31 development ID-jeva;
 - javni pinned `gold/sql` pokriva samo `local309`, pa nedostaje 30 reference SQL fajlova;
-- official SQLite arhiv se preuzima odvojeno i lokalno nije prisutan;
+- official SQLite arhiv je preuzet iz pinned README-a; svih šest potrebnih baza je instalirano i hashovano;
 - potrebno je šest baza: `Airlines`, `city_legislation`, `electronic_sales`, `f1`, `music`, `oracle_sql`.
 
 Dodati fajlovi:
@@ -756,8 +760,8 @@ Izmenjeni fajlovi:
 
 Blokirano:
 
-- `EVAL-002` i Faza 1 ostaju `BLOCKED`; nije pokrenut realni 31-example development run;
-- `LLM-002` može da napreduje offline; benchmark scoring ostaje blokiran EVAL-002 resursima.
+- strict SQL `EVAL-002` ostaje opciono nepotpun, ali više ne blokira projekat; SQL-free `EVAL-003` je primarna evaluaciona putanja;
+- benchmark scoring više nije blokiran SQL ili provider resursima; sledeći korak je `EXP-001`.
 
 Lokalna provera implementacije:
 
@@ -782,5 +786,24 @@ Implementirano:
 
 Blokirano:
 
-- autorizovani live smoke run nije pokrenut jer `GROQ_API_KEY` nije prisutan;
-- ovo ne menja EVAL-002 blokadu niti predstavlja benchmark rezultat.
+- autorizovani `openai/gpt-oss-120b` smoke je pokrenut sa 1024 output token limita, ali je Groq edge vratio HTTP 403/1010;
+- zahtev nije automatski ponovljen; evaluator je nezavisno spreman i ovaj pokušaj nije benchmark rezultat.
+
+### 2026-08-18 - Završen EVAL-003 bez nedostajućih SQL fajlova
+
+Implementirano:
+
+- official gold-result CSV store sa više varijanti, pinned comparison metadata i SHA-256 zapisima;
+- generated SQL se izvršava jednom, zatim se rezultat poredi sa svakom validnom official varijantom;
+- default `text2sql-evaluate-spider2` CLI koristi `gold-result`; strict `reference-sql` režim ostaje eksplicitan i opcion;
+- realni development preflight: 31/31 primera, 6/6 baza, 0 missing gold rezultata, `ready: true`;
+- EVAL-003 ima 5 novih testova; nakon SDK transport testa kompletan suite je 55/55.
+
+### 2026-08-18 - Završen LLM-002
+
+- `urllib` transport je zamenjen official `groq==1.6.0` SDK transportom;
+- SDK interni retry je isključen; projektni bounded retry ostaje jedina retry politika;
+- ispravljen je SDK base URL i dodat regression test;
+- live `openai/gpt-oss-120b` smoke je uspešan: validan SQL, 224 input tokena, 124 output tokena i 697 ms;
+- rezultat je sačuvan u `artifacts/reports/groq-sdk-smoke.jsonl`; smoke potvrđuje infrastrukturu, ne benchmark kvalitet;
+- kompletan offline suite je 55/55.

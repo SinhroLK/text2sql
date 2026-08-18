@@ -2,7 +2,7 @@
 
 ## Current state
 
-`phase0-smoke-v1` remains an infrastructure smoke test, not a research result. `DATA-001` freezes the benchmark protocol, `DATA-003` implements its metadata-only loader, `EVAL-001` implements the SQLite execution/comparison core, and EVAL-002 implements the strict resource/runner boundary. EVAL-002 remains blocked on the real databases and protected reference SQL. The Groq adapter, CLI selection, audit metadata and bounded retry are offline-tested with `openai/gpt-oss-120b` frozen as the active candidate, but no authorized API run or benchmark result exists yet.
+`phase0-smoke-v1` remains an infrastructure smoke test, not a research result. `DATA-001` freezes the benchmark protocol, `DATA-003` implements its metadata-only loader, and `EVAL-001` implements the SQLite execution/comparison core. `EVAL-003` is ready for all 31 development examples; strict reference-SQL `EVAL-002` is optional. `LLM-002` uses official Groq SDK 1.6.0 and completed a successful `openai/gpt-oss-120b` smoke: valid SQL, 224 input tokens, 124 output tokens, and 697 ms latency. This smoke validates infrastructure only and is not a benchmark result.
 
 The machine-readable source of truth is `configs/datasets/spider2-lite-sqlite-v1.toml`; the exact database and instance assignment is in `configs/datasets/spider2-lite-sqlite-split-v1.json`; the deterministic normalized-output contract is in `configs/datasets/spider2-lite-sqlite-metadata-manifest-v1.json`.
 

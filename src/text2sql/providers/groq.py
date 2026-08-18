@@ -5,8 +5,7 @@ import os
 import time
 from dataclasses import dataclass
 from typing import Any, Callable
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+import groq
 
 from text2sql.domain import GenerationInput
 from text2sql.providers.base import ProviderResponse
@@ -22,15 +21,37 @@ Transport = Callable[[str, dict[str, str], bytes, float], bytes]
 
 
 def _transport(endpoint: str, headers: dict[str, str], body: bytes, timeout: float) -> bytes:
-    request = Request(endpoint, data=body, headers=headers, method="POST")
+    authorization = headers.get("Authorization", "")
+    prefix = "Bearer "
+    if not authorization.startswith(prefix) or not authorization[len(prefix):]:
+        raise GroqProviderError("Groq API authorization header is missing")
     try:
-        with urlopen(request, timeout=timeout) as response:
-            return response.read()
-    except HTTPError as error:
-        detail = error.read().decode("utf-8", errors="replace")[:500]
-        raise GroqProviderError(f"Groq API returned HTTP {error.code}: {detail}") from error
-    except (URLError, TimeoutError) as error:
-        raise GroqProviderError(f"Groq API request failed: {error}") from error
+        payload = json.loads(body)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise GroqProviderError("Groq API request contains invalid JSON") from error
+
+    suffix = "/openai/v1/chat/completions"
+    if not endpoint.endswith(suffix):
+        raise GroqProviderError("Groq chat-completions endpoint is invalid")
+    client = groq.Groq(
+        api_key=authorization[len(prefix):],
+        base_url=endpoint[: -len(suffix)],
+        timeout=timeout,
+        max_retries=0,
+    )
+    try:
+        response = client.chat.completions.create(**payload)
+    except groq.APIStatusError as error:
+        raise GroqProviderError(
+            f"Groq API returned HTTP {error.status_code}"
+        ) from error
+    except groq.APIConnectionError as error:
+        raise GroqProviderError("Groq API request failed") from error
+    except groq.APIError as error:
+        raise GroqProviderError(
+            f"Groq API request failed: {type(error).__name__}"
+        ) from error
+    return response.model_dump_json().encode("utf-8")
 
 
 @dataclass(frozen=True)

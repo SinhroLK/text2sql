@@ -51,7 +51,7 @@
 ## ADR-006 - Strict EVAL-002 resource boundary and blocked completion
 
 - **Date:** 2026-08-18
-- **Status:** accepted
+- **Status:** superseded by ADR-008 for primary scoring; retained for optional SQL audits
 - **Problem:** DATA-003 and EVAL-001 were implemented, but the roadmap marked Phase 1 done without proving a real 31-example integration run. The pinned repository exposes comparison metadata and execution-result CSVs for the development IDs, only one of their 31 reference SQL files, and no downloaded SQLite archive.
 - **Options:** synthesize missing gold SQL; silently compare against public CSVs; weaken the phase criterion; implement the integration boundary and keep the task blocked until the declared SQL-to-SQL contract can be run.
 - **Decision:** Add an exact `db_id -> <db_id>.sqlite` resolver, an evaluation-only protected SQL store, strict prediction/reference coverage, per-resource hashes and a runner that calls EVAL-001. Never expose gold SQL through DATA-003 or the model pipeline. Keep `EVAL-002` and Phase 1 `BLOCKED` until all six development databases and all 31 development reference SQL files are present and the real run succeeds.
@@ -65,4 +65,13 @@
 - **Problem:** Missing protected EVAL-002 resources blocked scoring but did not technically prevent provider integration.
 - **Decision:** Develop and test the Groq adapter, CLI selection, audit metadata and bounded retries offline. Keep live benchmark scoring gated by EVAL-002 and require explicit authorization and GROQ_API_KEY for a smoke request.
 - **Reason:** This preserves evaluation integrity without allowing an external resource blocker to halt independent engineering work.
-- **Consequences:** openai/gpt-oss-120b is the active candidate in configuration; the deprecated Llama 3.3 ID remains disabled for provenance. No model result exists until an authorized request is recorded.
+- **Consequences:** openai/gpt-oss-120b is the active candidate in configuration; the deprecated Llama 3.3 ID remains disabled for provenance. No model result exists until a successful authorized request is recorded.
+
+## ADR-008 - Official materialized results are the primary evaluation reference
+
+- **Date:** 2026-08-18
+- **Status:** accepted
+- **Problem:** The pinned snapshot provides official result CSV variants for all 31 development examples but only one reference SQL file. Requiring unavailable SQL blocks scoring even though the official evaluator explicitly supports execution-result mode.
+- **Decision:** Use the pinned official `exec_result` CSV variants plus `condition_cols` and `ignore_order` metadata as the primary EVAL-003 reference. Execute generated SQL once in isolated SQLite, accept a match against any paired official variant, hash every database/CSV/metadata resource, and preserve EVAL-002 as an explicit optional SQL audit mode.
+- **Reason:** This uses a complete, versioned official evaluation artifact and preserves the model/evaluation boundary without fabricating SQL.
+- **Consequences:** Phase 1 and development preflight no longer depend on the 30 unavailable SQL files. Results remain labelled as the custom DB-disjoint SQLite split, not the full Spider2 leaderboard.

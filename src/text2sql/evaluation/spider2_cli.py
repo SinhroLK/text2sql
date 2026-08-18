@@ -9,6 +9,7 @@ from text2sql.datasets import load_spider2_lite_sqlite
 from text2sql.datasets.protocol import load_and_validate_protocol
 
 from .evaluator import SQLiteExecutionEvaluator
+from .gold_results import OfficialGoldResultStore, Spider2GoldResultRunner
 from .resources import (
     EvaluationResourceError,
     ProtectedReferenceSQLStore,
@@ -23,6 +24,7 @@ DEFAULT_DATASET_MANIFEST = PROJECT_ROOT / "configs/datasets/spider2-lite-sqlite-
 DEFAULT_SOURCE = PROJECT_ROOT / "data/raw/spider2/spider2-lite/spider2-lite.jsonl"
 DEFAULT_DATABASE_ROOT = PROJECT_ROOT / "data/raw/spider2/spider2-lite/resource/databases/spider2-localdb"
 DEFAULT_REFERENCE_ROOT = PROJECT_ROOT / "data/private/spider2-lite/gold/sql"
+DEFAULT_GOLD_RESULT_ROOT = PROJECT_ROOT / "data/raw/spider2/spider2-lite/evaluation_suite/gold/exec_result"
 DEFAULT_STANDARDS = PROJECT_ROOT / "data/raw/spider2/spider2-lite/evaluation_suite/gold/spider2lite_eval.jsonl"
 
 
@@ -31,7 +33,13 @@ def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--config", type=Path, default=DEFAULT_PROTOCOL)
     parser.add_argument("--expected-dataset-manifest", type=Path, default=DEFAULT_DATASET_MANIFEST)
     parser.add_argument("--database-root", type=Path, default=DEFAULT_DATABASE_ROOT)
+    parser.add_argument(
+        "--reference-mode",
+        choices=("gold-result", "reference-sql"),
+        default="gold-result",
+    )
     parser.add_argument("--reference-root", type=Path, default=DEFAULT_REFERENCE_ROOT)
+    parser.add_argument("--gold-result-root", type=Path, default=DEFAULT_GOLD_RESULT_ROOT)
     parser.add_argument("--standards-jsonl", type=Path, default=DEFAULT_STANDARDS)
     parser.add_argument("--timeout", type=float, default=60.0)
 
@@ -68,6 +76,17 @@ def _build_runner(args: argparse.Namespace) -> Spider2EvaluationRunner:
         PROJECT_ROOT,
         args.expected_dataset_manifest,
     )
+    if args.reference_mode == "gold-result":
+        return Spider2GoldResultRunner(
+            dataset=dataset,
+            database_resolver=Spider2SQLiteDatabaseResolver(args.database_root),
+            gold_results=OfficialGoldResultStore.from_official_directory(
+                args.gold_result_root,
+                args.standards_jsonl,
+                expected_metadata_sha256=protocol["source"]["evaluation_manifest_sha256"],
+            ),
+            evaluator=SQLiteExecutionEvaluator(timeout_seconds=args.timeout),
+        )
     return Spider2EvaluationRunner(
         dataset=dataset,
         database_resolver=Spider2SQLiteDatabaseResolver(args.database_root),

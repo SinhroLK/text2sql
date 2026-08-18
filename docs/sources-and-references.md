@@ -1,7 +1,7 @@
 # Registar izvora i literature
 
 **Projekat:** Text-to-SQL master rad
-**Verzija registra:** 1.3
+**Verzija registra:** 1.4
 **Poslednje ažuriranje:** 2026-08-18
 **Vlasnik registra:** autor projekta
 
@@ -63,9 +63,10 @@ predstavlja samo pozadinsku literaturu ili je planiran za kasniju fazu.
 | `DATA-SPIDER2-REPO-001` | `ACTIVE` | Zvanični `xlang-ai/Spider2` repozitorijum: <https://github.com/xlang-ai/Spider2>, commit `cafb867313aab4e674652054198f383cf4018943` | Jedini dozvoljeni Spider2 snapshot za aktuelni protokol. Mutable `main` se ne koristi direktno. |
 | `DATA-SPIDER2-SITE-001` | `ACTIVE` | Zvanični Spider 2.0 sajt: <https://spider2-sql.github.io/> | Opis benchmarka, režima evaluacije i obavezne oznake `oracle tables`. |
 | `DATA-SPIDER2-LITE-001` | `ACTIVE` | `spider2-lite/spider2-lite.jsonl`, SHA-256 `4ba48916576fbd60311a2478c6d4550b5d8cf3fcbc512457ea493b5941ca009d` | DATA-003 loader proverava ovaj hash pre parsiranja 547 zapisa i izdvaja tačno 135 SQLite instanci za DB-disjoint podelu 31 development / 104 test. |
-| `DATA-SPIDER2-EVAL-001` | `ACTIVE` | Zvanični `spider2-lite/evaluation_suite/evaluate.py` iz commita `cafb867313aab4e674652054198f383cf4018943`, SHA-256 `e93624e4ffa00e51c67bdee1d9e42b534630087cb453270c0dedc0c73e618480`; `evaluate_utils.py` SHA-256 `d740984e9097b29aa8d9d01e1b978ae71163309dce1954eaff84cdf2e9834053`; evaluation manifest SHA-256 `5113ddaea6107492c08a898241a9f69ec99b03bc60d014e9f0b12ec59fa28970` | EVAL-001 wrapper prati zvaničnu semantiku poređenja execution rezultata; EVAL-002 koristi official comparison metadata, ali ostaje blokiran jer pinned javni SQL direktorijum pokriva samo 1/31 izabranih development ID-jeva. |
-| `DATA-SPIDER2-LOCALDB-001` | `PLANNED` | Zvanični Spider2-Lite local database arhiv naveden u pinned `spider2-lite/README.md`; odvojeni download, nije deo Git checkout-a | EVAL-002 zahteva šest development baza: `Airlines`, `city_legislation`, `electronic_sales`, `f1`, `music`, `oracle_sql`. Checksumovi se beleže tek nakon autorizovanog preuzimanja; sadržaj ostaje van Git-a. |
-| `DATA-SPIDER2-GOLD-SQL-001` | `PLANNED` | Zaštićeni/official reference SQL za 31 ID iz custom development splita, vezan za isti pinned snapshot | Model pipeline nema pristup ovom resursu. Lokalno je kroz javni pinned Git dostupan samo `local309.sql`; preostalih 30 ID-jeva je eksplicitni EVAL-002 blocker i ne sme se sintetisati. |
+| `DATA-SPIDER2-EVAL-001` | `ACTIVE` | Zvanični `evaluate.py` i `evaluate_utils.py` iz commita `cafb867313aab4e674652054198f383cf4018943`; hashovi `e93624e4...`, `d740984e...`; evaluation manifest hash `5113ddae...` | EVAL-001 prati zvaničnu semantiku poređenja; EVAL-003 koristi official comparison metadata i execution-result CSV varijante za svih 31 development ID-jeva. |
+| `DATA-SPIDER2-LOCALDB-001` | `ACTIVE` | Zvanični Spider2-Lite local database arhiv naveden u pinned `spider2-lite/README.md`; odvojeni download, nije deo Git checkout-a | EVAL-002 zahteva šest development baza: `Airlines`, `city_legislation`, `electronic_sales`, `f1`, `music`, `oracle_sql`. Instalirani SHA-256: `Airlines` `83dd643367785c6b38b5379eecaf2c37128babac96805a48362783ff0cafc0a1`, `city_legislation` `6a9714f9fe11676691c38bb6e2cd048ab877415d28c358a2647ff1b8b8bfe763`, `electronic_sales` `8e759e113c316c7f996c2e721b596f73979fe679abeacb21e6ea5dbe6fc62eaa`, `f1` `35ad3b824678e8435bde02f14bcd554630792874749fdd59fe9ca1385234ce23`, `music` `f82efedb6c5c40734609e168bc5be5616a2eca6b90ed0048451a8674625e03a3`, `oracle_sql` `ace68ede8f7fddc523d522e938ccfeee1f54c11888fd2c956ebc27892fc595fe`; sadržaj ostaje van Git-a. |
+| `DATA-SPIDER2-GOLD-RESULT-001` | `ACTIVE` | Official `evaluation_suite/gold/exec_result/*.csv` iz pinned commita, sa varijantama mapiranim na `condition_cols` | Primarni EVAL-003 gold resurs; pokriva 31/31 development ID-jeva, ostaje van model pipeline-a i svaki korišćeni CSV se SHA-256 evidentira. |
+| `DATA-SPIDER2-GOLD-SQL-001` | `BACKGROUND` | Zaštićeni/official reference SQL vezan za isti pinned snapshot | Optional EVAL-002 audit resurs. Dostupan je `local309.sql`; preostalih 30 fajlova se ne sintetizuje i ne blokira EVAL-003. |
 | `DATA-SPIDER2-SPLIT-001` | `ACTIVE` | `configs/datasets/spider2-lite-sqlite-split-v1.json` | Kanonski spisak development/test baza i instance ID-jeva. Rezultat se naziva `Spider2-Lite SQLite custom DB-disjoint test split`, a ne puni Spider2-Lite score. |
 | `DATA-SPIDER2-METADATA-001` | `ACTIVE` | `configs/datasets/spider2-lite-sqlite-metadata-manifest-v1.json`; normalizovani `examples.jsonl` SHA-256 `9951e147543c819597dec0336c486612171e36c73ddc5b7e8b387e6f20b6c9f0` | DATA-003 ugovor za deterministički metadata-only izlaz; eksplicitno ne sadrži gold SQL ni database fajlove. |
 | `DATA-SPIDER1-001` | `PLANNED` | Zvanični Spider 1.0 train split; tačan upstream commit, licenca i checksum biće dodati tokom `DATA-002`/`RET-001` | Planirani eksterni retrieval/few-shot korpus. Spider2 primeri su zabranjeni u retrieval indeksu. |
@@ -154,7 +155,8 @@ Za svaku biblioteku tada treba dodati zaključanu verziju iz `requirements.lock`
 | Spider2-Lite SQLite protokol (`DATA-001`) | `PAPER-SPIDER2-001`, `DATA-SPIDER2-REPO-001`, `DATA-SPIDER2-SITE-001`, `DATA-SPIDER2-LITE-001`, `DATA-SPIDER2-EVAL-001` |
 | Spider2-Lite metadata loader (`DATA-003`) | `DATA-SPIDER2-REPO-001`, `DATA-SPIDER2-LITE-001`, `DATA-SPIDER2-SPLIT-001`, `DATA-SPIDER2-METADATA-001`, `DOC-PYTHON-001` |
 | Execution evaluator (`EVAL-001`) | `DATA-SPIDER2-REPO-001`, `DATA-SPIDER2-EVAL-001`, `DATA-SPIDER2-SPLIT-001`, `DOC-PYTHON-001`, `DOC-SQLITE-001` |
-| Pinned integration runner (`EVAL-002`) | `DATA-SPIDER2-REPO-001`, `DATA-SPIDER2-LITE-001`, `DATA-SPIDER2-EVAL-001`, `DATA-SPIDER2-SPLIT-001`, `DATA-SPIDER2-LOCALDB-001`, `DATA-SPIDER2-GOLD-SQL-001`, `DOC-SQLITE-001` |
+| Official gold-result runner (`EVAL-003`) | `DATA-SPIDER2-REPO-001`, `DATA-SPIDER2-EVAL-001`, `DATA-SPIDER2-SPLIT-001`, `DATA-SPIDER2-LOCALDB-001`, `DATA-SPIDER2-GOLD-RESULT-001`, `DOC-SQLITE-001` |
+| Strict SQL audit runner (`EVAL-002`) | `DATA-SPIDER2-GOLD-SQL-001`, `DOC-SQLITE-001` |
 | M-Schema (`SCHEMA-002`) | `PAPER-XIYAN-001` |
 | Extractive schema linking (`LINK-001`, `LINK-002`) | `PAPER-SCHEMA-001` |
 | Similarity few-shot retrieval (`RET-001`, `RET-002`) | `LIT-RETRIEVAL-001`, `LIT-DYNAMIC-001`, `DATA-SPIDER1-001` |
@@ -191,4 +193,5 @@ Zamenjuje ili je zamenjen izvorom:
 | 2026-08-13 | 1.0 | Kreiran centralni registar; evidentirani aktuelni arhitektonski izvori, zaključani Spider2 protokol, literatura iz prijave, početni projektni materijali i planirana tehnička dokumentacija. |
 | 2026-08-17 | 1.1 | Evidentiran DATA-003 metadata loader, njegov verzionisani manifest i hash determinističkog normalizovanog izlaza; postojeći Spider2 izvor povezan sa izvršivom checksum proverom. |
 | 2026-08-17 | 1.2 | Evidentiran EVAL-001, tačan pinned evaluator i evaluation-manifest checksum, SQLite izolacija/timeout i veza izvora sa implementiranim execution evaluatorom. |
-| 2026-08-18 | 1.3 | Evidentirani EVAL-002 resource audit, official local database download kao zaseban izvor, nedostajućih 30/31 development reference SQL fajlova, ispravljeni pinned evaluator hashovi i veza sa strict integration runner-om. |
+| 2026-08-18 | 1.3 | Evidentirani EVAL-002 resource audit, baze i nedostajući reference SQL. |
+| 2026-08-18 | 1.4 | Official execution-result CSV-ovi postavljeni kao primarni EVAL-003 gold resurs; reference SQL prebačen u opcioni audit status. |

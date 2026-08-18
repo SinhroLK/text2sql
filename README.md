@@ -2,12 +2,12 @@
 
 Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
-This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides a structured SQLite execution evaluator, and EVAL-002 provides the strict integration runner. EVAL-002 remains blocked on missing real benchmark resources.
+This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, and `EVAL-003` provides the ready official gold-result runner. The strict reference-SQL `EVAL-002` path remains optional.
 
 ## Requirements
 
 - Python 3.11 or newer
-- No runtime dependencies for the current EVAL-002 foundation
+- Python dependencies installed from `requirements.lock` (including the official Groq SDK)
 
 ## Quick start
 
@@ -41,7 +41,7 @@ Implemented:
 - stable domain models;
 - SQLite schema inspection;
 - deterministic schema serialization for the baseline prompt;
-- provider protocol, deterministic mock provider and offline-tested Groq adapter;
+- provider protocol, deterministic mock provider and official-SDK Groq adapter;
 - end-to-end pipeline;
 - JSONL audit output;
 - unit and integration tests;
@@ -63,12 +63,13 @@ Implemented:
 - local evaluator CLI and fixture-backed integration tests;
 - deterministic `db_id` resolver, protected reference SQL store and Spider2 batch runner;
 - strict duplicate/missing/extra prediction and reference coverage;
-- per-resource checksums and structured EVAL-002 batch summaries.
+- official gold-result CSV variant evaluation with per-resource checksums;
+- a default Spider2 preflight that is ready for all 31 development examples.
 
 Not implemented yet:
 
-- successful real 31-example Spider2 development run (six databases and 30 reference SQL files are missing);
-- authorized real-provider smoke run;
+- a scored 31-example Spider2 development run (the evaluator resources are ready; predictions are not generated yet);
+- full 31-example B0/B1 prediction generation and scoring;
 - M-Schema;
 - retrieval and DSPy optimization;
 - SQL AST validation and sandbox execution;
@@ -111,8 +112,8 @@ The evaluator runs each statement in a separate read-only in-memory copy and
 prints a structured JSON result. See `docs/evaluation.md` for comparison rules,
 exit codes and limitations.
 
-The pinned Spider2 integration command, required local layout and current
-resource blocker are documented in `docs/spider2-evaluation-runner.md`.
+The pinned Spider2 integration commands, required local layout, default gold-result
+mode, and optional strict SQL audit mode are documented in `docs/spider2-evaluation-runner.md`.
 
 ## Repository map
 
@@ -127,7 +128,7 @@ resource blocker are documented in `docs/spider2-evaluation-runner.md`.
 - `docs/sources-and-references.md` - living register of every paper, dataset,
   repository, documentation source and legacy input used by the project;
 - `docs/evaluation.md` - EVAL-001 execution and comparison contract;
-- `docs/spider2-evaluation-runner.md` - EVAL-002 resources, CLI and blocker;
+- `docs/spider2-evaluation-runner.md` - EVAL-003 default workflow and optional EVAL-002 audit mode;
 - `artifacts/` - generated results, excluded from Git by default.
 
 ## Optional Groq smoke run

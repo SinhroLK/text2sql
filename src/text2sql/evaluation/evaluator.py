@@ -32,6 +32,29 @@ class SQLiteExecutionEvaluator:
 
         generated = self.executor.execute(database_path, generated_sql)
         reference = self.executor.execute(database_path, reference_sql)
+        return self.evaluate_results(
+            example=example,
+            generated=generated,
+            reference=reference,
+            condition_cols=condition_cols,
+            ignore_order=ignore_order,
+            numeric_tolerance=numeric_tolerance,
+        )
+
+    def evaluate_results(
+        self,
+        *,
+        example: Text2SQLExample,
+        generated: QueryExecutionResult,
+        reference: QueryExecutionResult,
+        condition_cols: Sequence[int] | None = None,
+        ignore_order: bool = False,
+        numeric_tolerance: float = SPIDER2_NUMERIC_TOLERANCE,
+    ) -> ExecutionEvaluationResult:
+        """Compare materialized results, including official gold-result CSVs."""
+
+        if example.dialect != "sqlite":
+            raise ValueError(f"EVAL-001 supports only SQLite examples, got {example.dialect!r}")
 
         if not reference.succeeded:
             return ExecutionEvaluationResult(

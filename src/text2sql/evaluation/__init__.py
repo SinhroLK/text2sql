@@ -1,5 +1,13 @@
 from .comparator import SPIDER2_COMPARISON_MODE, SPIDER2_NUMERIC_TOLERANCE, compare_execution_results
 from .evaluator import SQLiteExecutionEvaluator, summarize_execution_accuracy
+from .gold_results import (
+    GoldResultEvaluationPreflight,
+    GoldResultEvaluationRecord,
+    GoldResultVariant,
+    OfficialGoldResult,
+    OfficialGoldResultStore,
+    Spider2GoldResultRunner,
+)
 from .models import (
     ExecutionAccuracySummary,
     ExecutionEvaluationResult,
@@ -26,6 +34,12 @@ __all__ = [
     "ExecutionAccuracySummary",
     "ExecutionEvaluationResult",
     "EvaluationResourceError",
+    "GoldResultEvaluationPreflight",
+    "GoldResultEvaluationRecord",
+    "GoldResultVariant",
+    "OfficialGoldResult",
+    "OfficialGoldResultStore",
+    "Spider2GoldResultRunner",
     "ProtectedReferenceSQL",
     "ProtectedReferenceSQLStore",
     "QueryExecutionResult",

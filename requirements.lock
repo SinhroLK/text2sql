@@ -1,3 +1,3 @@
-# EVAL-002 runtime intentionally uses only the Python standard library.
-# Future phases will replace this file with a generated lock after adding
-# the official evaluator, LLM provider, M-Schema, DSPy and SQL parser.
+# Direct runtime dependency. The official Groq SDK uses httpx for transport,
+# avoiding the Cloudflare 1010 rejection observed with urllib.
+groq==1.6.0

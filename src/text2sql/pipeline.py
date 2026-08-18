@@ -57,6 +57,10 @@ class Text2SQLPipeline:
             latency_ms=latency_ms,
             input_tokens=response.input_tokens,
             output_tokens=response.output_tokens,
-            metadata={"phase": 0, "schema_representation": "simple"},
+            metadata={
+                "phase": 0,
+                "schema_representation": "simple",
+                "provider": response.metadata,
+            },
         )
 

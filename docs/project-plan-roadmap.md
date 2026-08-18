@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 1.8
+**Verzija plana:** 1.9
 **Datum:** 18. avgust 2026.
 **Status projekta:** `EVAL-002` kod je implementiran, ali je task `BLOCKED`; Faza 1 nije završena. `LLM-002` napreduje offline, dok benchmark scoring ostaje blokiran.
-**Poslednja provera:** 18. avgust 2026. - 47/47 testova, compileall i pinned preflight prolaze; preflight potvrđuje 6 nedostajućih baza i 30 reference SQL fajlova
+**Poslednja provera:** 18. avgust 2026. - 49/49 testova, compileall i pinned preflight prolaze; preflight potvrđuje 6 nedostajućih baza i 30 reference SQL fajlova
 
 ### Istorija verzija
 
@@ -19,6 +19,7 @@
 | 1.6 | 17. avgust 2026. | Završen `EVAL-001`: izolovano SQLite izvršavanje, Spider2-kompatibilno poređenje, strukturirani rezultat, exact-ID coverage i 25 testova |
 | 1.7 | 18. avgust 2026. | Dodat `EVAL-002` resolver/protected-reference/preflight/batch runner i 43 testa; ispravljen status Faze 1 na BLOCKED nakon resource audita pinned snapshot-a |
 | 1.8 | 18. avgust 2026. | Dozvoljen paralelni offline rad na LLM-002; dodat standard-library Groq adapter i 4 offline testa; realni scoring ostaje blokiran EVAL-002 resursima |
+| 1.9 | 18. avgust 2026. | Završen offline deo LLM-002: Groq CLI, audit metadata, bounded retry, aktivni model config i 49 testova; live smoke blokiran nedostajućim ključem |
 
 ## 1. Svrha dokumenta
 
@@ -341,7 +342,7 @@ Zadaci:
 
 **Trajanje:** 1 nedelja
 **Zavisnost:** Faza 0 za provider/runner infrastrukturu; EVAL-002 za realno development bodovanje
-**Status:** `NOT STARTED`
+**Status:** `IN PROGRESS`
 
 Zadaci:
 
@@ -508,7 +509,7 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | EVAL-001 | Implementirati execution evaluator | 1 | P0 | DONE | DATA-003 | izolovano SQLite izvršavanje, pinned-kompatibilni comparator, strukturirani rezultat, exact-ID coverage i 11 evaluator testova |
 | EVAL-002 | Integracija pinned Spider2-Lite evaluation runner-a | 1 | P0 | BLOCKED | DATA-003, EVAL-001 | resolver, protected store, preflight, strict coverage, batch/CLI i 18 novih testova postoje; nedostaju 6 DB fajlova i 30/31 development reference SQL fajlova |
 | LLM-001 | Implementirati provider interfejs | 2 | P0 | DONE | REPO-002 | provider protokol, deterministički mock i test pipeline-a |
-| LLM-002 | Implementirati realni LLM/Groq adapter | 2 | P0 | IN PROGRESS | LLM-001 | standard-library adapter i 4 offline transport testa; preostaju CLI integracija, izbor aktivnog model ID-ja i autorizovani smoke run |
+| LLM-002 | Implementirati realni LLM/Groq adapter | 2 | P0 | IN PROGRESS | LLM-001 | CLI integracija, auditable provider metadata, bounded retry, aktivni `openai/gpt-oss-120b` config i 6 offline testa postoje; autorizovani smoke run čeka `GROQ_API_KEY` |
 | EXP-001 | Implementirati B0 i B1 | 2 | P0 | NOT STARTED | LLM-002; EVAL-002 samo za scoring | fixture dry-run može pre EVAL-002; realno development bodovanje čeka resurse |
 | SCHEMA-001 | Implementirati kanonski model šeme | 3 | P0 | NOT STARTED | DATA-003 | unit test |
 | SCHEMA-002 | Implementirati M-Schema | 3 | P0 | NOT STARTED | SCHEMA-001 | B2 rezultat |
@@ -713,7 +714,7 @@ Izmenjeni fajlovi:
 Sledeće:
 
 1. `EVAL-002`: nabaviti pinned baze/reference SQL i dokazati realni 31-example development run;
-2. `LLM-002`: tek nakon zatvaranja EVAL-002.
+2. `LLM-002`: paralelno završiti offline integraciju; scoring ostaje iza EVAL-002.
 
 ### 2026-08-18 - Implementiran EVAL-002 kod; task blokiran resursima
 
@@ -756,7 +757,7 @@ Izmenjeni fajlovi:
 Blokirano:
 
 - `EVAL-002` i Faza 1 ostaju `BLOCKED`; nije pokrenut realni 31-example development run;
-- `LLM-002` ostaje `NOT STARTED` dok se blokada ne ukloni.
+- `LLM-002` može da napreduje offline; benchmark scoring ostaje blokiran EVAL-002 resursima.
 
 Lokalna provera implementacije:
 
@@ -767,3 +768,19 @@ python3 -m compileall -q src tests
 
 Kompletna realna CLI komanda i očekivana lokalna struktura su u
 `docs/spider2-evaluation-runner.md`.
+
+### 2026-08-18 - Završen offline deo LLM-002; live smoke blokiran
+
+Implementirano:
+
+- eksplicitni izbor `mock` ili `groq` providera kroz generation CLI;
+- obavezni model ID za Groq, sa temperaturom i maksimalnim brojem tokena;
+- aktivni kandidat `openai/gpt-oss-120b`; deprecated Llama 3.3 ID ostaje samo kao provenance zapis;
+- audit metadata za provider request ID, vraćeni model, endpoint i parametre generisanja;
+- najviše dva retry pokušaja sa determinističkim backoff-om za transport greške;
+- mocked CLI integracioni test i retry test; kompletan suite je 49/49.
+
+Blokirano:
+
+- autorizovani live smoke run nije pokrenut jer `GROQ_API_KEY` nije prisutan;
+- ovo ne menja EVAL-002 blokadu niti predstavlja benchmark rezultat.

@@ -63,6 +63,26 @@ class GroqProviderTest(unittest.TestCase):
             provider.generate(INPUT)
         self.assertNotIn("secret-not-in-error", str(context.exception))
 
+    def test_retries_transport_errors_with_bounded_backoff(self) -> None:
+        attempts = []
+        delays = []
+
+        def transport(*_):
+            attempts.append(1)
+            if len(attempts) < 3:
+                raise GroqProviderError("temporary transport failure")
+            return b'{"choices":[{"message":{"content":"SELECT 1"}}]}'
+
+        response = GroqProvider(
+            model_id="test-model",
+            api_key="x",
+            max_retries=2,
+            sleep=delays.append,
+            transport=transport,
+        ).generate(INPUT)
+        self.assertEqual(response.candidates, ("SELECT 1",))
+        self.assertEqual((len(attempts), delays), (3, [1, 2]))
+
 
 if __name__ == "__main__":
     unittest.main()

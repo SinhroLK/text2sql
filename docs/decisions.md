@@ -56,4 +56,13 @@
 - **Options:** synthesize missing gold SQL; silently compare against public CSVs; weaken the phase criterion; implement the integration boundary and keep the task blocked until the declared SQL-to-SQL contract can be run.
 - **Decision:** Add an exact `db_id -> <db_id>.sqlite` resolver, an evaluation-only protected SQL store, strict prediction/reference coverage, per-resource hashes and a runner that calls EVAL-001. Never expose gold SQL through DATA-003 or the model pipeline. Keep `EVAL-002` and Phase 1 `BLOCKED` until all six development databases and all 31 development reference SQL files are present and the real run succeeds.
 - **Reason:** A fixture-only success is not evidence that the pinned benchmark integration is reproducible. Synthesized references or an undocumented metric substitution would invalidate the experiment contract.
-- **Consequences:** The code is ready to run as soon as authorized resources are added locally. `LLM-002` remains `NOT STARTED`; its safe start is gated by completion of EVAL-002.
+- **Consequences:** The code is ready to run as soon as authorized resources are added locally. `LLM-002` may proceed offline independently; only benchmark scoring remains gated by EVAL-002.
+
+## ADR-007 - Offline provider progress independent of evaluation resources
+
+- **Date:** 2026-08-18
+- **Status:** accepted
+- **Problem:** Missing protected EVAL-002 resources blocked scoring but did not technically prevent provider integration.
+- **Decision:** Develop and test the Groq adapter, CLI selection, audit metadata and bounded retries offline. Keep live benchmark scoring gated by EVAL-002 and require explicit authorization and GROQ_API_KEY for a smoke request.
+- **Reason:** This preserves evaluation integrity without allowing an external resource blocker to halt independent engineering work.
+- **Consequences:** openai/gpt-oss-120b is the active candidate in configuration; the deprecated Llama 3.3 ID remains disabled for provenance. No model result exists until an authorized request is recorded.

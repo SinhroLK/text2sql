@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from dataclasses import dataclass
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
@@ -41,6 +42,8 @@ class GroqProvider:
     timeout_seconds: float = 60.0
     endpoint: str = DEFAULT_GROQ_ENDPOINT
     transport: Transport = _transport
+    max_retries: int = 2
+    sleep: Callable[[float], None] = time.sleep
 
     provider_name = "groq"
 
@@ -49,6 +52,8 @@ class GroqProvider:
             raise ValueError("model_id must not be empty")
         if self.max_tokens <= 0 or self.timeout_seconds <= 0:
             raise ValueError("max_tokens and timeout_seconds must be positive")
+        if self.max_retries < 0:
+            raise ValueError("max_retries must not be negative")
 
     def generate(self, generation_input: GenerationInput) -> ProviderResponse:
         api_key = self.api_key or os.environ.get("GROQ_API_KEY")
@@ -62,12 +67,19 @@ class GroqProvider:
             "n": 1,
             "stream": False,
         }
-        raw = self.transport(
-            self.endpoint,
-            {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json.dumps(payload, separators=(",", ":")).encode(),
-            self.timeout_seconds,
-        )
+        for attempt in range(self.max_retries + 1):
+            try:
+                raw = self.transport(
+                    self.endpoint,
+                    {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                    json.dumps(payload, separators=(",", ":")).encode(),
+                    self.timeout_seconds,
+                )
+                break
+            except GroqProviderError:
+                if attempt == self.max_retries:
+                    raise
+                self.sleep(2 ** attempt)
         response = _decode(raw)
         choices = response.get("choices")
         if not isinstance(choices, list) or not choices:
@@ -88,6 +100,14 @@ class GroqProvider:
             candidates=candidates,
             input_tokens=_count(usage.get("prompt_tokens")),
             output_tokens=_count(usage.get("completion_tokens")),
+            metadata={
+                "provider_request_id": response.get("id"),
+                "provider_model": response.get("model"),
+                "temperature": self.temperature,
+                "max_tokens": self.max_tokens,
+                "timeout_seconds": self.timeout_seconds,
+                "endpoint": self.endpoint,
+            },
         )
 
 

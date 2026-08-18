@@ -6,7 +6,7 @@ from pathlib import Path
 
 from text2sql.observability import append_jsonl
 from text2sql.pipeline import Text2SQLPipeline
-from text2sql.providers import MockSchemaAwareProvider
+from text2sql.providers import GroqProvider, MockSchemaAwareProvider
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -19,16 +19,28 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", type=Path, default=None, help="Optional JSONL output path")
     parser.add_argument(
         "--provider",
-        choices=("mock",),
+        choices=("mock", "groq"),
         default="mock",
-        help="Phase 0 supports only the deterministic mock provider",
+        help="Provider to use; Groq requires GROQ_API_KEY",
     )
+    parser.add_argument("--model-id", help="Required when --provider groq is selected")
+    parser.add_argument("--temperature", type=float, default=0.0)
+    parser.add_argument("--max-tokens", type=int, default=1024)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    provider = MockSchemaAwareProvider()
+    if args.provider == "groq":
+        if not args.model_id:
+            build_parser().error("--model-id is required when --provider groq is selected")
+        provider = GroqProvider(
+            model_id=args.model_id,
+            temperature=args.temperature,
+            max_tokens=args.max_tokens,
+        )
+    else:
+        provider = MockSchemaAwareProvider()
     pipeline = Text2SQLPipeline(provider)
     result = pipeline.generate(args.question, args.database, db_id=args.db_id)
     record = result.to_dict()

@@ -19,7 +19,7 @@ PYTHONPATH=src python3 -m text2sql.cli \
   --output artifacts/reports/data001-smoke.jsonl
 ```
 
-The command prints one JSON result and appends the same structured record to the requested JSONL file. The Phase 0 pipeline does **not** execute generated SQL. EVAL-001 provides a separate evaluation-only SQLite executor; production pipeline execution and AST validation remain planned for Phase 5.
+The command prints one JSON result and appends the same structured record to the requested JSONL file. The generation pipeline does **not** execute generated SQL. EVAL-001 provides a separate evaluation-only SQLite executor; production pipeline execution and AST validation remain planned for Phase 5.
 
 ## Run tests
 
@@ -41,7 +41,7 @@ Implemented:
 - stable domain models;
 - SQLite schema inspection;
 - deterministic schema serialization for the baseline prompt;
-- provider protocol and deterministic mock provider;
+- provider protocol, deterministic mock provider and offline-tested Groq adapter;
 - end-to-end pipeline;
 - JSONL audit output;
 - unit and integration tests;
@@ -68,7 +68,7 @@ Implemented:
 Not implemented yet:
 
 - successful real 31-example Spider2 development run (six databases and 30 reference SQL files are missing);
-- authorized real-provider smoke run and frozen active model selection;
+- authorized real-provider smoke run;
 - M-Schema;
 - retrieval and DSPy optimization;
 - SQL AST validation and sandbox execution;
@@ -129,3 +129,20 @@ resource blocker are documented in `docs/spider2-evaluation-runner.md`.
 - `docs/evaluation.md` - EVAL-001 execution and comparison contract;
 - `docs/spider2-evaluation-runner.md` - EVAL-002 resources, CLI and blocker;
 - `artifacts/` - generated results, excluded from Git by default.
+
+## Optional Groq smoke run
+
+The mock provider remains the default. A Groq request is explicit and requires an environment key:
+
+```bash
+export GROQ_API_KEY="..."
+python3 scripts/create_fixture_db.py
+PYTHONPATH=src python3 -m text2sql.cli \
+  --question "List customer names" \
+  --database data/fixtures/demo.sqlite \
+  --provider groq \
+  --model-id openai/gpt-oss-120b \
+  --temperature 0 \
+  --max-tokens 1024 \
+  --output artifacts/reports/groq-smoke.jsonl
+```

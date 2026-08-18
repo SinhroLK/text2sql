@@ -6,10 +6,20 @@ models:
     model_id: mock-schema-aware-v1
     temperature: 0
     max_candidates: 1
+  groq_primary:
+    provider: groq
+    model_id: openai/gpt-oss-120b
+    enabled: true
+    temperature: 0
+    max_tokens: 1024
+    max_candidates: 1
+    max_retries: 2
   llama_3_3_70b:
     provider: groq
     model_id: llama-3.3-70b-versatile
     enabled: false
+    status: deprecated
+    deprecation_date: 2026-08-16
     temperature: 0
     max_candidates: 1
   llama_4_scout:

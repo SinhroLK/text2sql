@@ -1,0 +1,68 @@
+from __future__ import annotations
+
+import json
+import unittest
+from unittest.mock import patch
+
+from text2sql.domain import GenerationInput, SchemaSnapshot
+from text2sql.providers import GroqProvider, GroqProviderError
+
+
+INPUT = GenerationInput(
+    question="List customers",
+    prompt="Return SQL only. SQL:",
+    schema=SchemaSnapshot(db_id="fixture", dialect="sqlite", tables=()),
+    model_id="test-model",
+)
+
+
+class GroqProviderTest(unittest.TestCase):
+    def test_builds_request_and_parses_usage(self) -> None:
+        captured = {}
+
+        def transport(endpoint, headers, body, timeout):
+            captured.update(headers=headers, payload=json.loads(body))
+            return json.dumps({
+                "choices": [{"message": {"content": " SELECT 1 "}}],
+                "usage": {"prompt_tokens": 12, "completion_tokens": 3},
+            }).encode()
+
+        response = GroqProvider(
+            model_id="test-model", api_key="test-secret", transport=transport
+        ).generate(INPUT)
+        self.assertEqual(response.candidates, ("SELECT 1",))
+        self.assertEqual((response.input_tokens, response.output_tokens), (12, 3))
+        self.assertEqual(captured["payload"]["model"], "test-model")
+        self.assertEqual(captured["headers"]["Authorization"], "Bearer test-secret")
+
+    def test_requires_api_key(self) -> None:
+        with patch.dict("os.environ", {}, clear=True):
+            provider = GroqProvider(model_id="test-model", transport=lambda *_: b"")
+            with self.assertRaisesRegex(GroqProviderError, "GROQ_API_KEY"):
+                provider.generate(INPUT)
+
+    def test_rejects_invalid_or_empty_response(self) -> None:
+        provider = GroqProvider(
+            model_id="test-model", api_key="x", transport=lambda *_: b"not-json"
+        )
+        with self.assertRaisesRegex(GroqProviderError, "invalid JSON"):
+            provider.generate(INPUT)
+        provider = GroqProvider(
+            model_id="test-model", api_key="x", transport=lambda *_: b'{"choices":[]}'
+        )
+        with self.assertRaisesRegex(GroqProviderError, "no choices"):
+            provider.generate(INPUT)
+
+    def test_provider_error_does_not_expose_api_key(self) -> None:
+        provider = GroqProvider(
+            model_id="test-model",
+            api_key="secret-not-in-error",
+            transport=lambda *_: b'{"error":{"message":"model unavailable"}}',
+        )
+        with self.assertRaisesRegex(GroqProviderError, "model unavailable") as context:
+            provider.generate(INPUT)
+        self.assertNotIn("secret-not-in-error", str(context.exception))
+
+
+if __name__ == "__main__":
+    unittest.main()

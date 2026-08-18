@@ -11,7 +11,7 @@ question + SQLite database
         -> stdout and optional JSONL audit record
 ```
 
-Generated SQL is not executed. The target offline/online architecture and full roadmap are maintained in `text2sql-project-plan-roadmap.md` outside this project bundle.
+Generated SQL is not executed by the generation pipeline. The target offline/online architecture and full roadmap are maintained in `docs/project-plan-roadmap.md`.
 
 ## Design rules
 

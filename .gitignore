@@ -26,6 +26,7 @@ venv/
 # Local data and generated artifacts
 data/raw/
 data/processed/
+data/private/
 data/fixtures/*.sqlite
 data/fixtures/*.db
 artifacts/**/*.jsonl
@@ -37,4 +38,3 @@ artifacts/**/*.json
 # Distribution
 build/
 dist/
-

@@ -2,18 +2,18 @@
 
 Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
-This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, and `EVAL-001` provides a structured SQLite execution evaluator.
+This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides a structured SQLite execution evaluator, and EVAL-002 provides the strict integration runner. EVAL-002 remains blocked on missing real benchmark resources.
 
 ## Requirements
 
 - Python 3.11 or newer
-- No runtime dependencies for the current EVAL-001 foundation
+- No runtime dependencies for the current EVAL-002 foundation
 
 ## Quick start
 
 ```bash
 python scripts/create_fixture_db.py
-PYTHONPATH=src python -m text2sql.cli \
+PYTHONPATH=src python3 -m text2sql.cli \
   --question "List customer names" \
   --database data/fixtures/demo.sqlite \
   --output artifacts/reports/data001-smoke.jsonl
@@ -24,13 +24,13 @@ The command prints one JSON result and appends the same structured record to the
 ## Run tests
 
 ```bash
-PYTHONPATH=src python -m unittest discover -s tests -v
+PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
 ## Optional editable install
 
 ```bash
-python -m pip install --no-build-isolation -e .
+python3 -m pip install --no-build-isolation -e .
 text2sql --question "List customer names" --database data/fixtures/demo.sqlite
 ```
 
@@ -60,12 +60,15 @@ Implemented:
 - Spider2-Lite-compatible result comparison with order, condition-column,
   NULL and numeric-tolerance handling;
 - structured evaluation results and exact-ID Execution Accuracy aggregation;
-- local evaluator CLI and fixture-backed integration tests.
+- local evaluator CLI and fixture-backed integration tests;
+- deterministic `db_id` resolver, protected reference SQL store and Spider2 batch runner;
+- strict duplicate/missing/extra prediction and reference coverage;
+- per-resource checksums and structured EVAL-002 batch summaries.
 
 Not implemented yet:
 
-- Spider2 SQLite database archive ingestion and execution;
-- Groq or another real LLM provider;
+- successful real 31-example Spider2 development run (six databases and 30 reference SQL files are missing);
+- authorized real-provider smoke run and frozen active model selection;
 - M-Schema;
 - retrieval and DSPy optimization;
 - SQL AST validation and sandbox execution;
@@ -83,7 +86,7 @@ The headline benchmark is the pinned 135-example SQLite portion of Spider2-Lite,
 After placing the pinned upstream repository under `data/raw/spider2`, prepare the metadata with:
 
 ```bash
-PYTHONPATH=src python -m text2sql.datasets.cli
+PYTHONPATH=src python3 -m text2sql.datasets.cli
 ```
 
 The command verifies the source checksum and the version-controlled DATA-003
@@ -108,6 +111,9 @@ The evaluator runs each statement in a separate read-only in-memory copy and
 prints a structured JSON result. See `docs/evaluation.md` for comparison rules,
 exit codes and limitations.
 
+The pinned Spider2 integration command, required local layout and current
+resource blocker are documented in `docs/spider2-evaluation-runner.md`.
+
 ## Repository map
 
 - `src/text2sql/` - reusable pipeline code;
@@ -121,4 +127,5 @@ exit codes and limitations.
 - `docs/sources-and-references.md` - living register of every paper, dataset,
   repository, documentation source and legacy input used by the project;
 - `docs/evaluation.md` - EVAL-001 execution and comparison contract;
+- `docs/spider2-evaluation-runner.md` - EVAL-002 resources, CLI and blocker;
 - `artifacts/` - generated results, excluded from Git by default.

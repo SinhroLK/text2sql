@@ -72,8 +72,11 @@ Successful preparation writes:
   output hash and explicit anti-leakage flags.
 
 `DATA-003` intentionally does not download or load SQLite database files and does
-not evaluate SQL. The official database archive/files and their checksums become
-part of the execution environment in `EVAL-001`.
+not evaluate SQL. EVAL-002 expects the separately downloaded official databases
+under `spider2-lite/resource/databases/spider2-localdb/` and authorized protected
+reference SQL under the separate `data/private/spider2-lite/gold/sql/`. See
+`docs/spider2-evaluation-runner.md` for the exact six development databases,
+missing references, hashes and CLI.
 
 Rules:
 

@@ -7,16 +7,40 @@ from .models import (
     ResultComparison,
 )
 from .sqlite_executor import SQLiteQueryExecutor
+from .resources import (
+    EvaluationResourceError,
+    ProtectedReferenceSQL,
+    ProtectedReferenceSQLStore,
+    ResolvedSQLiteDatabase,
+    Spider2SQLiteDatabaseResolver,
+)
+from .spider2_runner import (
+    Spider2BatchEvaluation,
+    Spider2EvaluationPreflight,
+    Spider2EvaluationRecord,
+    Spider2EvaluationRunner,
+    load_generated_sql_jsonl,
+)
 
 __all__ = [
     "ExecutionAccuracySummary",
     "ExecutionEvaluationResult",
+    "EvaluationResourceError",
+    "ProtectedReferenceSQL",
+    "ProtectedReferenceSQLStore",
     "QueryExecutionResult",
+    "ResolvedSQLiteDatabase",
     "ResultComparison",
     "SPIDER2_COMPARISON_MODE",
     "SPIDER2_NUMERIC_TOLERANCE",
     "SQLiteExecutionEvaluator",
     "SQLiteQueryExecutor",
+    "Spider2BatchEvaluation",
+    "Spider2EvaluationPreflight",
+    "Spider2EvaluationRecord",
+    "Spider2EvaluationRunner",
+    "Spider2SQLiteDatabaseResolver",
     "compare_execution_results",
+    "load_generated_sql_jsonl",
     "summarize_execution_accuracy",
 ]

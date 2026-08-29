@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 2.3
+**Verzija plana:** 2.4
 **Datum:** 29. avgust 2026.
-**Status projekta:** `EXP-001` je `DONE`: B0 i B1 imaju po 31 live predikciju i scored report; sledeći razvojni zadatak je `SCHEMA-001`.
-**Poslednja provera:** 29. avgust 2026. - 60/60 testova prolazi; B0 = 0/31 (0%), B1 = 5/31 (16,13%), test split je ostao zatvoren
+**Status projekta:** `SCHEMA-001` je `DONE`: kanonski schema model, validacija, deterministička serijalizacija i hash postoje; sledeći razvojni zadatak je `SCHEMA-002`.
+**Poslednja provera:** 29. avgust 2026. - 65/65 testova prolazi; svih 6 development baza ima zamrznut kanonski schema hash
 
 ### Istorija verzija
 
@@ -24,6 +24,7 @@
 | 2.1 | 18. avgust 2026. | `urllib` zamenjen official Groq SDK 1.6.0 transportom; uspešan `openai/gpt-oss-120b` live smoke i 55/55 testova |
 | 2.2 | 29. avgust 2026. | Implementiran EXP-001 offline foundation: frozen B0/B1 TOML, seed, resumable exact-coverage runner, automatski scoring, resource manifest i 60 testova |
 | 2.3 | 29. avgust 2026. | Završen EXP-001 live run: 31/31 B0 i 31/31 B1 predikcija, B0 0%, B1 16,13%, scored report-i i checksumovani artefakti |
+| 2.4 | 29. avgust 2026. | Završen SCHEMA-001: verzionisan kanonski model, SQLite PK/FK/default metadata, validacija identifikatora, stabilni hash-evi za 6 baza i 65 testova |
 
 ## 1. Svrha dokumenta
 
@@ -347,17 +348,17 @@ Zadaci:
 
 **Trajanje:** 1 nedelja
 **Zavisnost:** Faza 0 za provider/runner infrastrukturu; EVAL-003 za realno development bodovanje
-**Status:** `IN PROGRESS`
+**Status:** `DONE`
 
 Zadaci:
 
-- povezati realni LLM/Groq adapter na već implementirani provider interfejs;
-- ukloniti stopword/lemmatization preprocessing;
-- fiksirati temperaturu, seed i parametre generisanja;
-- implementirati konfiguracije B0 i B1;
-- sačuvati kompletne rezultate u JSONL formatu;
-- meriti EX, validnost, latenciju i tokene;
-- dodati retry politiku koja ne menja semantiku eksperimenta.
+- `DONE` - povezati realni LLM/Groq adapter na već implementirani provider interfejs;
+- `DONE` - ukloniti stopword/lemmatization preprocessing;
+- `DONE` - fiksirati temperaturu, seed i parametre generisanja;
+- `DONE` - implementirati konfiguracije B0 i B1;
+- `DONE` - sačuvati kompletne rezultate u JSONL formatu;
+- `DONE` - meriti EX, validnost, latenciju i tokene;
+- `DONE` - dodati retry politiku koja ne menja semantiku eksperimenta.
 
 **Definition of Done:** oba modela mogu da pokrenu isti zaključani skup; svaki rezultat je ponovljiv i vezan za tačnu konfiguraciju.
 
@@ -365,11 +366,11 @@ Zadaci:
 
 **Trajanje:** 1-2 nedelje
 **Zavisnost:** Faza 2
-**Status:** `NOT STARTED`
+**Status:** `IN PROGRESS`
 
 Zadaci:
 
-- napraviti kanonski model šeme;
+- `DONE` - napraviti kanonski model šeme;
 - implementirati ili integrisati M-Schema serializer;
 - dodati podršku za PK, FK, tipove i bezbedne primere vrednosti;
 - implementirati B2;
@@ -500,7 +501,7 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 13 zadataka je završeno; `EXP-001` je `DONE`. B0 i B1 su izvršeni i bodovani nad svih 31 development primera; sledeći zadatak je `SCHEMA-001`.
+**Sažetak stanja:** 14 zadataka je završeno; `SCHEMA-001` je `DONE`. Kanonski model je validiran nad svih 6 development baza; sledeći zadatak je `SCHEMA-002`.
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
 | PLAN-001 | Arhitektura i roadmap | 0 | P0 | DONE | - | ovaj dokument |
@@ -517,7 +518,7 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | LLM-001 | Implementirati provider interfejs | 2 | P0 | DONE | REPO-002 | provider protokol, deterministički mock i test pipeline-a |
 | LLM-002 | Implementirati realni LLM/Groq adapter | 2 | P0 | DONE | LLM-001 | official Groq SDK 1.6.0, bounded retry, audit metadata, 7 offline testova i uspešan `openai/gpt-oss-120b` live smoke |
 | EXP-001 | Implementirati B0 i B1 | 2 | P0 | DONE | LLM-002, EVAL-003 | 31/31 predikcija po arm-u; B0 0/31, B1 5/31; scored JSON report-i, checksum manifest, reasoning effort low i zatvoren test split |
-| SCHEMA-001 | Implementirati kanonski model šeme | 3 | P0 | NOT STARTED | DATA-003 | unit test |
+| SCHEMA-001 | Implementirati kanonski model šeme | 3 | P0 | DONE | DATA-003 | verzionisan payload/hash, PK/FK/default metadata, validacija realnih identifikatora, zamrznuti hash-evi za 6 baza i 5 testova |
 | SCHEMA-002 | Implementirati M-Schema | 3 | P0 | NOT STARTED | SCHEMA-001 | B2 rezultat |
 | RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | NOT STARTED | DATA-001 | leakage test |
 | RET-002 | Implementirati random i similarity few-shot | 4 | P0 | NOT STARTED | RET-001 | B3/B4 rezultat |
@@ -719,8 +720,8 @@ Izmenjeni fajlovi:
 
 Sledeće:
 
-1. `SCHEMA-001`: implementirati kanonski model šeme nad postojećim SQLite inspektorom;
-2. `SCHEMA-002`: iz kanonskog modela izvesti deterministički M-Schema i pokrenuti B2 poređenje.
+1. `SCHEMA-002`: iz kanonskog modela izvesti deterministički M-Schema;
+2. pokrenuti kontrolisani B2 eksperiment i uporediti ga sa B1 rezultatom od 16,13%.
 
 ### 2026-08-18 - Implementiran EVAL-002 kod; task blokiran resursima
 
@@ -763,7 +764,7 @@ Izmenjeni fajlovi:
 Blokirano:
 
 - strict SQL `EVAL-002` ostaje opciono nepotpun, ali više ne blokira projekat; SQL-free `EVAL-003` je primarna evaluaciona putanja;
-- baseline scoring je završen kroz `EXP-001`; sledeći korak je kanonski model šeme u `SCHEMA-001`.
+- kanonski model šeme je završen kroz `SCHEMA-001`; sledeći korak je M-Schema u `SCHEMA-002`.
 
 Lokalna provera implementacije:
 
@@ -833,3 +834,14 @@ Implementirano:
 - rezultati su u `artifacts/experiments/exp001-{b0,b1}-predictions.jsonl` i `artifacts/reports/exp001-{b0,b1}-report.json`;
 - Groq limit od 8.000 tokena/min zahtevao je resumable prolaze; checkpoint nije duplirao završene ID-jeve;
 - `EXP-001` je `DONE`; sledeći razvojni zadatak je `SCHEMA-001`.
+
+### 2026-08-29 - Završen SCHEMA-001
+
+- postojeći `SchemaSnapshot` model je formalizovan kao kanonski model bez promene završenog B1 prompt formata;
+- kolone sada čuvaju ordinal, PK poziciju i SQL default, a strani ključevi constraint ID i sekvencu za složene veze;
+- SQLite inspector deterministički sortira tabele i FK veze, radi read-only i validira snapshot pre vraćanja;
+- validacija odbija duplikate, nestabilan redosled i FK reference ka nepostojećim tabelama ili kolonama;
+- dodat je verzionisan canonical JSON payload i SHA-256; hash-evi svih 6 development baza zamrznuti su testom;
+- budući generation audit koristi kanonski schema hash, dok `serialize_simple_schema` ostaje nepromenjen radi reproduktivnosti B1;
+- dodato je 5 SCHEMA-001 testova; kompletan suite je 65/65;
+- `SCHEMA-001` je `DONE`; sledeći zadatak je `SCHEMA-002`.

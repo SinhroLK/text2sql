@@ -13,7 +13,7 @@ from text2sql.prompting import (
     build_question_only_prompt,
 )
 from text2sql.providers import SQLProvider
-from text2sql.schema import inspect_sqlite_schema, serialize_simple_schema
+from text2sql.schema import canonical_schema_sha256, inspect_sqlite_schema
 
 
 def _sha256(text: str) -> str:
@@ -54,7 +54,6 @@ class Text2SQLPipeline:
         response = self.provider.generate(generation_input)
         latency_ms = round((time.perf_counter() - started) * 1000)
         selected_sql = response.candidates[0] if response.candidates else None
-        schema_text = serialize_simple_schema(schema)
 
         return GenerationResult(
             run_id=str(uuid.uuid4()),
@@ -65,7 +64,7 @@ class Text2SQLPipeline:
             model_id=self.provider.model_id,
             prompt_version=prompt_version,
             prompt_hash=_sha256(prompt),
-            schema_hash=_sha256(schema_text),
+            schema_hash=canonical_schema_sha256(schema),
             generated_sql=response.candidates,
             selected_sql=selected_sql,
             validation_status="not_implemented",

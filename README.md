@@ -42,6 +42,7 @@ Implemented:
 - SQLite schema inspection;
 - deterministic schema serialization for the baseline prompt;
 - provider protocol, deterministic mock provider and official-SDK Groq adapter;
+- validated canonical schema model with deterministic serialization and hashes;
 - end-to-end pipeline;
 - JSONL audit output;
 - unit and integration tests;
@@ -68,8 +69,6 @@ Implemented:
 
 Not implemented yet:
 
-- a scored 31-example Spider2 development run (the evaluator resources are ready; predictions are not generated yet);
-- full 31-example B0/B1 prediction generation and scoring;
 - M-Schema;
 - retrieval and DSPy optimization;
 - SQL AST validation and sandbox execution;

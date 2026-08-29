@@ -5,6 +5,7 @@ import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from text2sql.observability import append_jsonl
 from text2sql.pipeline import Text2SQLPipeline
@@ -60,6 +61,30 @@ class PipelineTest(unittest.TestCase):
         self.assertIn('FROM "customers"', result.selected_sql or "")
         self.assertEqual(len(result.prompt_hash), 64)
         self.assertEqual(len(result.schema_hash), 64)
+
+    def test_mschema_samples_are_cached_per_database_schema_and_policy(self) -> None:
+        pipeline = Text2SQLPipeline(MockSchemaAwareProvider())
+        with patch(
+            "text2sql.pipeline.sample_sqlite_mschema_values",
+            return_value={},
+        ) as sampler:
+            first = pipeline.generate(
+                "List customers",
+                self.database_path,
+                db_id="fixture",
+                prompt_variant="mschema",
+            )
+            pipeline.generate(
+                "Count customers",
+                self.database_path,
+                db_id="fixture",
+                prompt_variant="mschema",
+            )
+
+        self.assertEqual(sampler.call_count, 1)
+        self.assertEqual(
+            first.metadata["schema_representation"], "xiyan-compatible-v1"
+        )
 
     def test_jsonl_writer_appends_valid_json(self) -> None:
         output_path = Path(self.temp_dir.name) / "result.jsonl"

@@ -2,7 +2,7 @@
 
 Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
-This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, and `EVAL-003` provides the ready official gold-result runner. The strict reference-SQL `EVAL-002` path remains optional.
+This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, and SCHEMA-002 provides deterministic M-Schema prompts with bounded representative values. The strict reference-SQL `EVAL-002` path remains optional.
 
 ## Requirements
 
@@ -36,6 +36,7 @@ text2sql --question "List customer names" --database data/fixtures/demo.sqlite
 
 ## Current scope
 
+- XiYan-compatible M-Schema serialization, safe read-only value sampling and B2 prompt integration;
 Implemented:
 
 - stable domain models;
@@ -69,7 +70,7 @@ Implemented:
 
 Not implemented yet:
 
-- M-Schema;
+- extractive schema linking and B6 evaluation;
 - retrieval and DSPy optimization;
 - SQL AST validation and sandbox execution;
 - security evaluation;
@@ -169,4 +170,17 @@ PYTHONPATH=src .venv/bin/python -m text2sql.experiments.cli \
   --report artifacts/reports/exp001-b1-report.json
 ```
 
-Re-running the same command resumes from its JSONL checkpoint and does not repeat completed IDs. Starting both fresh runs requires 62 Groq requests before retries. Do not run the 104-example test split during development.
+Re-running the same command resumes from its JSONL checkpoint and does not repeat completed IDs. Starting both fresh runs requires 62 Groq requests before retries.
+
+## SCHEMA-002 B2 result
+
+The completed 31-example B2 run scored 2/31 (6.45%) with 22/31 executable SQL outputs, compared with B1 at 5/31 (16.13%) and 26/31 executable. B2 used 107,586 input tokens—109.8% more than B1—so full M-Schema did not improve this baseline. To reproduce or re-score the checkpoint, run:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.experiments.cli \
+  --experiment-config configs/experiments/exp002-b2.toml \
+  --predictions artifacts/experiments/exp002-b2-predictions.jsonl \
+  --report artifacts/reports/exp002-b2-report.json
+```
+
+This uses the same model/settings and 31 development IDs as B1, with M-Schema as the only prompt-arm change. With the completed checkpoint present, it makes no Groq requests and regenerates the report. The 104-example test split remains sealed.

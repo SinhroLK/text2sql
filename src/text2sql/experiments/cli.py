@@ -29,7 +29,7 @@ DEFAULT_STANDARDS = PROJECT_ROOT / "data/raw/spider2/spider2-lite/evaluation_sui
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Run a resumable EXP-001 B0 or B1 development baseline."
+        description="Run a resumable B0, B1, or B2 development baseline."
     )
     parser.add_argument("--experiment-config", type=Path, required=True)
     parser.add_argument("--predictions", type=Path, required=True)

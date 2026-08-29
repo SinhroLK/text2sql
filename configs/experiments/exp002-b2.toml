@@ -1,0 +1,16 @@
+schema_version = 1
+experiment_id = "exp002-b2-gpt-oss-120b-v1"
+baseline = "B2"
+split = "development"
+prompt_variant = "mschema"
+provider = "groq"
+model_id = "openai/gpt-oss-120b"
+temperature = 0.0
+max_tokens = 1024
+seed = 42
+reasoning_effort = "low"
+mschema_examples_per_column = 3
+mschema_max_text_length = 50
+mschema_scan_rows_per_column = 24
+max_retries = 2
+timeout_seconds = 60.0

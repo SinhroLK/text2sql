@@ -1,8 +1,8 @@
 # Registar izvora i literature
 
 **Projekat:** Text-to-SQL master rad
-**Verzija registra:** 1.4
-**Poslednje ažuriranje:** 2026-08-18
+**Verzija registra:** 1.5
+**Poslednje ažuriranje:** 2026-08-29
 **Vlasnik registra:** autor projekta
 
 Ovaj dokument je jedinstveno mesto za evidenciju svakog naučnog rada, dataseta,
@@ -49,7 +49,8 @@ predstavlja samo pozadinsku literaturu ili je planiran za kasniju fazu.
 | ID | Status | Izvor | Upotreba u projektu |
 |---|---|---|---|
 | `PAPER-SPIDER2-001` | `ACTIVE` | F. Lei et al., *Spider 2.0: Evaluating Language Models on Real-World Enterprise Text-to-SQL Workflows*, arXiv:2411.07763, 2024. <https://arxiv.org/abs/2411.07763> | Osnova za izbor modernog evaluacionog benchmarka i opis realnih Text-to-SQL izazova. |
-| `PAPER-XIYAN-001` | `PLANNED` | Y. Gao et al., *A Preview of XiYan-SQL: A Multi-Generator Ensemble Framework for Text-to-SQL*, arXiv:2411.08599, v3, 2025. <https://arxiv.org/abs/2411.08599> | Primarni izvor za M-Schema reprezentaciju; ideje o više kandidata i refineru koriste se samo u pojednostavljenoj opcionoj konfiguraciji. |
+| `PAPER-XIYAN-001` | `ACTIVE` | Y. Gao et al., *A Preview of XiYan-SQL: A Multi-Generator Ensemble Framework for Text-to-SQL*, arXiv:2411.08599, v3, 2025. <https://arxiv.org/abs/2411.08599> | Primarni metodološki izvor za SCHEMA-002 M-Schema reprezentaciju; ideje o više kandidata i refineru ostaju opcione. |
+| `CODE-XIYAN-MSCHEMA-001` | `ACTIVE` | Zvanični `XGenerationLab/M-Schema` repozitorijum, commit `755751451be841f7a54f8b08c0a1f818b041a1c0`, pristupljeno 2026-08-29, Apache-2.0. <https://github.com/XGenerationLab/M-Schema/tree/755751451be841f7a54f8b08c0a1f818b041a1c0> | Referenca za kompatibilnu sekcijsku sintaksu, pojednostavljene tipove i najviše tri reprezentativna primera; projektna implementacija je nezavisna, read-only i strože filtrira vrednosti. |
 | `PAPER-SCHEMA-001` | `PLANNED` | M. Glass et al., *Extractive Schema Linking for Text-to-SQL*, arXiv:2501.17174, 2025. <https://arxiv.org/abs/2501.17174> | Osnova za extractive schema linking i kontrolisanje odnosa precision/recall pri izboru relevantne šeme. |
 | `PAPER-DSPY-001` | `PLANNED` | O. Khattab et al., *DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines*, arXiv:2310.03714, 2023. <https://arxiv.org/abs/2310.03714> | Osnova za automatizovanu optimizaciju prompt programa umesto ručnog biranja prompta. |
 | `PAPER-P2SQL-001` | `PLANNED` | R. Pedro et al., *From Prompt Injections to SQL Injection Attacks: How Protected is Your LLM-Integrated Web Application?*, arXiv:2308.01990, v4, 2025. <https://arxiv.org/abs/2308.01990> | Osnova za prompt-to-SQL threat model, adversarial testove i input guardrails. |
@@ -142,7 +143,7 @@ Za svaku biblioteku tada treba dodati zaključanu verziju iz `requirements.lock`
 | ID | Status | Dokumentacija | Planirana upotreba |
 |---|---|---|---|
 | `DOC-PYTHON-001` | `ACTIVE` | Python 3.11 dokumentacija: <https://docs.python.org/3.11/> | Standardna biblioteka, `sqlite3`, `dataclasses`, `tomllib`, CLI i testovi. |
-| `DOC-SQLITE-001` | `ACTIVE` | SQLite dokumentacija: <https://www.sqlite.org/docs.html> | EVAL-001 read-only otvaranje, in-memory backup, `query_only`, progress-handler timeout i fixture introspekcija. |
+| `DOC-SQLITE-001` | `ACTIVE` | SQLite dokumentacija: <https://www.sqlite.org/docs.html> | EVAL-001 read-only execution/in-memory backup i SCHEMA-002 `mode=ro` + `query_only` bounded sampling, timeout i introspekcija. |
 | `DOC-DSPY-001` | `PLANNED` | Zvanična DSPy dokumentacija/repozitorijum: <https://github.com/stanfordnlp/dspy> | Implementacija i zaključavanje B5 programa u Fazi 4. |
 | `DOC-GROQ-001` | `PLANNED` | Zvanična Groq API dokumentacija: <https://console.groq.com/docs> | Realni LLM adapter; tačan model ID i datum pristupa ulaze u run manifest. |
 | `DOC-GRADIO-001` | `PLANNED` | Zvanična Gradio dokumentacija: <https://www.gradio.app/docs> | Finalni demo koji koristi isti pipeline kao eksperimenti. |
@@ -157,7 +158,7 @@ Za svaku biblioteku tada treba dodati zaključanu verziju iz `requirements.lock`
 | Execution evaluator (`EVAL-001`) | `DATA-SPIDER2-REPO-001`, `DATA-SPIDER2-EVAL-001`, `DATA-SPIDER2-SPLIT-001`, `DOC-PYTHON-001`, `DOC-SQLITE-001` |
 | Official gold-result runner (`EVAL-003`) | `DATA-SPIDER2-REPO-001`, `DATA-SPIDER2-EVAL-001`, `DATA-SPIDER2-SPLIT-001`, `DATA-SPIDER2-LOCALDB-001`, `DATA-SPIDER2-GOLD-RESULT-001`, `DOC-SQLITE-001` |
 | Strict SQL audit runner (`EVAL-002`) | `DATA-SPIDER2-GOLD-SQL-001`, `DOC-SQLITE-001` |
-| M-Schema (`SCHEMA-002`) | `PAPER-XIYAN-001` |
+| M-Schema (`SCHEMA-002`) | `PAPER-XIYAN-001`, `CODE-XIYAN-MSCHEMA-001`, `DOC-SQLITE-001` |
 | Extractive schema linking (`LINK-001`, `LINK-002`) | `PAPER-SCHEMA-001` |
 | Similarity few-shot retrieval (`RET-001`, `RET-002`) | `LIT-RETRIEVAL-001`, `LIT-DYNAMIC-001`, `DATA-SPIDER1-001` |
 | DSPy optimizacija (`DSPY-001`) | `PAPER-DSPY-001`, `DOC-DSPY-001` |
@@ -195,3 +196,4 @@ Zamenjuje ili je zamenjen izvorom:
 | 2026-08-17 | 1.2 | Evidentiran EVAL-001, tačan pinned evaluator i evaluation-manifest checksum, SQLite izolacija/timeout i veza izvora sa implementiranim execution evaluatorom. |
 | 2026-08-18 | 1.3 | Evidentirani EVAL-002 resource audit, baze i nedostajući reference SQL. |
 | 2026-08-18 | 1.4 | Official execution-result CSV-ovi postavljeni kao primarni EVAL-003 gold resurs; reference SQL prebačen u opcioni audit status. |
+| 2026-08-29 | 1.5 | PAPER-XIYAN-001 aktiviran za SCHEMA-002; dodat pinned official M-Schema code izvor, licenca, datum pristupa i veza sa SQLite read-only sampling politikom. |

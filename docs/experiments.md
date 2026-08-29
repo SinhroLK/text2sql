@@ -115,3 +115,31 @@ The scored report freezes generation parameters, token totals, total/p50/p95 lat
 | B1 | 5/31 | 16.13% | 26/31 | 51,287 / 12,328 | 1,371 / 1,998 ms | $0.015090 |
 
 B1 correct IDs are `local068`, `local202`, `local270`, `local274`, and `local275`. The cost estimate uses the run-time GPT-OSS 120B rates of $0.15/M input and $0.60/M output tokens. Prediction and report artifacts are stored under `artifacts/experiments/` and `artifacts/reports/`.
+
+## SCHEMA-002: B2 M-Schema development baseline
+
+B2 (`exp002-b2-gpt-oss-120b-v1`) keeps the EXP-001 model and generation settings fixed and changes only the schema context from the B1 simple serializer to `exp002-mschema-v1`. It adds primary/foreign-key structure and bounded representative values.
+
+The frozen sampling policy is 3 examples per column, a 50-character text limit, and a 24-row scan limit. Sampling is read-only, deterministic, cached per database/schema/policy, and omits columns whose names indicate sensitive data. Exact policy values are stored in each generation result and scored report.
+
+The implementation is verified over all six development databases and the controlled live B2 run is complete over all 31 development IDs. SCHEMA-002 is `DONE`; the 104-example test split remained sealed.
+
+| Arm | Correct | Execution accuracy | Executable SQL | Input/output tokens | p50/p95 latency | Estimated Groq cost |
+|---|---:|---:|---:|---:|---:|---:|
+| B1 | 5/31 | 16.13% | 26/31 | 51,287 / 12,328 | 1,371 / 1,998 ms | $0.015090 |
+| B2 | 2/31 | 6.45% | 22/31 | 107,586 / 13,417 | 1,783 / 19,431 ms | $0.024188 |
+
+B2 correct IDs are `local202` and `local311`. Compared with B1, execution accuracy decreased by 9.68 percentage points while input tokens increased by 109.8%. Nine generations had execution errors; `local167` and `local170` reached the 1,024-token output cap and produced incomplete SQL. This negative result rejects the hypothesis that full M-Schema plus raw representative values is sufficient by itself and motivates selective schema linking.
+
+The B2 prediction SHA-256 is `5a63026a14368fcfe80e12902e933e8ec297c8be450f3379791acd2ea72233db`; the scored-report SHA-256 is `d08bf39121d326c00385f87058b15befd3a3a8bdf8663e4e6471cd48899d42be`.
+
+To reproduce or re-score the completed run, use:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.experiments.cli \
+  --experiment-config configs/experiments/exp002-b2.toml \
+  --predictions artifacts/experiments/exp002-b2-predictions.jsonl \
+  --report artifacts/reports/exp002-b2-report.json
+```
+
+The command is resumable and restricted to the same 31 development IDs. With the completed checkpoint present, re-running makes no provider requests and regenerates the EVAL-003 report. Starting from an empty checkpoint requires 31 successful provider responses before retries.

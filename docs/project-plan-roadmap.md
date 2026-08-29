@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 2.4
+**Verzija plana:** 2.6
 **Datum:** 29. avgust 2026.
-**Status projekta:** `SCHEMA-001` je `DONE`: kanonski schema model, validacija, deterministička serijalizacija i hash postoje; sledeći razvojni zadatak je `SCHEMA-002`.
-**Poslednja provera:** 29. avgust 2026. - 65/65 testova prolazi; svih 6 development baza ima zamrznut kanonski schema hash
+**Status projekta:** `SCHEMA-002` je `DONE`: B2 M-Schema run je završen nad 31/31 development primera i ocenjen sa EVAL-003; B2 ima 2/31 (6,45%) naspram B1 5/31 (16,13%), pa puna M-Schema bez linking-a nije poboljšala baseline.
+**Poslednja provera:** 29. avgust 2026. - 73/73 testa prolaze; 31/31 B2 checkpoint i scored report su kompletni, a test split ostaje zatvoren.
 
 ### Istorija verzija
 
@@ -25,6 +25,8 @@
 | 2.2 | 29. avgust 2026. | Implementiran EXP-001 offline foundation: frozen B0/B1 TOML, seed, resumable exact-coverage runner, automatski scoring, resource manifest i 60 testova |
 | 2.3 | 29. avgust 2026. | Završen EXP-001 live run: 31/31 B0 i 31/31 B1 predikcija, B0 0%, B1 16,13%, scored report-i i checksumovani artefakti |
 | 2.4 | 29. avgust 2026. | Završen SCHEMA-001: verzionisan kanonski model, SQLite PK/FK/default metadata, validacija identifikatora, stabilni hash-evi za 6 baza i 65 testova |
+| 2.5 | 29. avgust 2026. | Implementiran offline SCHEMA-002: XiYan-kompatibilan M-Schema, bounded read-only sampling, frozen B2 config/runner i stabilni hash-evi za 6 baza; live B2 poređenje čeka autorizaciju |
+| 2.6 | 29. avgust 2026. | Završen SCHEMA-002 live B2: 31/31 predikcija, 2/31 tačna (6,45%), 22/31 executable, 107.586/13.417 input/output tokena i checksumovani artefakti |
 
 ## 1. Svrha dokumenta
 
@@ -371,13 +373,14 @@ Zadaci:
 Zadaci:
 
 - `DONE` - napraviti kanonski model šeme;
-- implementirati ili integrisati M-Schema serializer;
-- dodati podršku za PK, FK, tipove i bezbedne primere vrednosti;
-- implementirati B2;
-- implementirati prvi schema linker i B6 prototip;
-- meriti schema recall i smanjenje broja tokena.
+- `DONE` - implementirati XiYan-kompatibilan M-Schema serializer;
+- `DONE` - dodati PK, FK, tipove i bounded read-only primere sa redakcijom osetljivih kolona;
+- `DONE` - implementirati frozen B2 config, prompt, cache, resumable runner i audit metadata;
+- `DONE` - pokrenuti kontrolisani B2 nad 31 development primerom: 2/31 (6,45%) naspram B1 5/31 (16,13%);
+- `PENDING` - implementirati prvi schema linker i B6 prototip;
+- `PENDING` - meriti schema recall i smanjenje broja tokena.
 
-**Definition of Done:** za svaku bazu može se stabilno generisati ista M-Schema; postoji test da nijedan nepostojeći identifikator ne uđe u šemu; dobijeno je kontrolisano B1-B2 poređenje.
+**Definition of Done:** M-Schema serializer i kontrolisano B1-B2 poređenje su završeni; faza ostaje otvorena samo za schema linker/B6 i schema-recall merenje.
 
 ### Faza 4 - Few-shot retrieval i DSPy
 
@@ -501,7 +504,7 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 14 zadataka je završeno; `SCHEMA-001` je `DONE`. Kanonski model je validiran nad svih 6 development baza; sledeći zadatak je `SCHEMA-002`.
+**Sažetak stanja:** 15 zadataka je završeno; `SCHEMA-002` je `DONE`. B2 je kompletan nad 31/31 development primera, ali je sa 2/31 (6,45%) slabiji od B1 5/31 (16,13%); sledeći razvojni zadatak je `LINK-001`.
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
 | PLAN-001 | Arhitektura i roadmap | 0 | P0 | DONE | - | ovaj dokument |
@@ -519,7 +522,7 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | LLM-002 | Implementirati realni LLM/Groq adapter | 2 | P0 | DONE | LLM-001 | official Groq SDK 1.6.0, bounded retry, audit metadata, 7 offline testova i uspešan `openai/gpt-oss-120b` live smoke |
 | EXP-001 | Implementirati B0 i B1 | 2 | P0 | DONE | LLM-002, EVAL-003 | 31/31 predikcija po arm-u; B0 0/31, B1 5/31; scored JSON report-i, checksum manifest, reasoning effort low i zatvoren test split |
 | SCHEMA-001 | Implementirati kanonski model šeme | 3 | P0 | DONE | DATA-003 | verzionisan payload/hash, PK/FK/default metadata, validacija realnih identifikatora, zamrznuti hash-evi za 6 baza i 5 testova |
-| SCHEMA-002 | Implementirati M-Schema | 3 | P0 | NOT STARTED | SCHEMA-001 | B2 rezultat |
+| SCHEMA-002 | Implementirati M-Schema | 3 | P0 | DONE | SCHEMA-001 | 31/31 B2 predikcija; 2/31 tačna, 22/31 executable; scored report i checksumovani artefakti |
 | RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | NOT STARTED | DATA-001 | leakage test |
 | RET-002 | Implementirati random i similarity few-shot | 4 | P0 | NOT STARTED | RET-001 | B3/B4 rezultat |
 | DSPY-001 | Definisati i optimizovati DSPy program | 4 | P1 | NOT STARTED | RET-002, EVAL-001 | zamrznut B5 artefakt |
@@ -845,3 +848,37 @@ Implementirano:
 - budući generation audit koristi kanonski schema hash, dok `serialize_simple_schema` ostaje nepromenjen radi reproduktivnosti B1;
 - dodato je 5 SCHEMA-001 testova; kompletan suite je 65/65;
 - `SCHEMA-001` je `DONE`; sledeći zadatak je `SCHEMA-002`.
+
+### 2026-08-29 - Implementiran SCHEMA-002 offline i pripremljen B2
+
+- dodat je `xiyan-compatible-v1` M-Schema serializer sa DB/schema/PK/FK sekcijama i kanonskim identifikatorima;
+- representative values se čitaju u SQLite `mode=ro` + `query_only`, uz limit 3 primera, 24 skenirana reda i 50 karaktera;
+- sampling koristi stabilan PK/rowid prefix bez whole-column sortiranja, izostavlja blobs/non-finite/duge vrednosti i rediguje osetljive nazive kolona;
+- string vrednosti se JSON-escape-uju, a B2 prompt ih označava kao nepoverljive literale;
+- pipeline kešira uzorke po putanji baze, kanonskom hash-u i frozen politici;
+- dodat je `exp002-mschema-v1` prompt, `configs/experiments/exp002-b2.toml`, B2 config validacija, resumable runner podrška i policy audit metadata;
+- hash-evi M-Schema izlaza zamrznuti su za svih 6 development baza; serializer odbija unknown/sensitive example ključeve;
+- dodato je 8 SCHEMA-002/B2 testova; kompletan offline suite je 73/73;
+- `SCHEMA-002` je u tom trenutku ostao `IN PROGRESS` jer 31-example Groq B2 run još nije bio pokrenut; test split je ostao zatvoren.
+
+Sledeće u tom trenutku:
+
+1. uz eksplicitnu autorizaciju pokrenuti frozen B2 command iz `docs/experiments.md`;
+2. EVAL-003 report uporediti sa B1 rezultatom 5/31 (16,13%) i tek tada označiti `SCHEMA-002` kao `DONE`.
+
+### 2026-08-29 - Završen SCHEMA-002 live B2
+
+- frozen B2 je završen nad tačno 31/31 development primera; 104 test primera nisu korišćena;
+- B2 rezultat je 2/31 (6,45%), sa tačnim ID-jevima `local202` i `local311`;
+- 22/31 SQL upita se izvršava, 20 daje pogrešan rezultat, a 9 ima execution error;
+- B2 koristi 107.586 input i 13.417 output tokena, p50/p95 latenciju 1.783/19.431 ms i procenjeni Groq trošak 0,024188 USD;
+- u odnosu na B1, accuracy pada sa 16,13% na 6,45% (-9,68 procentnih poena), a input tokeni rastu sa 51.287 na 107.586 (+109,8%);
+- dva izlaza (`local167`, `local170`) dostigla su 1.024-token cap; među execution greškama su dva nepotpuna SQL-a i SQLite-nepodržani/nekorektno korišćeni izrazi;
+- prediction SHA-256 je `5a63026a14368fcfe80e12902e933e8ec297c8be450f3379791acd2ea72233db`, a report SHA-256 `d08bf39121d326c00385f87058b15befd3a3a8bdf8663e4e6471cd48899d42be`;
+- rezultat pokazuje da puna M-Schema sa raw reprezentativnim vrednostima sama nije dovoljna; sledeća hipoteza je selektivni schema linking (`LINK-001`);
+- `SCHEMA-002` je `DONE`, a test split ostaje zatvoren.
+
+Sledeće:
+
+1. implementirati `LINK-001` extractive schema linking nad development skupom;
+2. izmeriti schema recall, input-token reduction i B6 rezultat u poređenju sa B1/B2.

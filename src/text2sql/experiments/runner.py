@@ -8,6 +8,7 @@ from typing import Any
 from text2sql.datasets import LoadedSpider2LiteDataset
 from text2sql.evaluation import EvaluationResourceError, Spider2GoldResultRunner
 from text2sql.observability import append_jsonl
+from text2sql.schema import MSchemaSamplePolicy
 from text2sql.pipeline import Text2SQLPipeline
 from text2sql.providers import SQLProvider
 
@@ -101,7 +102,7 @@ class BaselineExperimentRunner:
     ) -> None:
         if config.split != "development":
             raise ExperimentRunError(
-                "split_firewall", "EXP-001 may access only the development split"
+                "split_firewall", "Baseline experiments may access only development"
             )
         if pipeline.provider.model_id != config.model_id:
             raise ExperimentRunError(
@@ -135,6 +136,15 @@ class BaselineExperimentRunner:
                 database.path,
                 db_id=example.db_id,
                 prompt_variant=self.config.prompt_variant,
+                mschema_sample_policy=(
+                    MSchemaSamplePolicy(
+                        examples_per_column=self.config.mschema_examples_per_column,
+                        max_text_length=self.config.mschema_max_text_length,
+                        scan_rows_per_column=self.config.mschema_scan_rows_per_column,
+                    )
+                    if self.config.baseline == "B2"
+                    else None
+                ),
             )
             if not generated.selected_sql:
                 raise ExperimentRunError(
@@ -195,6 +205,15 @@ class BaselineExperimentRunner:
                 "max_retries": self.config.max_retries,
                 "seed": self.config.seed,
                 "reasoning_effort": self.config.reasoning_effort,
+                "mschema_sample_policy": (
+                    {
+                        "examples_per_column": self.config.mschema_examples_per_column,
+                        "max_text_length": self.config.mschema_max_text_length,
+                        "scan_rows_per_column": self.config.mschema_scan_rows_per_column,
+                    }
+                    if self.config.baseline == "B2"
+                    else None
+                ),
                 "timeout_seconds": self.config.timeout_seconds,
                 "config_sha256": self.config.config_sha256,
             },

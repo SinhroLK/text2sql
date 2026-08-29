@@ -101,7 +101,11 @@ class BaselineExperimentRunnerTest(unittest.TestCase):
         self.temp_dir.cleanup()
 
     def _config(self, baseline: str) -> Path:
-        variant = "question_only" if baseline == "B0" else "simple_schema"
+        variant = {
+            "B0": "question_only",
+            "B1": "simple_schema",
+            "B2": "mschema",
+        }[baseline]
         path = self.root / f"{baseline.lower()}.toml"
         path.write_text(
             "\n".join(
@@ -113,6 +117,14 @@ class BaselineExperimentRunnerTest(unittest.TestCase):
                     'reasoning_effort = "low"',
                     f'prompt_variant = "{variant}"',
                     'provider = "groq"',
+                    *(
+                        [
+                            "mschema_examples_per_column = 3",
+                            "mschema_max_text_length = 50",
+                            "mschema_scan_rows_per_column = 24",
+                        ]
+                        if baseline == "B2" else []
+                    ),
                     f'model_id = "{MODEL_ID}"',
                     "temperature = 0.0",
                     "max_tokens = 1024",
@@ -158,6 +170,40 @@ class BaselineExperimentRunnerTest(unittest.TestCase):
         self.assertTrue(all("Schema:" in item.prompt for item in provider.inputs))
         self.assertTrue(all("customers" in item.prompt for item in provider.inputs))
 
+    def test_b2_prompt_contains_mschema_and_sample_values(self) -> None:
+        runner, provider = self._runner("B2")
+        result = runner.run(self.root / "b2.jsonl", self.root / "b2-report.json")
+
+        self.assertEqual(len(provider.inputs), 2)
+        self.assertTrue(
+            all("〖DB_ID〗 fixture" in item.prompt for item in provider.inputs)
+        )
+        self.assertTrue(
+            all("# Table: customers" in item.prompt for item in provider.inputs)
+        )
+        self.assertTrue(
+            all('Examples: ["Alice"]' in item.prompt for item in provider.inputs)
+        )
+        self.assertEqual(
+            result["experiment"]["mschema_sample_policy"],
+            {
+                "examples_per_column": 3,
+                "max_text_length": 50,
+                "scan_rows_per_column": 24,
+            },
+        )
+        checkpoint = [
+            json.loads(line)
+            for line in (self.root / "b2.jsonl").read_text().splitlines()
+        ]
+        self.assertTrue(
+            all(
+                item["generation"]["metadata"]["schema_representation"]
+                == "xiyan-compatible-v1"
+                for item in checkpoint
+            )
+        )
+
     def test_completed_checkpoint_resumes_without_provider_calls(self) -> None:
         runner, provider = self._runner("B0")
         predictions = self.root / "resume.jsonl"
@@ -191,6 +237,28 @@ class BaselineExperimentRunnerTest(unittest.TestCase):
         with self.assertRaises(ExperimentRunError) as raised:
             runner.run(path, self.root / "report.json")
         self.assertEqual(raised.exception.code, "checkpoint_coverage_mismatch")
+
+    def test_b2_config_requires_sampling_limits(self) -> None:
+        path = self._config("B2")
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                "mschema_max_text_length = 50\n", ""
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaises(ExperimentConfigurationError):
+            load_baseline_config(path)
+
+        path = self._config("B2")
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                "mschema_scan_rows_per_column = 24",
+                "mschema_scan_rows_per_column = 0",
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaises(ExperimentConfigurationError):
+            load_baseline_config(path)
 
     def test_config_rejects_test_split(self) -> None:
         path = self._config("B0")

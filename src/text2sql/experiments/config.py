@@ -24,6 +24,9 @@ class BaselineExperimentConfig:
     max_tokens: int
     seed: int | None
     reasoning_effort: str
+    mschema_examples_per_column: int
+    mschema_max_text_length: int
+    mschema_scan_rows_per_column: int
     max_retries: int
     timeout_seconds: float
     config_path: Path
@@ -62,13 +65,21 @@ def load_baseline_config(path: str | Path) -> BaselineExperimentConfig:
     seed = data.get("seed")
     if schema_version != 1:
         raise ExperimentConfigurationError("Only experiment schema_version 1 is supported")
-    expected_variant = {"B0": "question_only", "B1": "simple_schema"}.get(baseline)
+    expected_variant = {
+        "B0": "question_only",
+        "B1": "simple_schema",
+        "B2": "mschema",
+    }.get(baseline)
     if expected_variant is None or prompt_variant != expected_variant:
-        raise ExperimentConfigurationError("B0/B1 baseline and prompt_variant do not match")
+        raise ExperimentConfigurationError(
+            "Baseline and prompt_variant do not match B0, B1, or B2"
+        )
     if split != "development":
-        raise ExperimentConfigurationError("EXP-001 may run only on the development split")
+        raise ExperimentConfigurationError(
+            "Baseline experiments may run only on the development split"
+        )
     if provider != "groq":
-        raise ExperimentConfigurationError("EXP-001 provider must be groq")
+        raise ExperimentConfigurationError("Baseline experiment provider must be groq")
     if not experiment_id.strip() or not model_id.strip():
         raise ExperimentConfigurationError("experiment_id and model_id must not be empty")
     if not isinstance(temperature, (int, float)) or isinstance(temperature, bool):
@@ -81,6 +92,26 @@ def load_baseline_config(path: str | Path) -> BaselineExperimentConfig:
     max_tokens = _required(data, "max_tokens", int)
     if reasoning_effort not in ("low", "medium", "high"):
         raise ExperimentConfigurationError("reasoning_effort must be low, medium, or high")
+    if baseline == "B2":
+        mschema_examples_per_column = _required(
+            data, "mschema_examples_per_column", int
+        )
+        mschema_max_text_length = _required(data, "mschema_max_text_length", int)
+        mschema_scan_rows_per_column = _required(
+            data, "mschema_scan_rows_per_column", int
+        )
+        if (
+            mschema_examples_per_column < 0
+            or mschema_max_text_length <= 0
+            or mschema_scan_rows_per_column < mschema_examples_per_column
+            or mschema_scan_rows_per_column <= 0
+        ):
+            raise ExperimentConfigurationError("Invalid B2 M-Schema sampling limits")
+    else:
+        mschema_examples_per_column = 0
+        mschema_max_text_length = 0
+        mschema_scan_rows_per_column = 0
+
     max_retries = _required(data, "max_retries", int)
     if max_tokens <= 0 or max_retries < 0 or timeout_seconds <= 0:
         raise ExperimentConfigurationError(
@@ -97,6 +128,9 @@ def load_baseline_config(path: str | Path) -> BaselineExperimentConfig:
         temperature=float(temperature),
         max_tokens=max_tokens,
         seed=seed,
+        mschema_examples_per_column=mschema_examples_per_column,
+        mschema_max_text_length=mschema_max_text_length,
+        mschema_scan_rows_per_column=mschema_scan_rows_per_column,
         max_retries=max_retries,
         timeout_seconds=float(timeout_seconds),
         config_path=source,

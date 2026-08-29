@@ -60,6 +60,8 @@ class GroqProvider:
     api_key: str | None = None
     temperature: float = 0.0
     max_tokens: int = 1024
+    seed: int | None = None
+    reasoning_effort: str | None = None
     timeout_seconds: float = 60.0
     endpoint: str = DEFAULT_GROQ_ENDPOINT
     transport: Transport = _transport
@@ -75,6 +77,10 @@ class GroqProvider:
             raise ValueError("max_tokens and timeout_seconds must be positive")
         if self.max_retries < 0:
             raise ValueError("max_retries must not be negative")
+        if self.seed is not None and (not isinstance(self.seed, int) or isinstance(self.seed, bool)):
+            raise ValueError("seed must be an integer or None")
+        if self.reasoning_effort not in (None, "low", "medium", "high"):
+            raise ValueError("reasoning_effort must be low, medium, high, or None")
 
     def generate(self, generation_input: GenerationInput) -> ProviderResponse:
         api_key = self.api_key or os.environ.get("GROQ_API_KEY")
@@ -88,6 +94,10 @@ class GroqProvider:
             "n": 1,
             "stream": False,
         }
+        if self.seed is not None:
+            payload["seed"] = self.seed
+        if self.reasoning_effort is not None:
+            payload["reasoning_effort"] = self.reasoning_effort
         for attempt in range(self.max_retries + 1):
             try:
                 raw = self.transport(
@@ -126,6 +136,8 @@ class GroqProvider:
                 "provider_model": response.get("model"),
                 "temperature": self.temperature,
                 "max_tokens": self.max_tokens,
+                "seed": self.seed,
+                "reasoning_effort": self.reasoning_effort,
                 "timeout_seconds": self.timeout_seconds,
                 "endpoint": self.endpoint,
             },

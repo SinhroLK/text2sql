@@ -79,7 +79,7 @@ class CLITest(unittest.TestCase):
 
             self.assertEqual(exit_code, 0)
             constructor.assert_called_once_with(
-                model_id="openai/gpt-oss-120b", temperature=0.0, max_tokens=256
+                model_id="openai/gpt-oss-120b", temperature=0.0, max_tokens=256, seed=None
             )
 
 if __name__ == "__main__":

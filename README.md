@@ -147,3 +147,27 @@ PYTHONPATH=src python3 -m text2sql.cli \
   --max-tokens 1024 \
   --output artifacts/reports/groq-smoke.jsonl
 ```
+
+## EXP-001 baseline runner
+
+The B0/B1 development runner is resumable and restricted to the frozen 31-example development split. It checkpoints each successful provider response before continuing and automatically runs EVAL-003 only after exact coverage. The completed EXP-001 run scored B0 at 0/31 and schema-aware B1 at 5/31 (16.13%); reports are stored in `artifacts/reports/`.
+
+Load `GROQ_API_KEY` into the environment, then run B0 (question only):
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.experiments.cli \
+  --experiment-config configs/experiments/exp001-b0.toml \
+  --predictions artifacts/experiments/exp001-b0-predictions.jsonl \
+  --report artifacts/reports/exp001-b0-report.json
+```
+
+Run B1 (question plus complete simple schema):
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.experiments.cli \
+  --experiment-config configs/experiments/exp001-b1.toml \
+  --predictions artifacts/experiments/exp001-b1-predictions.jsonl \
+  --report artifacts/reports/exp001-b1-report.json
+```
+
+Re-running the same command resumes from its JSONL checkpoint and does not repeat completed IDs. Starting both fresh runs requires 62 Groq requests before retries. Do not run the 104-example test split during development.

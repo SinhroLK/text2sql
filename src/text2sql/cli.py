@@ -26,6 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--model-id", help="Required when --provider groq is selected")
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--max-tokens", type=int, default=1024)
+    parser.add_argument("--seed", type=int, default=None)
     return parser
 
 
@@ -38,6 +39,7 @@ def main(argv: list[str] | None = None) -> int:
             model_id=args.model_id,
             temperature=args.temperature,
             max_tokens=args.max_tokens,
+            seed=args.seed,
         )
     else:
         provider = MockSchemaAwareProvider()

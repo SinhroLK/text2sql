@@ -95,3 +95,23 @@ Every result must record:
 - Spider 2.0 official repository: <https://github.com/xlang-ai/Spider2>
 - Spider 2.0 paper (ICLR 2025 Oral): <https://arxiv.org/abs/2411.07763>
 - Official Spider2-Lite evaluator instructions: <https://github.com/xlang-ai/Spider2/tree/main/spider2-lite/evaluation_suite>
+
+## EXP-001: B0/B1 development baseline
+
+EXP-001 uses `openai/gpt-oss-120b`, temperature `0`, seed `42`, GPT-OSS reasoning effort `low`, a 1024-token output cap, a 60-second timeout, and at most two project-level retries. Official SDK retries remain disabled.
+
+- B0 (`exp001-b0-gpt-oss-120b-v1`) receives the original question and SQLite dialect only. The prompt must not contain serialized schema text.
+- B1 (`exp001-b1-gpt-oss-120b-v1`) receives the same question plus the complete deterministic simple-schema serialization.
+- Both configurations run the same frozen 31 development IDs in sorted order.
+- Each successful response is appended immediately to a config-hash-bound JSONL checkpoint.
+- Resume rejects duplicate IDs, foreign/test IDs, database mismatches, and changed configuration hashes.
+- Scoring begins only after exact coverage and uses EVAL-003 official gold-result variants.
+
+The scored report freezes generation parameters, token totals, total/p50/p95 latency, executable-SQL rate, the DATA-003 manifest, and the complete EVAL-003 database/gold-result checksum manifest. Both 31-record checkpoints and scored reports exist, so EXP-001 is `DONE`. The 104-example test split remained sealed.
+
+| Arm | Correct | Execution accuracy | Executable SQL | Input/output tokens | p50/p95 latency | Estimated Groq cost |
+|---|---:|---:|---:|---:|---:|---:|
+| B0 | 0/31 | 0.00% | 0/31 | 4,951 / 12,871 | 1,304 / 4,428 ms | $0.008465 |
+| B1 | 5/31 | 16.13% | 26/31 | 51,287 / 12,328 | 1,371 / 1,998 ms | $0.015090 |
+
+B1 correct IDs are `local068`, `local202`, `local270`, `local274`, and `local275`. The cost estimate uses the run-time GPT-OSS 120B rates of $0.15/M input and $0.60/M output tokens. Prediction and report artifacts are stored under `artifacts/experiments/` and `artifacts/reports/`.

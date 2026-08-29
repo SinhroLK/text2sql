@@ -28,11 +28,14 @@ class GroqProviderTest(unittest.TestCase):
             }).encode()
 
         response = GroqProvider(
-            model_id="test-model", api_key="test-secret", transport=transport
+            model_id="test-model", api_key="test-secret", seed=42,
+            reasoning_effort="low", transport=transport
         ).generate(INPUT)
         self.assertEqual(response.candidates, ("SELECT 1",))
         self.assertEqual((response.input_tokens, response.output_tokens), (12, 3))
         self.assertEqual(captured["payload"]["model"], "test-model")
+        self.assertEqual(captured["payload"]["seed"], 42)
+        self.assertEqual(captured["payload"]["reasoning_effort"], "low")
         self.assertEqual(captured["headers"]["Authorization"], "Bearer test-secret")
 
     def test_default_transport_uses_official_sdk(self) -> None:

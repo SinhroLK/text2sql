@@ -6,7 +6,12 @@ import uuid
 from pathlib import Path
 
 from text2sql.domain import GenerationInput, GenerationResult
-from text2sql.prompting import PROMPT_VERSION, build_baseline_prompt
+from text2sql.prompting import (
+    QUESTION_ONLY_PROMPT_VERSION,
+    SIMPLE_SCHEMA_PROMPT_VERSION,
+    build_baseline_prompt,
+    build_question_only_prompt,
+)
 from text2sql.providers import SQLProvider
 from text2sql.schema import inspect_sqlite_schema, serialize_simple_schema
 
@@ -24,9 +29,20 @@ class Text2SQLPipeline:
         question: str,
         database_path: str | Path,
         db_id: str | None = None,
+        *,
+        prompt_variant: str = "simple_schema",
     ) -> GenerationResult:
         schema = inspect_sqlite_schema(database_path, db_id=db_id)
-        prompt = build_baseline_prompt(question, schema)
+        if prompt_variant == "question_only":
+            prompt = build_question_only_prompt(question, schema.dialect)
+            prompt_version = QUESTION_ONLY_PROMPT_VERSION
+            schema_representation = "none"
+        elif prompt_variant == "simple_schema":
+            prompt = build_baseline_prompt(question, schema)
+            prompt_version = SIMPLE_SCHEMA_PROMPT_VERSION
+            schema_representation = "simple"
+        else:
+            raise ValueError(f"Unknown prompt variant: {prompt_variant!r}")
         generation_input = GenerationInput(
             question=question,
             prompt=prompt,
@@ -47,7 +63,7 @@ class Text2SQLPipeline:
             dialect=schema.dialect,
             provider=self.provider.provider_name,
             model_id=self.provider.model_id,
-            prompt_version=PROMPT_VERSION,
+            prompt_version=prompt_version,
             prompt_hash=_sha256(prompt),
             schema_hash=_sha256(schema_text),
             generated_sql=response.candidates,
@@ -58,8 +74,9 @@ class Text2SQLPipeline:
             input_tokens=response.input_tokens,
             output_tokens=response.output_tokens,
             metadata={
-                "phase": 0,
-                "schema_representation": "simple",
+                "phase": 2,
+                "prompt_variant": prompt_variant,
+                "schema_representation": schema_representation,
                 "provider": response.metadata,
             },
         )

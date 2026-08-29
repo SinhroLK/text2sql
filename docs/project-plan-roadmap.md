@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 2.1
-**Datum:** 18. avgust 2026.
-**Status projekta:** Faza 1 i `LLM-002` su završeni; official Groq SDK live smoke sa `openai/gpt-oss-120b` je uspešan. Sledeći aktivni zadatak je `EXP-001` za B0/B1 development predikcije.
-**Poslednja provera:** 18. avgust 2026. - 55/55 testova prolazi; EVAL-003 preflight je `ready` 31/31; Groq SDK smoke je uspešan (224 input, 124 output tokena, 697 ms)
+**Verzija plana:** 2.3
+**Datum:** 29. avgust 2026.
+**Status projekta:** `EXP-001` je `DONE`: B0 i B1 imaju po 31 live predikciju i scored report; sledeći razvojni zadatak je `SCHEMA-001`.
+**Poslednja provera:** 29. avgust 2026. - 60/60 testova prolazi; B0 = 0/31 (0%), B1 = 5/31 (16,13%), test split je ostao zatvoren
 
 ### Istorija verzija
 
@@ -22,6 +22,8 @@
 | 1.9 | 18. avgust 2026. | Završen offline deo LLM-002: Groq CLI, audit metadata, bounded retry, aktivni model config i 49 testova |
 | 2.0 | 18. avgust 2026. | Dodat primarni EVAL-003 nad official execution-result CSV-ovima; 31/31 preflight je ready i strict SQL putanja je opciona |
 | 2.1 | 18. avgust 2026. | `urllib` zamenjen official Groq SDK 1.6.0 transportom; uspešan `openai/gpt-oss-120b` live smoke i 55/55 testova |
+| 2.2 | 29. avgust 2026. | Implementiran EXP-001 offline foundation: frozen B0/B1 TOML, seed, resumable exact-coverage runner, automatski scoring, resource manifest i 60 testova |
+| 2.3 | 29. avgust 2026. | Završen EXP-001 live run: 31/31 B0 i 31/31 B1 predikcija, B0 0%, B1 16,13%, scored report-i i checksumovani artefakti |
 
 ## 1. Svrha dokumenta
 
@@ -498,7 +500,7 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 12 zadataka je završeno; `EVAL-003` i `LLM-002` su `DONE`. Development evaluator ima svih 31 gold rezultata i 6 baza, a official SDK live smoke je uspešan; `EXP-001` je sledeći prioritet.
+**Sažetak stanja:** 13 zadataka je završeno; `EXP-001` je `DONE`. B0 i B1 su izvršeni i bodovani nad svih 31 development primera; sledeći zadatak je `SCHEMA-001`.
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
 | PLAN-001 | Arhitektura i roadmap | 0 | P0 | DONE | - | ovaj dokument |
@@ -514,7 +516,7 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | EVAL-003 | Official gold-result Spider2-Lite runner | 1 | P0 | DONE | DATA-003, EVAL-001 | svih 31 development ID-jeva i 6 baza prolaze preflight; CSV varijante, checksum manifest, default CLI i 5 novih testova |
 | LLM-001 | Implementirati provider interfejs | 2 | P0 | DONE | REPO-002 | provider protokol, deterministički mock i test pipeline-a |
 | LLM-002 | Implementirati realni LLM/Groq adapter | 2 | P0 | DONE | LLM-001 | official Groq SDK 1.6.0, bounded retry, audit metadata, 7 offline testova i uspešan `openai/gpt-oss-120b` live smoke |
-| EXP-001 | Implementirati B0 i B1 | 2 | P0 | NOT STARTED | LLM-002, EVAL-003 | svi infrastrukturni uslovi su spremni; slede generisanje i scoring 31 development predikcije |
+| EXP-001 | Implementirati B0 i B1 | 2 | P0 | DONE | LLM-002, EVAL-003 | 31/31 predikcija po arm-u; B0 0/31, B1 5/31; scored JSON report-i, checksum manifest, reasoning effort low i zatvoren test split |
 | SCHEMA-001 | Implementirati kanonski model šeme | 3 | P0 | NOT STARTED | DATA-003 | unit test |
 | SCHEMA-002 | Implementirati M-Schema | 3 | P0 | NOT STARTED | SCHEMA-001 | B2 rezultat |
 | RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | NOT STARTED | DATA-001 | leakage test |
@@ -717,8 +719,8 @@ Izmenjeni fajlovi:
 
 Sledeće:
 
-1. `EXP-001`: generisati i bodovati B0/B1 predikcije kroz spremni EVAL-003 runner;
-2. `SCHEMA-001`: nakon baseline-a implementirati kanonski model šeme.
+1. `SCHEMA-001`: implementirati kanonski model šeme nad postojećim SQLite inspektorom;
+2. `SCHEMA-002`: iz kanonskog modela izvesti deterministički M-Schema i pokrenuti B2 poređenje.
 
 ### 2026-08-18 - Implementiran EVAL-002 kod; task blokiran resursima
 
@@ -761,7 +763,7 @@ Izmenjeni fajlovi:
 Blokirano:
 
 - strict SQL `EVAL-002` ostaje opciono nepotpun, ali više ne blokira projekat; SQL-free `EVAL-003` je primarna evaluaciona putanja;
-- benchmark scoring više nije blokiran SQL ili provider resursima; sledeći korak je `EXP-001`.
+- baseline scoring je završen kroz `EXP-001`; sledeći korak je kanonski model šeme u `SCHEMA-001`.
 
 Lokalna provera implementacije:
 
@@ -807,3 +809,27 @@ Implementirano:
 - live `openai/gpt-oss-120b` smoke je uspešan: validan SQL, 224 input tokena, 124 output tokena i 697 ms;
 - rezultat je sačuvan u `artifacts/reports/groq-sdk-smoke.jsonl`; smoke potvrđuje infrastrukturu, ne benchmark kvalitet;
 - kompletan offline suite je 55/55.
+
+### 2026-08-29 - Implementiran EXP-001 offline foundation
+
+- dodate frozen konfiguracije `configs/experiments/exp001-b0.toml` i `exp001-b1.toml`;
+- B0 prompt ne sadrži šemu, dok B1 koristi kompletnu jednostavnu SQLite šemu;
+- dodat je `text2sql-run-baseline` CLI nad tačno 31 development ID-jem;
+- svaki uspešan odgovor se odmah checkpoint-uje u JSONL; nastavak preskače završene ID-jeve;
+- checkpoint odbija pogrešan config hash, duplicate, unknown i test ID-jeve;
+- exact coverage automatski pokreće EVAL-003 i zapisuje tokene, p50/p95 latenciju i resource manifest;
+- Groq seed je podržan i auditovan;
+- dodato je 5 EXP-001 testova; kompletan suite je 60/60;
+- live B0/B1 run tada još nije bio pokrenut.
+
+### 2026-08-29 - Završen EXP-001 live baseline
+
+- frozen parametri su dopunjeni sa Groq GPT-OSS `reasoning_effort = "low"`, jer je podrazumevani medium reasoning povremeno trošio ceo limit bez finalnog SQL sadržaja;
+- B0 i B1 su izvršeni nad tačno 31 development primerom; 104 test primera nisu učitana u promptove niti bodovana;
+- B0: 0/31 tačnih, 31 execution error, 4.951 input i 12.871 output tokena, p50 1.304 ms, p95 4.428 ms;
+- B1: 5/31 tačnih (16,13%), 21 netačan rezultat, 5 execution error-a, executable rate 26/31 (83,87%), 51.287 input i 12.328 output tokena, p50 1.371 ms, p95 1.998 ms;
+- tačni B1 ID-jevi su `local068`, `local202`, `local270`, `local274` i `local275`;
+- procenjeni Groq trošak je približno 0,008465 USD za B0 i 0,015090 USD za B1;
+- rezultati su u `artifacts/experiments/exp001-{b0,b1}-predictions.jsonl` i `artifacts/reports/exp001-{b0,b1}-report.json`;
+- Groq limit od 8.000 tokena/min zahtevao je resumable prolaze; checkpoint nije duplirao završene ID-jeve;
+- `EXP-001` je `DONE`; sledeći razvojni zadatak je `SCHEMA-001`.

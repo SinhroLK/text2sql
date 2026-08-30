@@ -105,6 +105,8 @@ class BaselineExperimentRunnerTest(unittest.TestCase):
             "B0": "question_only",
             "B1": "simple_schema",
             "B2": "mschema",
+            "B6": "linked_mschema",
+            "B6R": "hybrid_linked_mschema",
         }[baseline]
         path = self.root / f"{baseline.lower()}.toml"
         path.write_text(
@@ -123,7 +125,26 @@ class BaselineExperimentRunnerTest(unittest.TestCase):
                             "mschema_max_text_length = 50",
                             "mschema_scan_rows_per_column = 24",
                         ]
-                        if baseline == "B2" else []
+                        if baseline in {"B2", "B6", "B6R"} else []
+                    ),
+                    *(
+                        [
+                            'schema_linker_version = "extractive-lexical-v1"',
+                            "schema_link_max_tables = 4",
+                            "schema_link_max_columns_per_table = 12",
+                            "schema_link_minimum_columns_per_table = 4",
+                            "schema_link_min_score = 4",
+                            "schema_link_include_value_matches = true",
+                            "schema_link_include_foreign_key_closure = true",
+                            'schema_link_fallback_mode = "full_schema"',
+                        ]
+                        if baseline in {"B6", "B6R"} else []
+                    ),
+                    *(
+                        [
+                            "schema_link_include_all_selected_table_columns = true"
+                        ]
+                        if baseline == "B6R" else []
                     ),
                     f'model_id = "{MODEL_ID}"',
                     "temperature = 0.0",
@@ -203,6 +224,95 @@ class BaselineExperimentRunnerTest(unittest.TestCase):
                 for item in checkpoint
             )
         )
+
+    def test_b6_prompt_and_report_contain_linking_audit(self) -> None:
+        runner, provider = self._runner("B6")
+        result = runner.run(
+            self.root / "b6.jsonl",
+            self.root / "b6-report.json",
+        )
+
+        self.assertEqual(len(provider.inputs), 2)
+        self.assertTrue(
+            all("Linked M-Schema:" in item.prompt for item in provider.inputs)
+        )
+        self.assertEqual(
+            result["experiment"]["schema_linking_policy"]["version"],
+            "extractive-lexical-v1",
+        )
+        summary = result["generation_summary"]["schema_linking"]
+        self.assertEqual(summary["total"], 2)
+        self.assertEqual(summary["fallback_count"], 0)
+        checkpoint = [
+            json.loads(line)
+            for line in (self.root / "b6.jsonl").read_text().splitlines()
+        ]
+        self.assertTrue(
+            all(
+                item["generation"]["metadata"]["schema_linking"]["version"]
+                == "extractive-lexical-v1"
+                for item in checkpoint
+            )
+        )
+
+    def test_b6r_prompt_and_report_preserve_recall_context(self) -> None:
+        runner, provider = self._runner("B6R")
+        result = runner.run(
+            self.root / "b6r.jsonl",
+            self.root / "b6r-report.json",
+        )
+
+        self.assertEqual(len(provider.inputs), 2)
+        self.assertTrue(
+            all(
+                "Complete compact schema" in item.prompt
+                and "Linked detailed M-Schema" in item.prompt
+                and "do not use QUALIFY" in item.prompt
+                for item in provider.inputs
+            )
+        )
+        policy = result["experiment"]["schema_linking_policy"]
+        self.assertTrue(
+            policy["include_all_selected_table_columns"]
+        )
+        self.assertEqual(
+            result["generation_summary"]["schema_linking"]["total"],
+            2,
+        )
+        checkpoint = [
+            json.loads(line)
+            for line in (self.root / "b6r.jsonl").read_text().splitlines()
+        ]
+        self.assertTrue(
+            all(
+                item["generation"]["prompt_version"]
+                == "exp004-recall-linked-mschema-v1"
+                for item in checkpoint
+            )
+        )
+
+    def test_b6r_config_requires_recall_column_policy(self) -> None:
+        path = self._config("B6R")
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                "schema_link_include_all_selected_table_columns = true\n",
+                "",
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaises(ExperimentConfigurationError):
+            load_baseline_config(path)
+
+    def test_b6_config_requires_complete_linking_policy(self) -> None:
+        path = self._config("B6")
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                "schema_link_max_tables = 4\n", ""
+            ),
+            encoding="utf-8",
+        )
+        with self.assertRaises(ExperimentConfigurationError):
+            load_baseline_config(path)
 
     def test_completed_checkpoint_resumes_without_provider_calls(self) -> None:
         runner, provider = self._runner("B0")

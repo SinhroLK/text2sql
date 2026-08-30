@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 2.6
-**Datum:** 29. avgust 2026.
-**Status projekta:** `SCHEMA-002` je `DONE`: B2 M-Schema run je završen nad 31/31 development primera i ocenjen sa EVAL-003; B2 ima 2/31 (6,45%) naspram B1 5/31 (16,13%), pa puna M-Schema bez linking-a nije poboljšala baseline.
-**Poslednja provera:** 29. avgust 2026. - 73/73 testa prolaze; 31/31 B2 checkpoint i scored report su kompletni, a test split ostaje zatvoren.
+**Verzija plana:** 2.9
+**Datum:** 30. avgust 2026.
+**Status projekta:** Faza 3 je `DONE`: `LINK-001`/B6 je zamrznut na 1/31, a `LINK-002`/B6R je završen sa 6/31 (19,35%). Sledeći razvojni zadatak je `RET-001` u Fazi 4.
+**Poslednja provera:** 30. avgust 2026. - B6R checkpoint/report pokrivaju 31/31 development primera, EVAL-003 daje 6/31 uz 25/31 executable; 91/91 testova prolazi i test split ostaje zatvoren.
 
 ### Istorija verzija
 
@@ -27,6 +27,9 @@
 | 2.4 | 29. avgust 2026. | Završen SCHEMA-001: verzionisan kanonski model, SQLite PK/FK/default metadata, validacija identifikatora, stabilni hash-evi za 6 baza i 65 testova |
 | 2.5 | 29. avgust 2026. | Implementiran offline SCHEMA-002: XiYan-kompatibilan M-Schema, bounded read-only sampling, frozen B2 config/runner i stabilni hash-evi za 6 baza; live B2 poređenje čeka autorizaciju |
 | 2.6 | 29. avgust 2026. | Završen SCHEMA-002 live B2: 31/31 predikcija, 2/31 tačna (6,45%), 22/31 executable, 107.586/13.417 input/output tokena i checksumovani artefakti |
+| 2.7 | 30. avgust 2026. | Implementiran LINK-001 offline: extractive-lexical-v1, PK/FK closure, recall-safe fallback, frozen B6, 31-example reduction audit, ADR-009 i 85 testova; live B6 ostaje sledeći korak |
+| 2.8 | 30. avgust 2026. | Završen LINK-001 live B6 sa negativnim rezultatom 1/31; dodat LINK-002/B6R recall-first hibrid, frozen exp004 config, 31-example offline audit, ADR-010 i 91 testova |
+| 2.9 | 30. avgust 2026. | Završen LINK-002 live B6R: 31/31, 6/31 tačnih (19,35%), 25/31 executable, 94.140/15.806 tokena, analiza grešaka i checksumovani artefakti; Faza 3 zatvorena |
 
 ## 1. Svrha dokumenta
 
@@ -44,6 +47,7 @@ Statusi zadataka:
 - `BLOCKED` - postoji zavisnost ili problem koji sprečava nastavak;
 - `DONE` - zadatak ispunjava definisani Definition of Done;
 - `DEFERRED` - svesno pomeren iz trenutnog obima.
+- `OPTIONAL` - podržana ili planirana audit putanja koja ne blokira primarni projekat.
 
 ## 2. Cilj i granice projekta
 
@@ -244,7 +248,8 @@ GenerationResult(
 | B3 | M-Schema + random few-shot | kontroliše doprinos samih demonstracija |
 | B4 | M-Schema + similarity few-shot | meri doprinos retrievera |
 | B5 | B4 + DSPy optimizovan program | meri automatizovanu optimizaciju prompta |
-| B6 | B5 + extractive schema linking | meri fokusiranje šeme i broj tokena |
+| B6 | B2 + extractive schema linking (frozen prototype) | meri fokusiranje šeme i broj tokena |
+| B6R | B6 recall repair + full compact schema | meri da li zaštita identifier recall-a popravlja B6 |
 | B7 | B6 + tri kandidata + validator/refiner | meri test-time korekciju |
 | S0 | B7 bez bezbednosnih kontrola, samo u izolovanom sandboxu | security baseline |
 | S1 | B7 + input i output guardrails | meri zaštitu i false positive stopu |
@@ -368,7 +373,7 @@ Zadaci:
 
 **Trajanje:** 1-2 nedelje
 **Zavisnost:** Faza 2
-**Status:** `IN PROGRESS`
+**Status:** `DONE`
 
 Zadaci:
 
@@ -377,10 +382,15 @@ Zadaci:
 - `DONE` - dodati PK, FK, tipove i bounded read-only primere sa redakcijom osetljivih kolona;
 - `DONE` - implementirati frozen B2 config, prompt, cache, resumable runner i audit metadata;
 - `DONE` - pokrenuti kontrolisani B2 nad 31 development primerom: 2/31 (6,45%) naspram B1 5/31 (16,13%);
-- `PENDING` - implementirati prvi schema linker i B6 prototip;
-- `PENDING` - meriti schema recall i smanjenje broja tokena.
+- `DONE` - implementirati deterministički `extractive-lexical-v1` linker, bounded table/column izbor, PK/FK endpoint retention, shortest-path closure i full-schema fallback;
+- `DONE` - integrisati linked M-Schema prompt, frozen B6 config, resumable runner i per-example selection audit;
+- `DONE` - izmeriti provider-free smanjenje konteksta nad 31 development primerom i fixture precision/recall/F1 bez pristupa test split-u;
+- `DONE` - pokrenuti live B6 nad 31 development primerom: 1/31 (3,23%), 27/31 executable, 18.287 input tokena;
+- `DONE` - implementirati zasebni B6R recall-repair: osam direktnih tabela, sve kolone izabranih tabela, full compact schema i stroža SQLite pravila;
+- `DONE` - pokrenuti B6R provider-free audit nad 31/31 development primera;
+- `DONE` - pokrenuti live B6R i oceniti ga primarnim EVAL-003 putem: 6/31 (19,35%), 25/31 executable, 94.140 input tokena.
 
-**Definition of Done:** M-Schema serializer i kontrolisano B1-B2 poređenje su završeni; faza ostaje otvorena samo za schema linker/B6 i schema-recall merenje.
+**Definition of Done:** Ispunjeno. M-Schema/B2, LINK-001/B6 i LINK-002/B6R pokrivaju tačno 31 development ID, EVAL-003 report-i su upoređeni i prediction/report artefakti su checksumovani. Realni schema recall se ne izmišlja: bez gold relevant-table/column anotacija iskazuje se samo fixture metrika i dokumentovano ograničenje.
 
 ### Faza 4 - Few-shot retrieval i DSPy
 
@@ -504,7 +514,8 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 15 zadataka je završeno; `SCHEMA-002` je `DONE`. B2 je kompletan nad 31/31 development primera, ali je sa 2/31 (6,45%) slabiji od B1 5/31 (16,13%); sledeći razvojni zadatak je `LINK-001`.
+**Sažetak stanja:** 17 zadataka je završeno; `LINK-001`, `LINK-002` i Faza 3 su `DONE`. Sledeći aktivni korak je `RET-001`: train-only retrieval indeks sa leakage proverom.
+
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
 | PLAN-001 | Arhitektura i roadmap | 0 | P0 | DONE | - | ovaj dokument |
@@ -523,10 +534,11 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | EXP-001 | Implementirati B0 i B1 | 2 | P0 | DONE | LLM-002, EVAL-003 | 31/31 predikcija po arm-u; B0 0/31, B1 5/31; scored JSON report-i, checksum manifest, reasoning effort low i zatvoren test split |
 | SCHEMA-001 | Implementirati kanonski model šeme | 3 | P0 | DONE | DATA-003 | verzionisan payload/hash, PK/FK/default metadata, validacija realnih identifikatora, zamrznuti hash-evi za 6 baza i 5 testova |
 | SCHEMA-002 | Implementirati M-Schema | 3 | P0 | DONE | SCHEMA-001 | 31/31 B2 predikcija; 2/31 tačna, 22/31 executable; scored report i checksumovani artefakti |
+| LINK-001 | Implementirati extractive schema linking | 3 | P1 | DONE | SCHEMA-002 | frozen B6: 31/31, 1/31 tačan, 27/31 executable; prediction/report/audit checksumovi i dokumentovan negativni rezultat |
+| LINK-002 | Implementirati recall-first schema-linking repair | 3 | P1 | DONE | LINK-001 | frozen B6R: 31/31, 6/31 tačnih, 25/31 executable; 94.140/15.806 tokena, prediction/report checksumovi i analiza grešaka |
 | RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | NOT STARTED | DATA-001 | leakage test |
 | RET-002 | Implementirati random i similarity few-shot | 4 | P0 | NOT STARTED | RET-001 | B3/B4 rezultat |
 | DSPY-001 | Definisati i optimizovati DSPy program | 4 | P1 | NOT STARTED | RET-002, EVAL-001 | zamrznut B5 artefakt |
-| LINK-001 | Implementirati extractive schema linking | 4 | P1 | NOT STARTED | SCHEMA-002 | B6 rezultat i schema recall |
 | SAFE-001 | Implementirati SQL AST validator | 5 | P0 | NOT STARTED | SCHEMA-001 | security unit testovi |
 | SAFE-002 | Implementirati read-only sandbox executor | 5 | P0 | NOT STARTED | SAFE-001 | integration test |
 | REF-001 | Implementirati izbor kandidata i refiner | 5 | P1 | NOT STARTED | SAFE-002 | B7 rezultat |
@@ -878,7 +890,28 @@ Sledeće u tom trenutku:
 - rezultat pokazuje da puna M-Schema sa raw reprezentativnim vrednostima sama nije dovoljna; sledeća hipoteza je selektivni schema linking (`LINK-001`);
 - `SCHEMA-002` je `DONE`, a test split ostaje zatvoren.
 
+Sledeće je bilo pokretanje LINK-001/B6; taj korak je sada završen i rezultat je dokumentovan u narednom dnevničkom unosu.
+
+### 2026-08-30 - Završen LINK-001/B6 i implementiran LINK-002/B6R offline
+
+- LINK-001 offline linker i audit ostaju zamrznuti; ponovljeni B6 audit ima isti SHA-256 `93d85cbdd41a5cf595576a9ed7e925ff3ccd253e5f285be14b8c72a4153ba238`;
+- B6 checkpoint pokriva 31/31 development primera i EVAL-003 daje 1/31 (3,23%), 27/31 executable, 18.287 input i 6.929 output tokena;
+- jedini B6 pogodak (`local275`) je dummy prazan upit koji slučajno odgovara praznom gold rezultatu, pa ne predstavlja korisnu semantičku tačnost;
+- B6 prediction SHA-256 je `05dad4186f7e16d7a23116e4ecec9a3cf8dbc0e9932f8682079ad7e240ac04df`, a report SHA-256 `838a2631bebdd22db54270b14d05d62dce1e579d464d6cc8678081159e8d9d20`;
+- analiza B1-tačnih/B6-netačnih primera pokazala je izgubljene tabele ili kolone (`cities.insert_date`, `alien_data.aggressive`, `packaging_relations`, `picking_line`);
+- dodat je zasebni B6R (`exp004-recall-linked-mschema-v1`) bez menjanja frozen B6: do osam direktnih tabela, sve kolone izabranih tabela, kompletan compact schema inventory i linked detailed M-Schema kao prioritetni kontekst;
+- B6R prompt zahteva jedan read-only SQLite SELECT, zabranjuje `QUALIFY` i dummy upite i traži kvalifikovanje dvosmislenih kolona;
+- provider-free B6R audit nad 31/31 development primera bira 215/751 tabela i 1.764/4.569 kolona, ima nula fallback-ova, 290.853 prompt karaktera i SHA-256 `b4c75877aef0d7f0617de70891874aac1c074e3f0c495326e382ccb13b1b4c18`;
+- kompletan offline suite prolazi 91/91; test split od 104 primera nije otvoren;
+- B6R live checkpoint sada pokriva 31/31: rezultat je 6/31 (19,35%), sa 25/31 executable, 94.140 input i 15.806 output tokena;
+- tačni ID-jevi su `local171`, `local202`, `local270`, `local274`, `local275` i `local310`; pet pogodaka ima neprazan rezultat, dok `local275` i dalje zavisi od podudaranja praznog rezultata, ali bez dummy SQL-a;
+- u odnosu na B1, B6R dobija `local171` i `local310`, gubi `local068` i neto raste sa 5/31 na 6/31 (+3,23 procentna poena);
+- šest execution grešaka su: nested window misuse (`local068`), dva timeout/interrupted upita (`local169`, `local170`), token-cap incomplete SQL (`local279`), nepostojeća kolona (`local311`) i PostgreSQL `generate_series` u SQLite-u (`local355`);
+- B6R prediction SHA-256 je `46664f819ce0d8faa2fe377babda3a6555df38477e0570415df146345df26577`, a report SHA-256 `aaa130ec8e2f606058c413ac9434f49b9af618ec2fb5da45214f4896bd7802fc`;
+- LINK-002 i Faza 3 su `DONE`; test split ostaje zatvoren.
+
 Sledeće:
 
-1. implementirati `LINK-001` extractive schema linking nad development skupom;
-2. izmeriti schema recall, input-token reduction i B6 rezultat u poređenju sa B1/B2.
+1. implementirati `RET-001` train-only retrieval indeks koristeći dozvoljeni Spider 1.0 train korpus;
+2. dodati automatsku zabranu Spider2 development/test self-retrieval-a i database leakage-a;
+3. tek zatim zamrznuti i pokrenuti B3 random few-shot i B4 similarity few-shot armove.

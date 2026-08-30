@@ -143,3 +143,106 @@ PYTHONPATH=src .venv/bin/python -m text2sql.experiments.cli \
 ```
 
 The command is resumable and restricted to the same 31 development IDs. With the completed checkpoint present, re-running makes no provider requests and regenerates the EVAL-003 report. Starting from an empty checkpoint requires 31 successful provider responses before retries.
+
+
+## LINK-001: B6 linked-M-Schema development arm
+
+B6 (**exp003-b6-gpt-oss-120b-v1**) keeps the B2 model, temperature, seed,
+reasoning effort, sample limits, retry count, output cap, timeout, dataset, and
+evaluator unchanged. Its only current experimental change is the versioned
+**extractive-lexical-v1** schema subset and
+**exp003-linked-mschema-v1** prompt.
+
+This early B6 prototype intentionally isolates linking directly against B2
+because B3-B5 retrieval/DSPy components are not implemented. A future cumulative
+B5+link arm must receive a new experiment/config identifier; it cannot overwrite
+this result.
+
+The provider-free development audit is complete:
+
+| Measure | Full B2 | Linked B6 | Reduction |
+|---|---:|---:|---:|
+| Repeated tables | 751 | 124 | 83.49% |
+| Repeated columns | 4,569 | 524 | 88.53% |
+| Prompt characters | 313,515 | 55,733 | 82.22% |
+| Whitespace-token proxy | 30,835 | 6,723 | 78.20% |
+
+No fallback occurred in 31 development examples. Selected table p50/p95 is 4/5
+and selected column p50/p95 is 17/23. The deterministic audit SHA-256 is
+**93d85cbdd41a5cf595576a9ed7e925ff3ccd253e5f285be14b8c72a4153ba238**.
+
+Reproduce the offline audit without GROQ_API_KEY:
+
+    PYTHONPATH=src .venv/bin/python -m text2sql.experiments.linking_cli \
+      --experiment-config configs/experiments/exp003-b6.toml \
+      --output artifacts/reports/exp003-b6-linking-audit.json
+
+LINK-001 is **DONE**. Frozen B6 covers 31/31 development IDs and scored
+1/31 (3.23%), with 27/31 executable outputs, 18,287 input tokens and 6,929
+output tokens. Its only match was a dummy empty query that coincidentally matched
+an empty result. B6 therefore demonstrates that aggressive linked-only pruning
+reduced cost but damaged recall and did not improve correctness.
+
+The prediction SHA-256 is
+**05dad4186f7e16d7a23116e4ecec9a3cf8dbc0e9932f8682079ad7e240ac04df**;
+the report SHA-256 is
+**838a2631bebdd22db54270b14d05d62dce1e579d464d6cc8678081159e8d9d20**.
+The 104 test IDs remained sealed.
+
+Because official reference SQL is unavailable for 30 development examples,
+fixture annotations provide schema precision/recall/F1 tests; no fabricated
+aggregate real-schema recall is reported. Full methodology and limitations are
+in **docs/schema-linking.md**.
+
+
+## LINK-002: B6R recall-repair arm
+
+B6R (**exp004-b6r-gpt-oss-120b-v1**) is a new arm; it does not modify B6. It
+keeps all columns in selected tables, raises the direct-table cap to eight, and
+combines linked detailed M-Schema with the complete compact schema. The prompt
+also forbids dummy queries and SQLite-incompatible QUALIFY, requires one
+read-only SELECT, and asks for qualified ambiguous columns. Generation settings
+remain frozen at the B6 values so the live comparison isolates context repair.
+
+The provider-free 31-example audit selected 215/751 tables and 1,764/4,569
+columns with zero fallback. Hybrid prompts total 290,853 characters (7.23% less
+than full B2) and 36,056 whitespace-token proxy units (16.93% more than B2).
+Audit SHA-256:
+**b4c75877aef0d7f0617de70891874aac1c074e3f0c495326e382ccb13b1b4c18**.
+These numbers measure context, not SQL accuracy.
+
+Reproduce the offline audit:
+
+    PYTHONPATH=src .venv/bin/python -m text2sql.experiments.linking_cli \
+      --experiment-config configs/experiments/exp004-b6r.toml \
+      --output artifacts/reports/exp004-b6r-linking-audit.json
+
+Start or resume the live B6R run:
+
+    PYTHONPATH=src .venv/bin/python -m text2sql.experiments.cli \
+      --experiment-config configs/experiments/exp004-b6r.toml \
+      --predictions artifacts/experiments/exp004-b6r-predictions.jsonl \
+      --report artifacts/reports/exp004-b6r-report.json
+
+LINK-002 is **DONE**. The checkpoint covers 31/31 development IDs and EVAL-003
+reports 6/31 correct (19.35%), 25/31 executable, 19 result mismatches, and 6
+execution errors. B6R used 94,140 input and 15,806 output tokens with p50/p95
+latency 2,174/3,335 ms. Estimated token cost is USD 0.023605.
+
+Correct IDs are `local171`, `local202`, `local270`, `local274`, `local275`, and
+`local310`. Five matches are non-empty; `local275` is an empty-result match but
+uses a plausible domain query rather than a dummy. Relative to B1, B6R gains
+`local171` and `local310`, loses `local068`, and improves by one example (+3.23
+percentage points). It uses 83.56% more input tokens than B1 and 12.50% fewer
+than B2.
+
+The six failures are nested-window misuse (`local068`), timeout/interruption
+(`local169`, `local170`), token-cap truncation (`local279`), an undefined
+alias/column (`local311`), and SQLite-incompatible `generate_series`
+(`local355`). No B6R output contains `QUALIFY` or the forbidden dummy pattern.
+
+Prediction SHA-256:
+**46664f819ce0d8faa2fe377babda3a6555df38477e0570415df146345df26577**.
+Report SHA-256:
+**aaa130ec8e2f606058c413ac9434f49b9af618ec2fb5da45214f4896bd7802fc**.
+The 104 test IDs remained sealed.

@@ -1,9 +1,11 @@
 # Schema representations
 
-The project has two separate, deterministic schema representations:
+The project has three separate, deterministic schema stages:
 
 - SCHEMA-001 canonical JSON is the internal, versioned source of truth used for validation and audit hashes.
 - SCHEMA-002 M-Schema is the model-facing B2 prompt representation derived only from that canonical snapshot.
+- LINK-001 derives a question-specific canonical subset and linked M-Schema for B6.
+- LINK-002 adds the B6R recall policy and hybrid full-compact/linked-detail prompt.
 
 The completed B1 simple-schema serializer remains unchanged so B1 results stay reproducible.
 
@@ -66,3 +68,46 @@ PYTHONPATH=src .venv/bin/python -m unittest discover -s tests -v
 ```
 
 The tests cover PK/FK rendering, injection-safe string escaping, sensitive-column omission, read-only sampling, invalid example rejection, B2 prompt/report plumbing, and frozen M-Schema hashes for all six development databases.
+
+
+## Linked M-Schema representation (LINK-001)
+
+The **linked_mschema** prompt variant is versioned as
+**exp003-linked-mschema-v1**. It runs the deterministic
+**extractive-lexical-v1** linker over the full canonical schema and bounded
+SCHEMA-002 samples, then serializes only selected tables, columns, keys,
+relationships, and values.
+
+The linker scores lexical table/column matches and allowed representative values,
+suppresses generic-column false positives, retains primary/FK columns, and adds
+shortest FK connector paths. A no-match question uses the complete schema as a
+recall-safe fallback. The full canonical schema hash remains the database
+identity; a separate linked-schema hash records the selected subset.
+
+The provider-free 31-example audit selected 124/751 repeated tables and
+524/4,569 repeated columns. Prompt characters fell by 82.22%, and the
+provider-independent whitespace-token proxy fell by 78.20%. No full-schema
+fallback was used. These numbers measure context reduction, not Execution
+Accuracy.
+
+LINK-001 and LINK-002 are **DONE**. Frozen B6 scored 1/31, confirming
+that the linked-only subset was too aggressive. Recall-repaired B6R scored 6/31
+with 25/31 executable outputs and improved by one example over B1. B6R keeps
+all columns in selected tables and adds the complete compact identifier inventory
+before linked M-Schema detail. Exact real aggregate schema recall cannot be
+claimed because protected reference SQL is unavailable for 30 examples; fixture
+annotations test precision/recall/F1 behavior instead.
+
+See **docs/schema-linking.md** for the algorithm, frozen policy, audit hash,
+commands, limitations, and Definition of Done.
+
+Additional verification:
+
+    PYTHONPATH=src .venv/bin/python -m unittest \
+      tests.test_schema_linker \
+      tests.test_linking_audit \
+      tests.test_pipeline \
+      tests.test_baseline_experiment \
+      -v
+
+The complete offline suite is currently 91/91.

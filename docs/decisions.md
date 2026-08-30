@@ -75,3 +75,26 @@
 - **Decision:** Use the pinned official `exec_result` CSV variants plus `condition_cols` and `ignore_order` metadata as the primary EVAL-003 reference. Execute generated SQL once in isolated SQLite, accept a match against any paired official variant, hash every database/CSV/metadata resource, and preserve EVAL-002 as an explicit optional SQL audit mode.
 - **Reason:** This uses a complete, versioned official evaluation artifact and preserves the model/evaluation boundary without fabricating SQL.
 - **Consequences:** Phase 1 and development preflight no longer depend on the 30 unavailable SQL files. Results remain labelled as the custom DB-disjoint SQLite split, not the full Spider2 leaderboard.
+
+
+## ADR-009 - Deterministic lexical linker with recall-safe fallback
+
+- **Date:** 2026-08-30
+- **Status:** accepted
+- **Problem:** Full M-Schema B2 doubled input context relative to B1 and reduced development accuracy, but a learned extractive linker would add training data, dependencies, and a new model before the basic linking hypothesis had been isolated. Missing reference SQL also prevents trustworthy aggregate schema gold labels for 30/31 development examples.
+- **Options:** wait for a trained paper reproduction; use another paid LLM as a linker; filter only tables; implement a transparent lexical/value extractor with structural closure; continue sending the full schema.
+- **Decision:** Implement versioned **extractive-lexical-v1** scoring over question, canonical identifiers, and already allowed bounded samples. Select a bounded number of direct tables/columns, retain PK/FK endpoints, add deterministic shortest FK paths, and use the complete schema when nothing reaches the threshold. Audit every score/selection and freeze an independent B2-plus-link B6 prototype before retrieval/DSPy.
+- **Reason:** This provides a cheap, deterministic and inspectable baseline that directly tests context reduction, preserves joinability, prevents silent no-match data loss, and does not cross the gold/test boundary.
+- **Consequences:** The offline audit can report table/column/prompt reduction but not SQL correctness. Fixture annotations support linking precision/recall/F1; the real 31-example claim must rely on EVAL-003 after an authorized live B6 run. Any trained, embedding-based, or B5-combined linker requires a new version/config rather than modifying the frozen v1 result.
+
+
+## ADR-010 - Preserve failed B6 and introduce a recall-first B6R arm
+
+- **Date:** 2026-08-30
+- **Status:** accepted
+- **Problem:** Frozen B6 reduced input tokens but scored 1/31. Several B1-correct examples lost required tables or columns during linking, and the sole B6 match was a dummy empty query. Editing B6 in place would destroy reproducibility.
+- **Options:** tune the frozen B6 policy in place; abandon linking; add only stricter prompt wording; create a new recall-first hybrid arm; move directly to retrieval.
+- **Decision:** Keep B6 and its artifacts unchanged. Add separately versioned B6R with up to eight direct tables, every column in selected tables, a complete compact schema identifier inventory, linked detailed M-Schema as priority context, and explicit SQLite/single-read-only-query/no-dummy instructions. Keep model and generation settings unchanged for the first live comparison.
+- **Reason:** This directly addresses the observed identifier omissions while preserving a controlled comparison and the evidentiary value of the negative B6 result.
+- **Consequences:** B6R sacrifices most B6 compression and may exceed full B2 on a whitespace-token proxy. Its offline audit proves context construction, not accuracy. B6R requires a new 31-example development run and may not be tuned against the sealed 104-example test split.
+- **Outcome:** The frozen B6R run scored 6/31 (19.35%) versus B1 5/31, B2 2/31, and B6 1/31. The recall repair recovered five B6 failures but remains too weak for final use without retrieval/validation work. The test split remained sealed.

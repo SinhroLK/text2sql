@@ -2,7 +2,7 @@
 
 Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
-This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, and SCHEMA-002 provides deterministic M-Schema prompts with bounded representative values. The strict reference-SQL `EVAL-002` path remains optional.
+This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, and LINK-002 provides a recall-repaired B6R arm. The strict reference-SQL `EVAL-002` path remains optional.
 
 ## Requirements
 
@@ -36,7 +36,6 @@ text2sql --question "List customer names" --database data/fixtures/demo.sqlite
 
 ## Current scope
 
-- XiYan-compatible M-Schema serialization, safe read-only value sampling and B2 prompt integration;
 Implemented:
 
 - stable domain models;
@@ -66,11 +65,15 @@ Implemented:
 - deterministic `db_id` resolver, protected reference SQL store and Spider2 batch runner;
 - strict duplicate/missing/extra prediction and reference coverage;
 - official gold-result CSV variant evaluation with per-resource checksums;
-- a default Spider2 preflight that is ready for all 31 development examples.
+- a default Spider2 preflight that is ready for all 31 development examples;
+- deterministic lexical table/column schema linking with value matches;
+- primary/foreign-key preservation and shortest-path FK closure;
+- recall-safe full-schema fallback and per-selection audit metadata;
+- frozen linked-M-Schema B6 config, 31-example audit, and completed negative live result;
+- separate B6R hybrid full-compact/linked-detail prompt, config, audit, and tests.
 
 Not implemented yet:
 
-- extractive schema linking and B6 evaluation;
 - retrieval and DSPy optimization;
 - SQL AST validation and sandbox execution;
 - security evaluation;
@@ -128,6 +131,7 @@ mode, and optional strict SQL audit mode are documented in `docs/spider2-evaluat
 - `docs/sources-and-references.md` - living register of every paper, dataset,
   repository, documentation source and legacy input used by the project;
 - `docs/evaluation.md` - EVAL-001 execution and comparison contract;
+- `docs/schema-linking.md` - LINK-001 algorithm, frozen policy, offline audit, and B6 commands;
 - `docs/spider2-evaluation-runner.md` - EVAL-003 default workflow and optional EVAL-002 audit mode;
 - `artifacts/` - generated results, excluded from Git by default.
 
@@ -184,3 +188,33 @@ PYTHONPATH=src .venv/bin/python -m text2sql.experiments.cli \
 ```
 
 This uses the same model/settings and 31 development IDs as B1, with M-Schema as the only prompt-arm change. With the completed checkpoint present, it makes no Groq requests and regenerates the report. The 104-example test split remains sealed.
+
+
+## Schema-linking status
+
+LINK-001 is **DONE**. Frozen B6 covers 31/31 development examples and scored
+1/31 (3.23%) with 27/31 executable outputs. It used 18,287 input tokens, but
+its aggressive pruning removed identifiers needed by previously correct B1
+examples. The negative result and artifact hashes are preserved.
+
+LINK-002 is **DONE**. B6R keeps every column in selected tables and also shows
+the model the complete compact schema, while retaining linked M-Schema as
+priority detail. It covers 31/31 development examples and scores 6/31 (19.35%)
+with 25/31 executable outputs, improving by one correct example over B1.
+
+Run the provider-free B6R audit:
+
+    PYTHONPATH=src .venv/bin/python -m text2sql.experiments.linking_cli \
+      --experiment-config configs/experiments/exp004-b6r.toml \
+      --output artifacts/reports/exp004-b6r-linking-audit.json
+
+Re-score completed B6R (no provider calls with the complete checkpoint):
+
+    PYTHONPATH=src .venv/bin/python -m text2sql.experiments.cli \
+      --experiment-config configs/experiments/exp004-b6r.toml \
+      --predictions artifacts/experiments/exp004-b6r-predictions.jsonl \
+      --report artifacts/reports/exp004-b6r-report.json
+
+Prediction/report SHA-256 values are `46664f819c...6577` and
+`aaa130ec8e...2fc`. See **docs/schema-linking.md** for both frozen policies,
+comparative analysis, failures, limitations, and full hashes.

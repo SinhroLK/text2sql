@@ -1,8 +1,8 @@
 # Registar izvora i literature
 
 **Projekat:** Text-to-SQL master rad
-**Verzija registra:** 1.5
-**Poslednje ažuriranje:** 2026-08-29
+**Verzija registra:** 1.6
+**Poslednje ažuriranje:** 2026-08-30
 **Vlasnik registra:** autor projekta
 
 Ovaj dokument je jedinstveno mesto za evidenciju svakog naučnog rada, dataseta,
@@ -51,7 +51,7 @@ predstavlja samo pozadinsku literaturu ili je planiran za kasniju fazu.
 | `PAPER-SPIDER2-001` | `ACTIVE` | F. Lei et al., *Spider 2.0: Evaluating Language Models on Real-World Enterprise Text-to-SQL Workflows*, arXiv:2411.07763, 2024. <https://arxiv.org/abs/2411.07763> | Osnova za izbor modernog evaluacionog benchmarka i opis realnih Text-to-SQL izazova. |
 | `PAPER-XIYAN-001` | `ACTIVE` | Y. Gao et al., *A Preview of XiYan-SQL: A Multi-Generator Ensemble Framework for Text-to-SQL*, arXiv:2411.08599, v3, 2025. <https://arxiv.org/abs/2411.08599> | Primarni metodološki izvor za SCHEMA-002 M-Schema reprezentaciju; ideje o više kandidata i refineru ostaju opcione. |
 | `CODE-XIYAN-MSCHEMA-001` | `ACTIVE` | Zvanični `XGenerationLab/M-Schema` repozitorijum, commit `755751451be841f7a54f8b08c0a1f818b041a1c0`, pristupljeno 2026-08-29, Apache-2.0. <https://github.com/XGenerationLab/M-Schema/tree/755751451be841f7a54f8b08c0a1f818b041a1c0> | Referenca za kompatibilnu sekcijsku sintaksu, pojednostavljene tipove i najviše tri reprezentativna primera; projektna implementacija je nezavisna, read-only i strože filtrira vrednosti. |
-| `PAPER-SCHEMA-001` | `PLANNED` | M. Glass et al., *Extractive Schema Linking for Text-to-SQL*, arXiv:2501.17174, 2025. <https://arxiv.org/abs/2501.17174> | Osnova za extractive schema linking i kontrolisanje odnosa precision/recall pri izboru relevantne šeme. |
+| `PAPER-SCHEMA-001` | `ACTIVE` | M. Glass et al., *Extractive Schema Linking for Text-to-SQL*, arXiv:2501.17174, 2025. <https://arxiv.org/abs/2501.17174> | Metodološka osnova za extractive schema linking i kontrolisanje odnosa precision/recall. LINK-001 koristi nezavisni deterministički lexical/value baseline sa PK/FK closure-om i full-schema fallback-om; LINK-002/B6R dodaje recall-first hibridni kontekst posle negativnog B6 rezultata. Ne tvrdi se reprodukcija treniranog modela iz rada. |
 | `PAPER-DSPY-001` | `PLANNED` | O. Khattab et al., *DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines*, arXiv:2310.03714, 2023. <https://arxiv.org/abs/2310.03714> | Osnova za automatizovanu optimizaciju prompt programa umesto ručnog biranja prompta. |
 | `PAPER-P2SQL-001` | `PLANNED` | R. Pedro et al., *From Prompt Injections to SQL Injection Attacks: How Protected is Your LLM-Integrated Web Application?*, arXiv:2308.01990, v4, 2025. <https://arxiv.org/abs/2308.01990> | Osnova za prompt-to-SQL threat model, adversarial testove i input guardrails. |
 | `PAPER-CHASE-001` | `BACKGROUND` | M. Pourreza et al., *CHASE-SQL: Multi-Path Reasoning and Preference Optimized Candidate Selection in Text-to-SQL*, arXiv:2410.01943, 2024. <https://arxiv.org/abs/2410.01943> | Inspiracija za opciono generisanje više kandidata i izbor kandidata; puna multi-agent reprodukcija je van MVP obima. |
@@ -197,3 +197,6 @@ Zamenjuje ili je zamenjen izvorom:
 | 2026-08-18 | 1.3 | Evidentirani EVAL-002 resource audit, baze i nedostajući reference SQL. |
 | 2026-08-18 | 1.4 | Official execution-result CSV-ovi postavljeni kao primarni EVAL-003 gold resurs; reference SQL prebačen u opcioni audit status. |
 | 2026-08-29 | 1.5 | PAPER-XIYAN-001 aktiviran za SCHEMA-002; dodat pinned official M-Schema code izvor, licenca, datum pristupa i veza sa SQLite read-only sampling politikom. |
+| 2026-08-30 | 1.6 | PAPER-SCHEMA-001 aktiviran za LINK-001; evidentirano da je implementirani extractive-lexical-v1 transparentan projektni baseline, a ne reprodukcija treniranog linkera iz rada. |
+| 2026-08-30 | 1.7 | Evidentiran završeni negativni B6 rezultat i zasebni LINK-002/B6R recall-first eksperiment; izvor i ograničenje tvrdnje ostaju nepromenjeni. |
+| 2026-08-30 | 1.8 | Završen B6R live/EVAL-003 rezultat 6/31; evidentirano da recall repair nadmašuje B1 za jedan primer, ali ostaje slab apsolutni rezultat. |

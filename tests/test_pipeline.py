@@ -10,7 +10,12 @@ from unittest.mock import patch
 from text2sql.observability import append_jsonl
 from text2sql.pipeline import Text2SQLPipeline
 from text2sql.providers import MockSchemaAwareProvider
-from text2sql.schema import inspect_sqlite_schema, serialize_simple_schema
+from text2sql.schema import (
+    RecallSchemaLinkingPolicy,
+    SchemaLinkingPolicy,
+    inspect_sqlite_schema,
+    serialize_simple_schema,
+)
 
 
 SCHEMA_SQL = """
@@ -85,6 +90,90 @@ class PipelineTest(unittest.TestCase):
         self.assertEqual(
             first.metadata["schema_representation"], "xiyan-compatible-v1"
         )
+
+    def test_linked_mschema_records_subset_and_linker_audit(self) -> None:
+        pipeline = Text2SQLPipeline(MockSchemaAwareProvider())
+        result = pipeline.generate(
+            "List customer first names",
+            self.database_path,
+            db_id="fixture",
+            prompt_variant="linked_mschema",
+        )
+
+        self.assertEqual(
+            result.prompt_version, "exp003-linked-mschema-v1"
+        )
+        self.assertEqual(
+            result.metadata["schema_representation"],
+            "xiyan-compatible-v1+extractive-lexical-v1",
+        )
+        linking = result.metadata["schema_linking"]
+        self.assertIsInstance(linking, dict)
+        self.assertEqual(linking["selected_table_count"], 1)
+        self.assertEqual(linking["direct_table_names"], ["customers"])
+        self.assertGreater(linking["table_reduction_ratio"], 0.0)
+        self.assertNotEqual(
+            result.metadata["linked_schema_hash"], result.schema_hash
+        )
+
+    def test_hybrid_linked_prompt_preserves_full_schema_and_recall_rules(self) -> None:
+        provider = MockSchemaAwareProvider()
+        pipeline = Text2SQLPipeline(provider)
+        with patch.object(
+            provider, "generate", wraps=provider.generate
+        ) as generate:
+            result = pipeline.generate(
+                "List customer first names",
+                self.database_path,
+                db_id="fixture",
+                prompt_variant="hybrid_linked_mschema",
+                schema_linking_policy=RecallSchemaLinkingPolicy(
+                    max_tables=1,
+                    max_columns_per_table=1,
+                    minimum_columns_per_table=1,
+                ),
+            )
+
+        generation_input = generate.call_args.args[0]
+        self.assertEqual(
+            result.prompt_version, "exp004-recall-linked-mschema-v1"
+        )
+        self.assertEqual(
+            [table.name for table in generation_input.schema.tables],
+            ["customers", "orders"],
+        )
+        self.assertIn("Complete compact schema", generation_input.prompt)
+        self.assertIn("Linked detailed M-Schema", generation_input.prompt)
+        self.assertIn("orders", generation_input.prompt)
+        self.assertIn("do not use QUALIFY", generation_input.prompt)
+        self.assertIn("Never return a dummy", generation_input.prompt)
+        self.assertEqual(
+            result.metadata["schema_linking"]["selected_column_count"],
+            3,
+        )
+        self.assertNotEqual(
+            result.metadata["linked_schema_hash"], result.schema_hash
+        )
+
+    def test_hybrid_prompt_rejects_column_pruning_policy(self) -> None:
+        pipeline = Text2SQLPipeline(MockSchemaAwareProvider())
+        with self.assertRaisesRegex(ValueError, "recall"):
+            pipeline.generate(
+                "List customers",
+                self.database_path,
+                prompt_variant="hybrid_linked_mschema",
+                schema_linking_policy=SchemaLinkingPolicy(),
+            )
+
+    def test_schema_linking_policy_requires_linked_prompt(self) -> None:
+        pipeline = Text2SQLPipeline(MockSchemaAwareProvider())
+        with self.assertRaisesRegex(ValueError, "linked_mschema"):
+            pipeline.generate(
+                "List customers",
+                self.database_path,
+                prompt_variant="simple_schema",
+                schema_linking_policy=SchemaLinkingPolicy(),
+            )
 
     def test_jsonl_writer_appends_valid_json(self) -> None:
         output_path = Path(self.temp_dir.name) / "result.jsonl"

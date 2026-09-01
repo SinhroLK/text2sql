@@ -153,8 +153,8 @@ evaluator unchanged. Its only current experimental change is the versioned
 **extractive-lexical-v1** schema subset and
 **exp003-linked-mschema-v1** prompt.
 
-This early B6 prototype intentionally isolates linking directly against B2
-because B3-B5 retrieval/DSPy components are not implemented. A future cumulative
+This early B6 prototype intentionally isolated linking directly against B2
+because B3-B5 retrieval/DSPy components were not implemented when it was frozen. A future cumulative
 B5+link arm must receive a new experiment/config identifier; it cannot overwrite
 this result.
 
@@ -246,3 +246,92 @@ Prediction SHA-256:
 Report SHA-256:
 **aaa130ec8e2f606058c413ac9434f49b9af618ec2fb5da45214f4896bd7802fc**.
 The 104 test IDs remained sealed.
+
+## RET-001: Spider 1.0 train-only retrieval index
+
+RET-001 is complete and does not call an LLM. It pins the official Yale LILY
+Spider archive, uses only `train_spider.json`, and validates its 7,000 records
+and 140 databases against `tables.json`. Source checksums are verified before
+JSON parsing.
+
+The index firewall requires exact coverage of all 135 frozen Spider2 metadata
+records and all 30 Spider2 SQLite databases before index construction. Every
+Spider 1.0 entry is rejected if its generated ID, case-folded database ID, or
+normalized question overlaps Spider2 development or test metadata. The completed
+audit found zero overlaps in all three categories.
+
+The deterministic JSONL index has SHA-256
+`82ee39e03792647fa7efeddf1fcd293ca068f0fc879d9a88cc27c8546550389e`.
+Its version-controlled config and expected manifest are under
+`configs/datasets/`; the local artifact is under
+`artifacts/retrieval/spider1-train-v1/`.
+
+Rebuild and verify it without provider access:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.retrieval.cli
+```
+
+RET-001 creates a safe candidate corpus. RET-002 separately freezes random B3
+and similarity B4 selection policies, records the exact retrieved IDs per
+target, and keeps the 104-example test outcomes sealed.
+
+## RET-002: B3/B4 few-shot retrieval arms
+
+The offline portion of RET-002 is complete. B3
+(`exp005-b3-gpt-oss-120b-v1`) uses `random-fixed-v1`, `k=3`, and retrieval seed
+42. Its three demonstrations are sampled once and shared by all targets. B4
+(`exp006-b4-gpt-oss-120b-v1`) uses deterministic `tfidf-cosine-v1`, `k=3`,
+with stable retrieval-ID tie-breaking. The standard-library TF-IDF index is fit
+only over normalized Spider 1.0 train questions.
+
+Both arms keep the B2 model, generation parameters, full M-Schema sampling
+policy, dataset, and evaluator fixed. They share
+`exp005-fewshot-mschema-v1`; only the demonstration-selection strategy differs.
+The prompt labels demonstrations as external training examples and explicitly
+forbids copying their database identifiers into the target query.
+
+Provider-free audits cover exactly 31 development targets and 93 selections per
+arm. B3 uses 3 unique examples from 3 databases, each appearing for all 31
+targets. B4 uses 85 unique examples from 40 databases; no example appears more
+than 3 times. Rebuilding produces identical files:
+
+| Arm | Audit SHA-256 |
+|---|---|
+| B3 | `3df8e8695d1006ec9f96efc50b9e1f52c5266de6459c54da3659e86bfd797dcc` |
+| B4 | `a16409c01f81e9822ccc6db41f4dc9debc878b60ca9828d11f426c3892d188c1` |
+
+Reproduce the audits without `GROQ_API_KEY`:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.experiments.retrieval_cli \
+  --experiment-config configs/experiments/exp005-b3.toml
+PYTHONPATH=src .venv/bin/python -m text2sql.experiments.retrieval_cli \
+  --experiment-config configs/experiments/exp006-b4.toml
+```
+
+Both live arms now cover exactly 31 development IDs and RET-002 is complete:
+
+| Arm | Correct | Execution accuracy | Executable SQL | Input/output tokens | p50/p95 latency | Estimated Groq cost |
+|---|---:|---:|---:|---:|---:|---:|
+| B3 fixed-random | 4/31 | 12.90% | 23/31 | 117,785 / 14,043 | 1,828 / 3,913 ms | $0.026094 |
+| B4 TF-IDF cosine | 5/31 | 16.13% | 23/31 | 115,556 / 13,145 | 1,872 / 2,996 ms | $0.025220 |
+
+B3 correct IDs are `local068`, `local202`, `local275`, and `local311`. B4
+retains those four and additionally solves `local272`. Similarity selection
+therefore improves on fixed random by one example (+3.23 percentage points),
+but only matches B1 and remains below B6R's 6/31. This is evidence for a small
+retrieval benefit, not a strong absolute result.
+
+Prediction/report SHA-256 values:
+
+| Arm | Predictions | Report |
+|---|---|---|
+| B3 | `5530acf94c632e4bcc352f37b8b2e72c4b90325368944cba836db85ad9255898` | `d00a8e82ea468f4790a1a64581c9985883ae2df0885faf1fba6a7972215f7389` |
+| B4 | `d64cd4f5e74cecce79c4aa465b8c762246b25241b5ec2e9f7b850b8f3c7bc580` | `0d2e995ebc7ce2e63b45b8416f301d84794cfe10ece35ee3a0739bccb3c5307a` |
+
+The final B4 request initially exposed a TPD 429. The provider now reports a
+sanitized Groq quota category and retry/reset details without exposing account
+IDs or key-like strings. The run resumed unchanged after the server-provided
+reset. The verified suite passes 108/108 tests and the 104-example test split
+remains sealed.

@@ -11,6 +11,37 @@ Planned layout:
 
 The original two-column `spider_text_sql.csv` is preserved outside the new pipeline as legacy material. It must not be used for final evaluation because it lacks `db_id`, database schemas and the official split.
 
+## Frozen Spider 1.0 retrieval source
+
+RET-001 uses only `train_spider.json` from the official Spider 1.0 archive.
+The official Yale LILY page distributes the archive under CC BY-SA 4.0. The
+archive, source files and generated retrieval artifact are not committed.
+
+Pinned identity:
+
+- official page repository commit: `08abddcedadc43a59e516c9c55b971b8a8ffcd4e`;
+- Spider code repository commit: `b7b5b8c890cd30e35427348bb9eb8c6d1350ca7c`;
+- official archive SHA-256: `00636695dabed6b5f4b8328a16b13e069a2f16591d5efcce57660669c85b121b`;
+- `train_spider.json` SHA-256: `c43d0d72e59e1a9e1a60837da9bf70d5a6277226bdb7f634d544f380646f527a`;
+- `tables.json` SHA-256: `61bb20aa401f03164e2d7f3b16509b7b5f79cc9c943ca7bd159046df1159e2ed`.
+
+Place the archive at `data/raw/spider1/spider_data.zip` and extract
+`spider_data/train_spider.json` and `spider_data/tables.json` below that
+directory. Then run:
+
+```bash
+PYTHONPATH=src python -m text2sql.retrieval.cli
+```
+
+The frozen config and output contract are
+`configs/datasets/spider1-train-retrieval-v1.toml` and
+`configs/datasets/spider1-train-retrieval-manifest-v1.json`. The generated
+index contains 7,000 records from 140 training databases and has SHA-256
+`82ee39e03792647fa7efeddf1fcd293ca068f0fc879d9a88cc27c8546550389e`.
+Its firewall checks all 135 Spider2 IDs/questions and 30 databases and records
+zero overlaps. Spider `dev.json`, `test.json`, Spider2 examples and the
+legacy CSV are not retrieval sources.
+
 ## Frozen Spider2-Lite source
 
 `DATA-001` does not commit benchmark databases. It freezes their identity in:

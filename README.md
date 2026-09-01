@@ -2,7 +2,7 @@
 
 Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
-This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, and LINK-002 provides a recall-repaired B6R arm. The strict reference-SQL `EVAL-002` path remains optional.
+This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, LINK-002 provides a recall-repaired B6R arm, RET-001 provides a checksum-gated Spider 1.0 train-only retrieval index, and RET-002 provides completed B3/B4 few-shot experiments. The strict reference-SQL `EVAL-002` path remains optional.
 
 ## Requirements
 
@@ -71,10 +71,16 @@ Implemented:
 - recall-safe full-schema fallback and per-selection audit metadata;
 - frozen linked-M-Schema B6 config, 31-example audit, and completed negative live result;
 - separate B6R hybrid full-compact/linked-detail prompt, config, audit, and tests.
+- pinned official Spider 1.0 training source, license, archive and input checksums;
+- deterministic 7,000-example / 140-database train-only retrieval index;
+- exact Spider2 ID, database and normalized-question leakage firewall;
+- version-controlled retrieval manifest and checksum-verifying artifact loader.
+- frozen B3 fixed-random and B4 TF-IDF cosine selectors and experiment configs;
+- few-shot M-Schema prompt integration and provider-free per-target retrieval audit.
 
 Not implemented yet:
 
-- retrieval and DSPy optimization;
+- DSPy optimization over the completed B4 foundation;
 - SQL AST validation and sandbox execution;
 - security evaluation;
 - Gradio application built on the new pipeline.
@@ -97,6 +103,34 @@ The command verifies the source checksum and the version-controlled DATA-003
 manifest before writing `examples.jsonl` and `dataset-manifest.json` under
 `data/processed/spider2-lite-sqlite-v1/`. It does not read or emit gold SQL and
 does not execute database queries.
+
+## Train-only retrieval index
+
+After acquiring the official Spider archive as documented in `data/README.md`,
+build and verify the RET-001 artifact with:
+
+```bash
+PYTHONPATH=src python3 -m text2sql.retrieval.cli
+```
+
+The command verifies the pinned Spider 1.0 train and schema files before parsing,
+requires exact coverage of the frozen Spider2 firewall, rejects every Spider2 ID,
+database or normalized-question overlap, and writes 7,000 deterministic training
+entries under `artifacts/retrieval/spider1-train-v1/`. RET-002 connects the
+verified index to separately frozen B3/B4 few-shot prompts.
+
+Audit both selectors over all 31 development targets without a provider key:
+
+```bash
+PYTHONPATH=src python3 -m text2sql.experiments.retrieval_cli \
+  --experiment-config configs/experiments/exp005-b3.toml
+PYTHONPATH=src python3 -m text2sql.experiments.retrieval_cli \
+  --experiment-config configs/experiments/exp006-b4.toml
+```
+
+The audit records retrieved IDs, source databases, ranks and similarity scores,
+but does not call Groq or read Spider2 test outcomes. Completed development
+results are B3 4/31 and B4 5/31; the sealed test split was not opened.
 
 ## Execution evaluator
 
@@ -121,6 +155,7 @@ mode, and optional strict SQL audit mode are documented in `docs/spider2-evaluat
 ## Repository map
 
 - `src/text2sql/` - reusable pipeline code;
+- `src/text2sql/retrieval/` - train-only retrieval index and leakage firewall;
 - `configs/` - versioned experiment and security configuration;
 - `configs/datasets/spider2-lite-sqlite-metadata-manifest-v1.json` - frozen
   DATA-003 output contract;

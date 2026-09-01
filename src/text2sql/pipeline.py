@@ -7,12 +7,15 @@ from pathlib import Path
 
 from text2sql.domain import GenerationInput, GenerationResult
 from text2sql.prompting import (
+    FEWSHOT_MSCHEMA_PROMPT_VERSION,
+    FewShotExample,
     LINKED_MSCHEMA_PROMPT_VERSION,
     MSCHEMA_PROMPT_VERSION,
     QUESTION_ONLY_PROMPT_VERSION,
     RECALL_LINKED_MSCHEMA_PROMPT_VERSION,
     SIMPLE_SCHEMA_PROMPT_VERSION,
     build_baseline_prompt,
+    build_fewshot_mschema_prompt,
     build_linked_mschema_prompt,
     build_mschema_prompt,
     build_question_only_prompt,
@@ -53,6 +56,8 @@ class Text2SQLPipeline:
         prompt_variant: str = "simple_schema",
         mschema_sample_policy: MSchemaSamplePolicy | None = None,
         schema_linking_policy: SchemaLinkingPolicy | None = None,
+        few_shot_examples: tuple[FewShotExample, ...] = (),
+        retrieval_audit: dict[str, object] | None = None,
     ) -> GenerationResult:
         schema = inspect_sqlite_schema(database_path, db_id=db_id)
         schema_hash = canonical_schema_sha256(schema)
@@ -60,7 +65,7 @@ class Text2SQLPipeline:
             "linked_mschema",
             "hybrid_linked_mschema",
         }
-        mschema_variants = {"mschema", *linking_variants}
+        mschema_variants = {"mschema", "fewshot_mschema", *linking_variants}
         if prompt_variant not in mschema_variants and mschema_sample_policy is not None:
             raise ValueError(
                 "M-Schema sample policy requires an M-Schema prompt variant"
@@ -72,6 +77,15 @@ class Text2SQLPipeline:
             raise ValueError(
                 "Schema-linking policy requires linked_mschema or "
                 "hybrid_linked_mschema"
+            )
+        if prompt_variant == "fewshot_mschema":
+            if not few_shot_examples or retrieval_audit is None:
+                raise ValueError(
+                    "fewshot_mschema requires examples and retrieval audit"
+                )
+        elif few_shot_examples or retrieval_audit is not None:
+            raise ValueError(
+                "Few-shot examples and retrieval audit require fewshot_mschema"
             )
         if (
             prompt_variant == "hybrid_linked_mschema"
@@ -149,6 +163,12 @@ class Text2SQLPipeline:
                     schema_representation = (
                         f"{MSCHEMA_VERSION}+{SCHEMA_LINKER_VERSION}"
                     )
+            elif prompt_variant == "fewshot_mschema":
+                prompt = build_fewshot_mschema_prompt(
+                    question, schema, examples, few_shot_examples
+                )
+                prompt_version = FEWSHOT_MSCHEMA_PROMPT_VERSION
+                schema_representation = MSCHEMA_VERSION
             else:
                 prompt = build_mschema_prompt(question, schema, examples)
                 prompt_version = MSCHEMA_PROMPT_VERSION
@@ -186,7 +206,11 @@ class Text2SQLPipeline:
             input_tokens=response.input_tokens,
             output_tokens=response.output_tokens,
             metadata={
-                "phase": 3 if prompt_variant in mschema_variants else 2,
+                "phase": (
+                    4
+                    if prompt_variant == "fewshot_mschema"
+                    else 3 if prompt_variant in mschema_variants else 2
+                ),
                 "prompt_variant": prompt_variant,
                 "schema_representation": schema_representation,
                 "linked_schema_hash": (
@@ -207,5 +231,6 @@ class Text2SQLPipeline:
                     else None
                 ),
                 "provider": response.metadata,
+                "retrieval": retrieval_audit,
             },
         )

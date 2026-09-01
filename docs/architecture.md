@@ -1,6 +1,6 @@
 # Architecture
 
-The current implementation supports baseline, full-schema, M-Schema, and linked and hybrid linked-M-Schema generation over the frozen Spider2-Lite SQLite development protocol.
+The current implementation supports baseline, full-schema, M-Schema, few-shot M-Schema, and linked and hybrid linked-M-Schema generation over the frozen Spider2-Lite SQLite development protocol. It also provides a verified Spider 1.0 train-only retrieval index plus deterministic B3/B4 selectors and provider-free per-target retrieval audits.
 
 ```text
 question + SQLite database
@@ -13,8 +13,9 @@ question + SQLite database
              -> full-schema fallback when no table reaches threshold
         -> linked M-Schema prompt (B6)
           or complete compact schema + linked detail (B6R)
+          or full M-Schema + three verified Spider 1.0 demonstrations (B3/B4)
         -> provider candidate + usage metadata
-        -> append-only prediction checkpoint and linking audit
+        -> append-only prediction checkpoint and linking/retrieval audit
         -> separate EVAL-003 read-only execution/result comparison
 ```
 
@@ -33,8 +34,15 @@ Joinability is protected by retaining primary keys, foreign-key endpoints and de
 
 Provider-free audits compare full B2 with linked B6 or hybrid B6R context on
 development metadata. B6 accuracy is frozen at 1/31 and B6R at 6/31 after separate EVAL-003 scoring.
-The next architectural increment is train-only retrieval; neither result permits
-opening the test split. Fixture annotations are the only current source of linker precision/recall/F1.
+RET-001 freezes 7,000 Spider 1.0 training demonstrations from 140 databases.
+Its loader verifies source and artifact checksums and rejects Spider2 ID,
+database, or normalized-question overlap. RET-002 adds fixed seeded random B3
+selection and deterministic TF-IDF cosine B4 selection. Both use the same
+few-shot M-Schema prompt and record every selected retrieval ID, database, rank,
+and score. Provider-free audits cover all 31 development targets; completed
+live results are B3 4/31 and B4 5/31. Neither retrieval work nor the B6R result permits
+opening the test split.
+Fixture annotations are the only current source of linker precision/recall/F1.
 
 ## Design rules
 
@@ -46,7 +54,8 @@ opening the test split. Fixture annotations are the only current source of linke
 - Linker policy and version are configuration data recorded in every B6 or B6R result.
 - Experiment checkpoints are append-only JSONL and resume without repeating completed IDs.
 - Development and test coverage is enforced by the dataset/evaluation boundaries.
+- Retrieval artifacts must verify as Spider 1.0 train-only before any selector can consume them.
+- B3/B4 selectors and index identities are frozen in config; every target records its exact selection.
 - Every component is callable from modules, scripts and tests without a notebook kernel.
 
 The target offline/online architecture, task dependencies and remaining safety/retrieval work are maintained in `docs/project-plan-roadmap.md`.
-

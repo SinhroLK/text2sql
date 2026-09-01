@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,10 @@ from text2sql.schema import (
     SCHEMA_LINKER_VERSION,
     RecallSchemaLinkingPolicy,
     SchemaLinkingPolicy,
+)
+from text2sql.retrieval import (
+    RANDOM_RETRIEVAL_VERSION,
+    SIMILARITY_RETRIEVAL_VERSION,
 )
 
 
@@ -42,6 +47,12 @@ class BaselineExperimentConfig:
     schema_link_include_foreign_key_closure: bool
     schema_link_include_all_selected_table_columns: bool
     schema_link_fallback_mode: str | None
+    retrieval_index_id: str | None
+    retrieval_index_sha256: str | None
+    retrieval_manifest_sha256: str | None
+    retrieval_strategy: str | None
+    retrieval_k: int
+    retrieval_seed: int | None
     max_retries: int
     timeout_seconds: float
     config_path: Path
@@ -90,12 +101,14 @@ def load_baseline_config(path: str | Path) -> BaselineExperimentConfig:
         "B0": "question_only",
         "B1": "simple_schema",
         "B2": "mschema",
+        "B3": "fewshot_mschema",
+        "B4": "fewshot_mschema",
         "B6": "linked_mschema",
         "B6R": "hybrid_linked_mschema",
     }.get(baseline)
     if expected_variant is None or prompt_variant != expected_variant:
         raise ExperimentConfigurationError(
-            "Baseline and prompt_variant do not match B0, B1, B2, B6, or B6R"
+            "Baseline and prompt_variant do not match a supported frozen arm"
         )
     if split != "development":
         raise ExperimentConfigurationError(
@@ -127,7 +140,7 @@ def load_baseline_config(path: str | Path) -> BaselineExperimentConfig:
         raise ExperimentConfigurationError(
             "reasoning_effort must be low, medium, or high"
         )
-    if baseline in {"B2", "B6", "B6R"}:
+    if baseline in {"B2", "B3", "B4", "B6", "B6R"}:
         mschema_examples_per_column = _required(
             data, "mschema_examples_per_column", int
         )
@@ -237,6 +250,59 @@ def load_baseline_config(path: str | Path) -> BaselineExperimentConfig:
         schema_link_include_all_selected_table_columns = False
         schema_link_fallback_mode = None
 
+    if baseline in {"B3", "B4"}:
+        retrieval_index_id = _required(data, "retrieval_index_id", str)
+        retrieval_index_sha256 = _required(
+            data, "retrieval_index_sha256", str
+        )
+        retrieval_manifest_sha256 = _required(
+            data, "retrieval_manifest_sha256", str
+        )
+        retrieval_strategy = _required(data, "retrieval_strategy", str)
+        retrieval_k = _required(data, "retrieval_k", int)
+        retrieval_seed = data.get("retrieval_seed")
+        expected_strategy = (
+            RANDOM_RETRIEVAL_VERSION
+            if baseline == "B3"
+            else SIMILARITY_RETRIEVAL_VERSION
+        )
+        if retrieval_strategy != expected_strategy:
+            raise ExperimentConfigurationError(
+                f"{baseline} requires retrieval strategy {expected_strategy!r}"
+            )
+        if (
+            not retrieval_index_id.strip()
+            or retrieval_k <= 0
+            or not all(
+                re.fullmatch(r"[0-9a-f]{64}", value)
+                for value in (
+                    retrieval_index_sha256,
+                    retrieval_manifest_sha256,
+                )
+            )
+        ):
+            raise ExperimentConfigurationError(
+                "Invalid retrieval index identity, hash, or k"
+            )
+        if baseline == "B3" and (
+            not isinstance(retrieval_seed, int)
+            or isinstance(retrieval_seed, bool)
+        ):
+            raise ExperimentConfigurationError(
+                "B3 random retrieval requires an integer retrieval_seed"
+            )
+        if baseline == "B4" and retrieval_seed is not None:
+            raise ExperimentConfigurationError(
+                "B4 TF-IDF retrieval must not define retrieval_seed"
+            )
+    else:
+        retrieval_index_id = None
+        retrieval_index_sha256 = None
+        retrieval_manifest_sha256 = None
+        retrieval_strategy = None
+        retrieval_k = 0
+        retrieval_seed = None
+
     max_retries = _required(data, "max_retries", int)
     if max_tokens <= 0 or max_retries < 0 or timeout_seconds <= 0:
         raise ExperimentConfigurationError(
@@ -274,6 +340,12 @@ def load_baseline_config(path: str | Path) -> BaselineExperimentConfig:
             schema_link_include_all_selected_table_columns
         ),
         schema_link_fallback_mode=schema_link_fallback_mode,
+        retrieval_index_id=retrieval_index_id,
+        retrieval_index_sha256=retrieval_index_sha256,
+        retrieval_manifest_sha256=retrieval_manifest_sha256,
+        retrieval_strategy=retrieval_strategy,
+        retrieval_k=retrieval_k,
+        retrieval_seed=retrieval_seed,
         max_retries=max_retries,
         timeout_seconds=float(timeout_seconds),
         config_path=source,

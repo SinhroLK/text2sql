@@ -1,7 +1,7 @@
 # Registar izvora i literature
 
 **Projekat:** Text-to-SQL master rad
-**Verzija registra:** 1.6
+**Verzija registra:** 2.1
 **Poslednje ažuriranje:** 2026-08-30
 **Vlasnik registra:** autor projekta
 
@@ -70,7 +70,7 @@ predstavlja samo pozadinsku literaturu ili je planiran za kasniju fazu.
 | `DATA-SPIDER2-GOLD-SQL-001` | `BACKGROUND` | Zaštićeni/official reference SQL vezan za isti pinned snapshot | Optional EVAL-002 audit resurs. Dostupan je `local309.sql`; preostalih 30 fajlova se ne sintetizuje i ne blokira EVAL-003. |
 | `DATA-SPIDER2-SPLIT-001` | `ACTIVE` | `configs/datasets/spider2-lite-sqlite-split-v1.json` | Kanonski spisak development/test baza i instance ID-jeva. Rezultat se naziva `Spider2-Lite SQLite custom DB-disjoint test split`, a ne puni Spider2-Lite score. |
 | `DATA-SPIDER2-METADATA-001` | `ACTIVE` | `configs/datasets/spider2-lite-sqlite-metadata-manifest-v1.json`; normalizovani `examples.jsonl` SHA-256 `9951e147543c819597dec0336c486612171e36c73ddc5b7e8b387e6f20b6c9f0` | DATA-003 ugovor za deterministički metadata-only izlaz; eksplicitno ne sadrži gold SQL ni database fajlove. |
-| `DATA-SPIDER1-001` | `PLANNED` | Zvanični Spider 1.0 train split; tačan upstream commit, licenca i checksum biće dodati tokom `DATA-002`/`RET-001` | Planirani eksterni retrieval/few-shot korpus. Spider2 primeri su zabranjeni u retrieval indeksu. |
+| `DATA-SPIDER1-001` | `ACTIVE` | Official Yale LILY Spider page at commit `08abddcedadc43a59e516c9c55b971b8a8ffcd4e`; code repo `taoyds/spider` at `b7b5b8c890cd30e35427348bb9eb8c6d1350ca7c`; CC BY-SA 4.0 archive SHA-256 `00636695...b121b`; `train_spider.json` `c43d0d72...f527a`; `tables.json` `61bb20aa...e2ed` | RET-001 external train-only corpus: 7.000 examples / 140 databases, deterministic index SHA-256 `82ee39e0...0389e`. Full Spider2 firewall records zero ID, database and normalized-question overlaps; dev/test Spider 1.0 files and all Spider2 examples are excluded. |
 | `DATA-LEGACY-CSV-001` | `LEGACY` | Originalni `spider_text_sql.csv`; hash je naveden u odeljku 5 | Raniji dvokolonski eksperimentalni skup. Ne koristi se za finalnu evaluaciju jer nema `db_id`, šeme i pouzdan zvanični split. |
 
 ## 3. Naučna literatura iz postojeće prijave master rada
@@ -90,7 +90,7 @@ Duplikat rada Peng et al. iz originalne bibliografije ovde je spojen u jedan zap
 | `LIT-GRAMMAR-001` | `BACKGROUND` | K. Lin et al., *Grammar-based Neural Text-to-SQL Generation*, arXiv:1905.13326, 2019. <https://arxiv.org/abs/1905.13326> | Grammar-based neural pristupi. |
 | `LIT-RASAT-001` | `BACKGROUND` | J. Qi et al., *RASAT: Integrating Relational Structures into Pretrained Seq2Seq Model for Text-to-SQL*, arXiv:2205.06983, 2022. <https://arxiv.org/abs/2205.06983> | Relacije šeme u seq2seq modelima. |
 | `LIT-ZEROSHOT-001` | `BACKGROUND` | Z. Gu et al., *Interleaving Pre-trained Language Models and Large Language Models for Zero-Shot NL2SQL Generation*, arXiv:2306.08891, 2023. <https://arxiv.org/abs/2306.08891> | Zero-shot NL2SQL i kombinovanje modela. |
-| `LIT-RETRIEVAL-001` | `BACKGROUND` | C. Guo et al., *Prompting GPT-3.5 for Text-to-SQL with De-semanticization and Skeleton Retrieval*, arXiv:2304.13301, 2023. <https://arxiv.org/abs/2304.13301> | Skeleton/similarity retrieval za few-shot demonstracije. |
+| `LIT-RETRIEVAL-001` | `ACTIVE` | C. Guo et al., *Prompting GPT-3.5 for Text-to-SQL with De-semanticization and Skeleton Retrieval*, arXiv:2304.13301, 2023. <https://arxiv.org/abs/2304.13301> | Metodološka motivacija za similarity few-shot retrieval; RET-002 koristi jednostavniji, transparentni TF-IDF cosine baseline i ne tvrdi reprodukciju skeleton metode. |
 | `LIT-SQLPALM-001` | `BACKGROUND` | R. Sun et al., *SQL-PaLM: Improved Large Language Model Adaptation for Text-to-SQL*, arXiv:2306.00739, 2023. <https://arxiv.org/abs/2306.00739> | LLM adaptacija za Text-to-SQL. |
 | `LIT-DYNAMIC-001` | `BACKGROUND` | C. Guo et al., *Retrieval-Augmented GPT-3.5-Based Text-to-SQL Framework with Sample-Aware Prompting and Dynamic Revision Chain*, arXiv:2307.05074, 2023. <https://arxiv.org/abs/2307.05074> | Retrieval, sample-aware prompting i revizija kandidata. |
 | `LIT-CODES-001` | `BACKGROUND` | H. Li et al., *CODES: Towards Building Open-Source Language Models for Text-to-SQL*, arXiv:2402.16347, 2024. <https://arxiv.org/abs/2402.16347> | Open-source Text-to-SQL modeli i podaci. |
@@ -200,3 +200,6 @@ Zamenjuje ili je zamenjen izvorom:
 | 2026-08-30 | 1.6 | PAPER-SCHEMA-001 aktiviran za LINK-001; evidentirano da je implementirani extractive-lexical-v1 transparentan projektni baseline, a ne reprodukcija treniranog linkera iz rada. |
 | 2026-08-30 | 1.7 | Evidentiran završeni negativni B6 rezultat i zasebni LINK-002/B6R recall-first eksperiment; izvor i ograničenje tvrdnje ostaju nepromenjeni. |
 | 2026-08-30 | 1.8 | Završen B6R live/EVAL-003 rezultat 6/31; evidentirano da recall repair nadmašuje B1 za jedan primer, ali ostaje slab apsolutni rezultat. |
+| 2026-08-30 | 1.9 | Aktiviran official Spider 1.0 train izvor za RET-001; zamrznuti su page/repository commit-i, CC BY-SA 4.0 licenca, archive/input/index hash-evi, 7.000/140 counts i zero-overlap Spider2 audit. |
+| 2026-08-30 | 2.0 | Aktiviran LIT-RETRIEVAL-001 za RET-002; evidentirani su transparentni TF-IDF cosine B4 baseline, fixed-random B3 kontrola i ograničenje da implementacija nije reprodukcija skeleton retrieval metode. |
+| 2026-08-31 | 2.1 | Evidentirani završeni RET-002 live rezultati: B3 4/31 i B4 5/31; potvrđen je mali dobitak similarity izbora uz ograničenje da B4 ne nadmašuje B1 niti B6R. |

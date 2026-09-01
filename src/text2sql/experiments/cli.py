@@ -13,6 +13,7 @@ from text2sql.evaluation import (
 )
 from text2sql.pipeline import Text2SQLPipeline
 from text2sql.providers import GroqProvider, GroqProviderError
+from text2sql.retrieval import load_verified_retrieval_index
 
 from .config import ExperimentConfigurationError, load_baseline_config
 from .runner import BaselineExperimentRunner, ExperimentRunError
@@ -25,12 +26,24 @@ DEFAULT_SOURCE = PROJECT_ROOT / "data/raw/spider2/spider2-lite/spider2-lite.json
 DEFAULT_DATABASE_ROOT = PROJECT_ROOT / "data/raw/spider2/spider2-lite/resource/databases/spider2-localdb"
 DEFAULT_GOLD_RESULT_ROOT = PROJECT_ROOT / "data/raw/spider2/spider2-lite/evaluation_suite/gold/exec_result"
 DEFAULT_STANDARDS = PROJECT_ROOT / "data/raw/spider2/spider2-lite/evaluation_suite/gold/spider2lite_eval.jsonl"
+DEFAULT_RETRIEVAL_INDEX = (
+    PROJECT_ROOT
+    / "artifacts/retrieval/spider1-train-v1/retrieval-index.jsonl"
+)
+DEFAULT_RETRIEVAL_MANIFEST = (
+    PROJECT_ROOT
+    / "artifacts/retrieval/spider1-train-v1/retrieval-manifest.json"
+)
+DEFAULT_EXPECTED_RETRIEVAL_MANIFEST = (
+    PROJECT_ROOT
+    / "configs/datasets/spider1-train-retrieval-manifest-v1.json"
+)
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Run a resumable B0, B1, B2, B6, or B6R development baseline."
+            "Run a resumable B0-B4, B6, or B6R development experiment."
         )
     )
     parser.add_argument("--experiment-config", type=Path, required=True)
@@ -44,6 +57,17 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--database-root", type=Path, default=DEFAULT_DATABASE_ROOT)
     parser.add_argument("--gold-result-root", type=Path, default=DEFAULT_GOLD_RESULT_ROOT)
     parser.add_argument("--standards-jsonl", type=Path, default=DEFAULT_STANDARDS)
+    parser.add_argument(
+        "--retrieval-index", type=Path, default=DEFAULT_RETRIEVAL_INDEX
+    )
+    parser.add_argument(
+        "--retrieval-manifest", type=Path, default=DEFAULT_RETRIEVAL_MANIFEST
+    )
+    parser.add_argument(
+        "--expected-retrieval-manifest",
+        type=Path,
+        default=DEFAULT_EXPECTED_RETRIEVAL_MANIFEST,
+    )
     return parser
 
 
@@ -51,6 +75,15 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         config = load_baseline_config(args.experiment_config)
+        retrieval_index = (
+            load_verified_retrieval_index(
+                args.retrieval_index,
+                args.retrieval_manifest,
+                expected_manifest_path=args.expected_retrieval_manifest,
+            )
+            if config.baseline in {"B3", "B4"}
+            else None
+        )
         dataset = load_spider2_lite_sqlite(
             args.source_jsonl,
             args.dataset_config,
@@ -79,6 +112,7 @@ def main(argv: list[str] | None = None) -> int:
             dataset=dataset,
             pipeline=Text2SQLPipeline(provider),
             evaluator=evaluator,
+            retrieval_index=retrieval_index,
         )
         result = runner.run(args.predictions, args.report)
     except (

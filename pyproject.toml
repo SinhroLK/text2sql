@@ -17,6 +17,8 @@ text2sql-evaluate = "text2sql.evaluation.cli:main"
 text2sql-evaluate-spider2 = "text2sql.evaluation.spider2_cli:main"
 text2sql-run-baseline = "text2sql.experiments.cli:main"
 text2sql-audit-linking = "text2sql.experiments.linking_cli:main"
+text2sql-audit-retrieval = "text2sql.experiments.retrieval_cli:main"
+text2sql-prepare-retrieval = "text2sql.retrieval.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

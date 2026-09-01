@@ -1,0 +1,34 @@
+schema_version = 1
+index_id = "spider1-train-retrieval-v1"
+
+[origin]
+official_page_url = "https://yale-lily.github.io/spider"
+official_page_commit = "08abddcedadc43a59e516c9c55b971b8a8ffcd4e"
+repository_url = "https://github.com/taoyds/spider"
+repository_commit = "b7b5b8c890cd30e35427348bb9eb8c6d1350ca7c"
+archive_url = "https://drive.google.com/file/d/1403EGqzIDoHMdQF4c9Bkyl7dZLZ5Wt6J/view"
+archive_sha256 = "00636695dabed6b5f4b8328a16b13e069a2f16591d5efcce57660669c85b121b"
+license = "CC BY-SA 4.0"
+license_url = "https://creativecommons.org/licenses/by-sa/4.0/legalcode"
+
+[source]
+dataset_id = "spider1"
+split = "train"
+dialect = "sqlite"
+expected_examples = 7000
+expected_databases = 140
+train_sha256 = "c43d0d72e59e1a9e1a60837da9bf70d5a6277226bdb7f634d544f380646f527a"
+tables_sha256 = "61bb20aa401f03164e2d7f3b16509b7b5f79cc9c943ca7bd159046df1159e2ed"
+
+[spider2_firewall]
+metadata_sha256 = "9951e147543c819597dec0336c486612171e36c73ddc5b7e8b387e6f20b6c9f0"
+split_manifest_sha256 = "36cbd3a18c359ad3e23662c73b0e9976af9f7a77e6174183c70c855a7b766518"
+
+[leakage_policy]
+source_split_must_be_train = true
+spider2_examples_allowed = false
+spider2_databases_allowed = false
+spider2_question_overlap_allowed = false
+
+[artifact]
+filename = "retrieval-index.jsonl"

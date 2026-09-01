@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 2.9
-**Datum:** 30. avgust 2026.
-**Status projekta:** Faza 3 je `DONE`: `LINK-001`/B6 je zamrznut na 1/31, a `LINK-002`/B6R je završen sa 6/31 (19,35%). Sledeći razvojni zadatak je `RET-001` u Fazi 4.
-**Poslednja provera:** 30. avgust 2026. - B6R checkpoint/report pokrivaju 31/31 development primera, EVAL-003 daje 6/31 uz 25/31 executable; 91/91 testova prolazi i test split ostaje zatvoren.
+**Verzija plana:** 3.2
+**Datum:** 31. avgust 2026.
+**Status projekta:** Faza 4 je `IN PROGRESS`: `RET-001` i `RET-002` su `DONE`; sledeći razvojni zadatak je `DSPY-001`/B5 nad zamrznutim B4 temeljem.
+**Poslednja provera:** 31. avgust 2026. - B3 je završen sa 4/31, a B4 sa 5/31; oba imaju 23/31 executable. Checkpoint/report hash-evi su zabeleženi, 108/108 testova i compileall prolaze, a Spider2 test split ostaje zatvoren.
 
 ### Istorija verzija
 
@@ -30,6 +30,9 @@
 | 2.7 | 30. avgust 2026. | Implementiran LINK-001 offline: extractive-lexical-v1, PK/FK closure, recall-safe fallback, frozen B6, 31-example reduction audit, ADR-009 i 85 testova; live B6 ostaje sledeći korak |
 | 2.8 | 30. avgust 2026. | Završen LINK-001 live B6 sa negativnim rezultatom 1/31; dodat LINK-002/B6R recall-first hibrid, frozen exp004 config, 31-example offline audit, ADR-010 i 91 testova |
 | 2.9 | 30. avgust 2026. | Završen LINK-002 live B6R: 31/31, 6/31 tačnih (19,35%), 25/31 executable, 94.140/15.806 tokena, analiza grešaka i checksumovani artefakti; Faza 3 zatvorena |
+| 3.0 | 30. avgust 2026. | Završen RET-001: pinned official Spider 1.0 train, deterministički indeks 7.000 primera / 140 baza, checksum loader i potpuni Spider2 leakage firewall; 99 testova |
+| 3.1 | 30. avgust 2026. | RET-002 offline deo verifikovan: B3 fixed-random i B4 TF-IDF cosine selektori, frozen exp005/exp006 konfiguracije, zajednički few-shot M-Schema prompt, deterministički 31-target auditi i 107 testova; live rezultati ostaju otvoreni |
+| 3.2 | 31. avgust 2026. | Završen RET-002 live: B3 4/31, B4 5/31, oba 23/31 executable; prediction/report checksumovi, sanitized 429 dijagnostika i 108 testova; sledeći je DSPY-001/B5 |
 
 ## 1. Svrha dokumenta
 
@@ -340,7 +343,7 @@ Zadaci:
 
 - `DONE` - učitati originalne pinned metapodatke sa `db_id`; SQLite baze i šeme ostaju za evaluator okruženje;
 - `DONE` - definisati razvojni skup i zaključani evaluacioni skup;
-- implementirati Spider 1.0 razvojni loader tek kada počne train-only retrieval faza;
+- `DONE` - implementirati Spider 1.0 train loader kada počne train-only retrieval faza;
 - `DONE` - implementirati Spider2-Lite SQLite metadata loader (`DATA-003`);
 - `DONE` - napraviti mali fixture skup za brze testove;
 - `DONE` - implementirati execution-based evaluator kompatibilan sa pinned zvaničnim Spider2-Lite comparatorom;
@@ -396,14 +399,14 @@ Zadaci:
 
 **Trajanje:** 2 nedelje
 **Zavisnost:** Faze 2 i 3
-**Status:** `NOT STARTED`
+**Status:** `IN PROGRESS`
 
 Zadaci:
 
-- napraviti indeks isključivo od trening primera;
-- implementirati random few-shot baseline B3;
-- implementirati embedding ili skeleton retrieval B4;
-- dodati proveru protiv self-retrieval i test curenja;
+- `DONE` - napraviti indeks isključivo od Spider 1.0 trening primera;
+- `DONE` - implementirati i pokrenuti random few-shot baseline B3; 31/31, 4 tačna i 23 executable;
+- `DONE` - implementirati i pokrenuti similarity retrieval B4; 31/31, 5 tačnih i 23 executable;
+- `DONE` - dodati proveru protiv Spider2 ID, database i normalized-question curenja na nivou kompletnog development/test metadata firewalla;
 - definisati DSPy program i execution-based metriku;
 - optimizovati samo na development skupu;
 - zamrznuti i verzionisati izabrani DSPy program B5.
@@ -514,7 +517,7 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 17 zadataka je završeno; `LINK-001`, `LINK-002` i Faza 3 su `DONE`. Sledeći aktivni korak je `RET-001`: train-only retrieval indeks sa leakage proverom.
+**Sažetak stanja:** 19 zadataka je završeno; `RET-001` i `RET-002` su `DONE`, a Faza 4 ostaje `IN PROGRESS`. Sledeći aktivni zadatak je `DSPY-001`: definisati, optimizovati na development skupu i zamrznuti B5.
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
@@ -536,8 +539,8 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | SCHEMA-002 | Implementirati M-Schema | 3 | P0 | DONE | SCHEMA-001 | 31/31 B2 predikcija; 2/31 tačna, 22/31 executable; scored report i checksumovani artefakti |
 | LINK-001 | Implementirati extractive schema linking | 3 | P1 | DONE | SCHEMA-002 | frozen B6: 31/31, 1/31 tačan, 27/31 executable; prediction/report/audit checksumovi i dokumentovan negativni rezultat |
 | LINK-002 | Implementirati recall-first schema-linking repair | 3 | P1 | DONE | LINK-001 | frozen B6R: 31/31, 6/31 tačnih, 25/31 executable; 94.140/15.806 tokena, prediction/report checksumovi i analiza grešaka |
-| RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | NOT STARTED | DATA-001 | leakage test |
-| RET-002 | Implementirati random i similarity few-shot | 4 | P0 | NOT STARTED | RET-001 | B3/B4 rezultat |
+| RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | DONE | DATA-001 | pinned Spider 1.0 train 7.000/140, index SHA-256 `82ee39e0...0389e`, full Spider2 ID/DB/question firewall i 8 testova |
+| RET-002 | Implementirati random i similarity few-shot | 4 | P0 | DONE | RET-001 | B3 4/31 i B4 5/31; oba 23/31 executable; frozen config/audit/prediction/report checksumovi |
 | DSPY-001 | Definisati i optimizovati DSPy program | 4 | P1 | NOT STARTED | RET-002, EVAL-001 | zamrznut B5 artefakt |
 | SAFE-001 | Implementirati SQL AST validator | 5 | P0 | NOT STARTED | SCHEMA-001 | security unit testovi |
 | SAFE-002 | Implementirati read-only sandbox executor | 5 | P0 | NOT STARTED | SAFE-001 | integration test |
@@ -912,6 +915,58 @@ Sledeće je bilo pokretanje LINK-001/B6; taj korak je sada završen i rezultat j
 
 Sledeće:
 
-1. implementirati `RET-001` train-only retrieval indeks koristeći dozvoljeni Spider 1.0 train korpus;
-2. dodati automatsku zabranu Spider2 development/test self-retrieval-a i database leakage-a;
-3. tek zatim zamrznuti i pokrenuti B3 random few-shot i B4 similarity few-shot armove.
+1. implementirati i zamrznuti B3 random few-shot izbor nad RET-001 indeksom;
+2. implementirati B4 similarity few-shot izbor sa auditabilnim rangiranjem;
+3. tek nakon offline testova pokrenuti kontrolisane B3/B4 development armove.
+
+### 2026-08-30 - Završen RET-001
+
+- official Spider 1.0 archive je vezan za Yale LILY page commit `08abddc...`, code repository commit `b7b5b8c...`, CC BY-SA 4.0 licencu i archive SHA-256 `00636695...b121b`;
+- checksum se proverava pre parsiranja `train_spider.json` i `tables.json`;
+- izgrađen je deterministički `spider1-train-retrieval-v1` indeks sa 7.000 primera iz 140 training baza;
+- verzionisani expected manifest zamrzava index SHA-256 `82ee39e03792647fa7efeddf1fcd293ca068f0fc879d9a88cc27c8546550389e`;
+- firewall zahteva exact coverage svih 135 Spider2 ID-jeva i 30 baza i odbija ID, case-folded DB ili normalized-question preklapanje; realni audit je 0/0/0;
+- loader generisanog artefakta ponovo proverava checksum, train-only source i redosled;
+- dodati su CLI, fixture-i, ADR-011 i 8 offline testova; kompletan suite prolazi 99/99;
+- Spider2 test outcomes nisu otvoreni; RET-001 indeks je naknadno povezan sa B3/B4 promptovima u započetom RET-002 radu.
+
+Sledeće:
+
+1. nakon eksplicitne autorizacije pokrenuti plaćene B3/B4 development armove;
+2. proveriti exact 31-ID coverage i EVAL-003 rezultate;
+3. upisati accuracy, executable-rate, token, latency, cost i artifact checksum dokaze.
+
+### 2026-08-30 - RET-002 offline implementacija u toku
+
+- implementiran je `random-fixed-v1` B3 selektor sa fiksnim retrieval seed-om i istim demonstracijama za svaki target;
+- implementiran je deterministički `tfidf-cosine-v1` B4 selektor sa stabilnim rangiranjem i tie-break-om po retrieval ID-ju;
+- dodati su frozen `exp005-b3.toml` i `exp006-b4.toml`, zajednički few-shot M-Schema prompt i provere identiteta indeksa/manifesta;
+- runner beleži strategiju, target ID/DB, izabrane retrieval ID-jeve, rangove i score vrednosti u per-target audit metadata;
+- B1/B2/B6/B6R prompt varijante nisu menjane, a Spider2 test split i gold outcomes nisu korišćeni;
+- provider-free CLI je generisao determinističke audite za 31/31 targeta i 93 selekcije po arm-u; B3 koristi 3 jedinstvena ID-ja/3 baze, a B4 85 ID-jeva/40 baza;
+- B3 audit SHA-256 je `3df8e8695d1006ec9f96efc50b9e1f52c5266de6459c54da3659e86bfd797dcc`, a B4 `a16409c01f81e9822ccc6db41f4dc9debc878b60ca9828d11f426c3892d188c1`;
+- poznata test-structure greška je ispravljena; 107/107 testova, compileall i diff-check prolaze;
+- live B3/B4 development eksperimenti nisu pokrenuti, pa `RET-002` još ne ispunjava Definition of Done.
+
+Sledeće:
+
+1. posebno zatražiti autorizaciju za plaćene Groq B3/B4 run-ove nad 31 development primerom;
+2. pokrenuti/resume-ovati svaki arm do exact 31/31 coverage;
+3. bodovati EVAL-003, checksumovati artefakte i tek tada zatvoriti `RET-002`.
+
+### 2026-08-31 - Završen RET-002
+
+- B3 fixed-random i B4 TF-IDF cosine checkpoint-i pokrivaju tačno istih 31 development ID-jeva; test split nije otvoren;
+- B3 je dao 4/31 tačna i 23/31 executable rezultata uz 117.785 input i 14.043 output tokena;
+- B4 je dao 5/31 tačnih i 23/31 executable rezultata uz 115.556 input i 13.145 output tokena;
+- B4 zadržava četiri B3 pogotka i dodaje `local272`, odnosno daje mali dobitak od jednog primera (+3,23 pp), ali samo izjednačava B1 i ostaje ispod B6R 6/31;
+- B3 prediction/report SHA-256 su `5530acf94c632e4bcc352f37b8b2e72c4b90325368944cba836db85ad9255898` i `d00a8e82ea468f4790a1a64581c9985883ae2df0885faf1fba6a7972215f7389`;
+- B4 prediction/report SHA-256 su `d64cd4f5e74cecce79c4aa465b8c762246b25241b5ec2e9f7b850b8f3c7bc580` i `0d2e995ebc7ce2e63b45b8416f301d84794cfe10ece35ee3a0739bccb3c5307a`;
+- Groq 429 dijagnostika sada bezbedno prikazuje tip kvote i retry/reset vreme uz redakciju account ID-ja i key-like vrednosti;
+- 108/108 testova, compileall i diff-check prolaze; `RET-002` je `DONE`.
+
+Sledeće:
+
+1. `DSPY-001`: definisati B5 program i execution-based development metriku;
+2. optimizovati isključivo nad 31 development primerom koristeći zamrznuti B4 kao osnovu;
+3. zamrznuti izabrani program/config pre bilo kakvog pristupa test split-u.

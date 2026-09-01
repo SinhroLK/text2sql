@@ -1,0 +1,12 @@
+[
+  {
+    "db_id": "school",
+    "table_names_original": ["students"],
+    "column_names_original": [[-1, "*"], [0, "name"]]
+  },
+  {
+    "db_id": "library",
+    "table_names_original": ["books"],
+    "column_names_original": [[-1, "*"], [0, "available"]]
+  }
+]

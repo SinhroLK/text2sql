@@ -12,7 +12,12 @@ from text2sql.evaluation import (
 )
 from text2sql.observability import append_jsonl
 from text2sql.pipeline import Text2SQLPipeline
+from text2sql.prompting import FewShotExample
 from text2sql.providers import SQLProvider
+from text2sql.retrieval import (
+    LoadedRetrievalIndex,
+    build_retrieval_selector,
+)
 from text2sql.schema import (
     MSchemaSamplePolicy,
     RecallSchemaLinkingPolicy,
@@ -107,6 +112,56 @@ def _schema_linking_summary(
     }
 
 
+def _retrieval_summary(
+    generations: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    audits = [
+        generation.get("metadata", {}).get("retrieval")
+        for generation in generations
+    ]
+    if all(audit is None for audit in audits):
+        return None
+    if any(not isinstance(audit, dict) for audit in audits):
+        raise ExperimentRunError(
+            "invalid_retrieval_audit",
+            "Few-shot generations must all contain retrieval audit metadata",
+        )
+    resolved = [audit for audit in audits if isinstance(audit, dict)]
+    strategies = {str(audit.get("strategy")) for audit in resolved}
+    index_ids = {str(audit.get("index_id")) for audit in resolved}
+    index_hashes = {str(audit.get("index_sha256")) for audit in resolved}
+    k_values = {int(audit.get("k", 0)) for audit in resolved}
+    if (
+        len(strategies) != 1
+        or len(index_ids) != 1
+        or len(index_hashes) != 1
+        or len(k_values) != 1
+        or 0 in k_values
+    ):
+        raise ExperimentRunError(
+            "invalid_retrieval_audit",
+            "Retrieval audit policy is inconsistent across generations",
+        )
+    selected_ids: list[str] = []
+    for audit in resolved:
+        selected = audit.get("selected")
+        if not isinstance(selected, list) or len(selected) not in k_values:
+            raise ExperimentRunError(
+                "invalid_retrieval_audit",
+                "Retrieval audit selected entries are incomplete",
+            )
+        selected_ids.extend(str(item["retrieval_id"]) for item in selected)
+    return {
+        "strategy": next(iter(strategies)),
+        "index_id": next(iter(index_ids)),
+        "index_sha256": next(iter(index_hashes)),
+        "k": next(iter(k_values)),
+        "targets": len(resolved),
+        "selections": len(selected_ids),
+        "unique_retrieval_ids": len(set(selected_ids)),
+    }
+
+
 def _read_checkpoint(
     path: Path,
     *,
@@ -161,6 +216,27 @@ def _read_checkpoint(
                     "configuration",
                     example_id=example_id,
                 )
+            if config.baseline in {"B3", "B4"}:
+                retrieval = (
+                    record.get("generation", {})
+                    .get("metadata", {})
+                    .get("retrieval")
+                )
+                if (
+                    not isinstance(retrieval, dict)
+                    or retrieval.get("strategy")
+                    != config.retrieval_strategy
+                    or retrieval.get("index_id")
+                    != config.retrieval_index_id
+                    or retrieval.get("index_sha256")
+                    != config.retrieval_index_sha256
+                    or retrieval.get("k") != config.retrieval_k
+                ):
+                    raise ExperimentRunError(
+                        "checkpoint_retrieval_mismatch",
+                        "Checkpoint retrieval audit does not match config",
+                        example_id=example_id,
+                    )
             expected = expected_by_id[example_id]
             if record.get("db_id") != expected.db_id:
                 raise ExperimentRunError(
@@ -191,6 +267,7 @@ class BaselineExperimentRunner:
         dataset: LoadedSpider2LiteDataset,
         pipeline: Text2SQLPipeline,
         evaluator: Spider2GoldResultRunner,
+        retrieval_index: LoadedRetrievalIndex | None = None,
     ) -> None:
         if config.split != "development":
             raise ExperimentRunError(
@@ -207,6 +284,37 @@ class BaselineExperimentRunner:
         self.dataset = dataset
         self.pipeline = pipeline
         self.evaluator = evaluator
+        self.retrieval_index = retrieval_index
+        self.retrieval_selector = None
+        if config.baseline in {"B3", "B4"}:
+            if retrieval_index is None:
+                raise ExperimentRunError(
+                    "missing_retrieval_index",
+                    "B3/B4 require a verified retrieval index",
+                )
+            manifest = retrieval_index.manifest
+            if (
+                manifest.get("index_id") != config.retrieval_index_id
+                or manifest.get("artifact", {}).get("sha256")
+                != config.retrieval_index_sha256
+                or retrieval_index.manifest_sha256
+                != config.retrieval_manifest_sha256
+            ):
+                raise ExperimentRunError(
+                    "retrieval_index_mismatch",
+                    "Retrieval index identity does not match frozen config",
+                )
+            self.retrieval_selector = build_retrieval_selector(
+                retrieval_index,
+                strategy=config.retrieval_strategy or "",
+                k=config.retrieval_k,
+                seed=config.retrieval_seed,
+            )
+        elif retrieval_index is not None:
+            raise ExperimentRunError(
+                "unexpected_retrieval_index",
+                "Only B3/B4 may receive a retrieval index",
+            )
 
     def run(
         self, predictions_path: str | Path, report_path: str | Path
@@ -243,7 +351,37 @@ class BaselineExperimentRunner:
             database = self.evaluator.database_resolver.resolve(
                 example.db_id
             )
-            uses_mschema = self.config.baseline in {"B2", "B6", "B6R"}
+            uses_mschema = self.config.baseline in {
+                "B2", "B3", "B4", "B6", "B6R"
+            }
+            selection = (
+                self.retrieval_selector.select(example.question)
+                if self.retrieval_selector is not None
+                else None
+            )
+            retrieval_audit = None
+            few_shot_examples: tuple[FewShotExample, ...] = ()
+            if selection is not None:
+                retrieval_audit = {
+                    **selection.to_dict(),
+                    "target_example_id": example.example_id,
+                    "target_db_id": example.db_id,
+                    "index_id": self.config.retrieval_index_id,
+                    "index_sha256": self.config.retrieval_index_sha256,
+                    "manifest_sha256": (
+                        self.config.retrieval_manifest_sha256
+                    ),
+                    "seed": self.config.retrieval_seed,
+                }
+                few_shot_examples = tuple(
+                    FewShotExample(
+                        retrieval_id=item.entry.retrieval_id,
+                        db_id=item.entry.db_id,
+                        question=item.entry.question,
+                        sql=item.entry.sql,
+                    )
+                    for item in selection.entries
+                )
             generated = self.pipeline.generate(
                 example.question,
                 database.path,
@@ -296,6 +434,8 @@ class BaselineExperimentRunner:
                     if self.config.baseline in {"B6", "B6R"}
                     else None
                 ),
+                few_shot_examples=few_shot_examples,
+                retrieval_audit=retrieval_audit,
             )
             if not generated.selected_sql:
                 raise ExperimentRunError(
@@ -352,7 +492,9 @@ class BaselineExperimentRunner:
         output_tokens = sum(
             int(item["output_tokens"]) for item in generations
         )
-        uses_mschema = self.config.baseline in {"B2", "B6", "B6R"}
+        uses_mschema = self.config.baseline in {
+            "B2", "B3", "B4", "B6", "B6R"
+        }
         payload = {
             "schema_version": 1,
             "experiment": {
@@ -422,6 +564,20 @@ class BaselineExperimentRunner:
                     if self.config.baseline in {"B6", "B6R"}
                     else None
                 ),
+                "retrieval_policy": (
+                    {
+                        "index_id": self.config.retrieval_index_id,
+                        "index_sha256": self.config.retrieval_index_sha256,
+                        "manifest_sha256": (
+                            self.config.retrieval_manifest_sha256
+                        ),
+                        "strategy": self.config.retrieval_strategy,
+                        "k": self.config.retrieval_k,
+                        "seed": self.config.retrieval_seed,
+                    }
+                    if self.config.baseline in {"B3", "B4"}
+                    else None
+                ),
                 "timeout_seconds": self.config.timeout_seconds,
                 "config_sha256": self.config.config_sha256,
             },
@@ -438,6 +594,7 @@ class BaselineExperimentRunner:
                 "schema_linking": _schema_linking_summary(
                     generations
                 ),
+                "retrieval": _retrieval_summary(generations),
             },
             "resources": {
                 "dataset_manifest": self.dataset.manifest,
@@ -445,6 +602,11 @@ class BaselineExperimentRunner:
                     self.evaluator.resource_manifest(
                         split="development"
                     )
+                ),
+                "retrieval_manifest": (
+                    self.retrieval_index.manifest
+                    if self.retrieval_index is not None
+                    else None
                 ),
             },
             "evaluation": evaluation.to_dict(),

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any, Callable
 import groq
@@ -18,6 +20,36 @@ class GroqProviderError(RuntimeError):
 
 
 Transport = Callable[[str, dict[str, str], bytes, float], bytes]
+
+
+def _status_error_message(
+    status_code: int,
+    body: object,
+    headers: Mapping[str, str],
+) -> str:
+    parts = [f"Groq API returned HTTP {status_code}"]
+    if isinstance(body, dict):
+        error = body.get("error")
+        detail = error.get("message") if isinstance(error, dict) else None
+        if isinstance(detail, str) and detail.strip():
+            sanitized = re.sub(
+                r"\b(?:org|project)_[A-Za-z0-9_-]+\b",
+                "[redacted-id]",
+                detail.strip(),
+            )
+            sanitized = re.sub(
+                r"\bgsk_[A-Za-z0-9_-]+\b",
+                "[redacted-api-key]",
+                sanitized,
+            )
+            parts.append(sanitized[:1000])
+    retry_after = headers.get("retry-after")
+    reset_tokens = headers.get("x-ratelimit-reset-tokens")
+    if retry_after:
+        parts.append(f"retry-after={retry_after}")
+    if reset_tokens:
+        parts.append(f"token-reset={reset_tokens}")
+    return ": ".join(parts)
 
 
 def _transport(endpoint: str, headers: dict[str, str], body: bytes, timeout: float) -> bytes:
@@ -43,7 +75,11 @@ def _transport(endpoint: str, headers: dict[str, str], body: bytes, timeout: flo
         response = client.chat.completions.create(**payload)
     except groq.APIStatusError as error:
         raise GroqProviderError(
-            f"Groq API returned HTTP {error.status_code}"
+            _status_error_message(
+                error.status_code,
+                error.body,
+                error.response.headers,
+            )
         ) from error
     except groq.APIConnectionError as error:
         raise GroqProviderError("Groq API request failed") from error

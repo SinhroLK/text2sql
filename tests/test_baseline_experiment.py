@@ -13,9 +13,14 @@ from text2sql.experiments import (
     BaselineExperimentRunner,
     ExperimentConfigurationError,
     ExperimentRunError,
+    audit_development_retrieval,
     load_baseline_config,
 )
 from text2sql.pipeline import Text2SQLPipeline
+from text2sql.retrieval import (
+    LoadedRetrievalIndex,
+    RetrievalIndexEntry,
+)
 from text2sql.providers.base import ProviderResponse
 from text2sql.evaluation import Spider2SQLiteDatabaseResolver
 
@@ -105,6 +110,8 @@ class BaselineExperimentRunnerTest(unittest.TestCase):
             "B0": "question_only",
             "B1": "simple_schema",
             "B2": "mschema",
+            "B3": "fewshot_mschema",
+            "B4": "fewshot_mschema",
             "B6": "linked_mschema",
             "B6R": "hybrid_linked_mschema",
         }[baseline]
@@ -125,7 +132,26 @@ class BaselineExperimentRunnerTest(unittest.TestCase):
                             "mschema_max_text_length = 50",
                             "mschema_scan_rows_per_column = 24",
                         ]
-                        if baseline in {"B2", "B6", "B6R"} else []
+                        if baseline in {"B2", "B3", "B4", "B6", "B6R"} else []
+                    ),
+                    *(
+                        [
+                            'retrieval_index_id = "fixture-index"',
+                            f'retrieval_index_sha256 = "{"a" * 64}"',
+                            f'retrieval_manifest_sha256 = "{"b" * 64}"',
+                            (
+                                'retrieval_strategy = "random-fixed-v1"'
+                                if baseline == "B3"
+                                else 'retrieval_strategy = "tfidf-cosine-v1"'
+                            ),
+                            "retrieval_k = 2",
+                            *(
+                                ["retrieval_seed = 42"]
+                                if baseline == "B3"
+                                else []
+                            ),
+                        ]
+                        if baseline in {"B3", "B4"} else []
                     ),
                     *(
                         [
@@ -161,12 +187,42 @@ class BaselineExperimentRunnerTest(unittest.TestCase):
 
     def _runner(self, baseline: str) -> tuple[BaselineExperimentRunner, CountingProvider]:
         provider = CountingProvider()
+        retrieval_index = (
+            LoadedRetrievalIndex(
+                entries=(
+                    RetrievalIndexEntry(
+                        "spider1-train-00000",
+                        0,
+                        "school",
+                        "List student names",
+                        "SELECT name FROM students",
+                        ("list", "student", "names"),
+                    ),
+                    RetrievalIndexEntry(
+                        "spider1-train-00001",
+                        1,
+                        "library",
+                        "Count available books",
+                        "SELECT count(*) FROM books",
+                        ("count", "available", "books"),
+                    ),
+                ),
+                manifest={
+                    "index_id": "fixture-index",
+                    "artifact": {"sha256": "a" * 64},
+                },
+                manifest_sha256="b" * 64,
+            )
+            if baseline in {"B3", "B4"}
+            else None
+        )
         return (
             BaselineExperimentRunner(
                 config=load_baseline_config(self._config(baseline)),
                 dataset=self.dataset,
                 pipeline=Text2SQLPipeline(provider),
                 evaluator=FakeEvaluator(self.resolver),
+                retrieval_index=retrieval_index,
             ),
             provider,
         )
@@ -253,6 +309,96 @@ class BaselineExperimentRunnerTest(unittest.TestCase):
                 == "extractive-lexical-v1"
                 for item in checkpoint
             )
+        )
+
+    def test_b3_and_b4_record_retrieval_audit(self) -> None:
+        for baseline, strategy in (
+            ("B3", "random-fixed-v1"),
+            ("B4", "tfidf-cosine-v1"),
+        ):
+            with self.subTest(baseline=baseline):
+                runner, provider = self._runner(baseline)
+                result = runner.run(
+                    self.root / f"{baseline.lower()}.jsonl",
+                    self.root / f"{baseline.lower()}-report.json",
+                )
+                self.assertEqual(len(provider.inputs), 2)
+                self.assertTrue(
+                    all(
+                        "Training demonstrations:" in item.prompt
+                        and "Target M-Schema:" in item.prompt
+                        for item in provider.inputs
+                    )
+                )
+                policy = result["experiment"]["retrieval_policy"]
+                self.assertEqual(policy["strategy"], strategy)
+                self.assertEqual(policy["k"], 2)
+                summary = result["generation_summary"]["retrieval"]
+                self.assertEqual(summary["targets"], 2)
+                self.assertEqual(summary["selections"], 4)
+                checkpoint = [
+                    json.loads(line)
+                    for line in (
+                        self.root / f"{baseline.lower()}.jsonl"
+                    ).read_text().splitlines()
+                ]
+                self.assertTrue(
+                    all(
+                        row["generation"]["metadata"]["retrieval"]["k"] == 2
+                        for row in checkpoint
+                    )
+                )
+
+    def test_provider_free_retrieval_audit_covers_only_development(self) -> None:
+        for baseline, strategy in (
+            ("B3", "random-fixed-v1"),
+            ("B4", "tfidf-cosine-v1"),
+        ):
+            with self.subTest(baseline=baseline):
+                runner, provider = self._runner(baseline)
+                self.assertIsNotNone(runner.retrieval_index)
+                payload = audit_development_retrieval(
+                    config=runner.config,
+                    dataset=runner.dataset,
+                    retrieval_index=runner.retrieval_index,
+                )
+
+                self.assertEqual(provider.inputs, [])
+                self.assertEqual(payload["scope"], "development")
+                self.assertEqual(
+                    payload["retrieval_policy"]["strategy"], strategy
+                )
+                self.assertEqual(payload["summary"]["targets"], 2)
+                self.assertEqual(payload["summary"]["selections"], 4)
+                self.assertEqual(
+                    {row["target_example_id"] for row in payload["records"]},
+                    {"local001", "local002"},
+                )
+                self.assertNotIn(
+                    "local999",
+                    {row["target_example_id"] for row in payload["records"]},
+                )
+
+    def test_b3_checkpoint_rejects_wrong_retrieval_index_id(self) -> None:
+        runner, _ = self._runner("B3")
+        predictions = self.root / "b3-checkpoint.jsonl"
+        runner.run(predictions, self.root / "b3-checkpoint-report.json")
+        rows = [
+            json.loads(line) for line in predictions.read_text().splitlines()
+        ]
+        rows[0]["generation"]["metadata"]["retrieval"]["index_id"] = (
+            "wrong-index"
+        )
+        predictions.write_text(
+            "".join(json.dumps(row) + "\n" for row in rows),
+            encoding="utf-8",
+        )
+
+        resumed, _ = self._runner("B3")
+        with self.assertRaises(ExperimentRunError) as raised:
+            resumed.run(predictions, self.root / "resume-report.json")
+        self.assertEqual(
+            raised.exception.code, "checkpoint_retrieval_mismatch"
         )
 
     def test_b6r_prompt_and_report_preserve_recall_context(self) -> None:

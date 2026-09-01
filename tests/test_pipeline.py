@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 from text2sql.observability import append_jsonl
 from text2sql.pipeline import Text2SQLPipeline
+from text2sql.prompting import FewShotExample
 from text2sql.providers import MockSchemaAwareProvider
 from text2sql.schema import (
     RecallSchemaLinkingPolicy,
@@ -175,6 +176,60 @@ class PipelineTest(unittest.TestCase):
                 schema_linking_policy=SchemaLinkingPolicy(),
             )
 
+    def test_fewshot_mschema_prompt_records_retrieval_audit(self) -> None:
+        provider = MockSchemaAwareProvider()
+        pipeline = Text2SQLPipeline(provider)
+        audit = {
+            "strategy": "random-fixed-v1",
+            "index_id": "fixture-index",
+            "index_sha256": "a" * 64,
+            "k": 1,
+            "selected": [
+                {
+                    "rank": 1,
+                    "retrieval_id": "spider1-train-00000",
+                    "db_id": "school",
+                    "score": None,
+                }
+            ],
+        }
+        with patch.object(
+            provider, "generate", wraps=provider.generate
+        ) as generate:
+            result = pipeline.generate(
+                "List customer names",
+                self.database_path,
+                db_id="fixture",
+                prompt_variant="fewshot_mschema",
+                few_shot_examples=(
+                    FewShotExample(
+                        retrieval_id="spider1-train-00000",
+                        db_id="school",
+                        question="List student names",
+                        sql="SELECT name FROM students",
+                    ),
+                ),
+                retrieval_audit=audit,
+            )
+
+        prompt = generate.call_args.args[0].prompt
+        self.assertIn("Training demonstrations:", prompt)
+        self.assertIn("SELECT name FROM students", prompt)
+        self.assertIn("Target M-Schema:", prompt)
+        self.assertIn("Target question:\nList customer names", prompt)
+        self.assertEqual(result.prompt_version, "exp005-fewshot-mschema-v1")
+        self.assertEqual(result.metadata["phase"], 4)
+        self.assertEqual(result.metadata["retrieval"], audit)
+
+    def test_fewshot_prompt_requires_examples_and_audit(self) -> None:
+        pipeline = Text2SQLPipeline(MockSchemaAwareProvider())
+        with self.assertRaisesRegex(ValueError, "requires examples"):
+            pipeline.generate(
+                "List customers",
+                self.database_path,
+                prompt_variant="fewshot_mschema",
+            )
+
     def test_jsonl_writer_appends_valid_json(self) -> None:
         output_path = Path(self.temp_dir.name) / "result.jsonl"
         append_jsonl(output_path, {"example_id": "one", "ok": True})
@@ -185,4 +240,3 @@ class PipelineTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

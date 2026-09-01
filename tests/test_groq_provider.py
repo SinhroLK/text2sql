@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from text2sql.domain import GenerationInput, SchemaSnapshot
 from text2sql.providers import GroqProvider, GroqProviderError
+from text2sql.providers.groq import _status_error_message
 
 
 INPUT = GenerationInput(
@@ -88,6 +89,30 @@ class GroqProviderTest(unittest.TestCase):
         with self.assertRaisesRegex(GroqProviderError, "model unavailable") as context:
             provider.generate(INPUT)
         self.assertNotIn("secret-not-in-error", str(context.exception))
+
+    def test_status_error_reports_rate_limit_without_sensitive_ids(self) -> None:
+        message = _status_error_message(
+            429,
+            {
+                "error": {
+                    "message": (
+                        "Rate limit reached for org_private on tokens per day; "
+                        "credential gsk_do-not-print"
+                    )
+                }
+            },
+            {
+                "retry-after": "3600",
+                "x-ratelimit-reset-tokens": "59m59s",
+            },
+        )
+
+        self.assertIn("HTTP 429", message)
+        self.assertIn("tokens per day", message)
+        self.assertIn("retry-after=3600", message)
+        self.assertIn("token-reset=59m59s", message)
+        self.assertNotIn("org_private", message)
+        self.assertNotIn("gsk_do-not-print", message)
 
     def test_retries_transport_errors_with_bounded_backoff(self) -> None:
         attempts = []

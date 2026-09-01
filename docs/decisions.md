@@ -98,3 +98,24 @@
 - **Reason:** This directly addresses the observed identifier omissions while preserving a controlled comparison and the evidentiary value of the negative B6 result.
 - **Consequences:** B6R sacrifices most B6 compression and may exceed full B2 on a whitespace-token proxy. Its offline audit proves context construction, not accuracy. B6R requires a new 31-example development run and may not be tuned against the sealed 104-example test split.
 - **Outcome:** The frozen B6R run scored 6/31 (19.35%) versus B1 5/31, B2 2/31, and B6 1/31. The recall repair recovered five B6 failures but remains too weak for final use without retrieval/validation work. The test split remained sealed.
+
+## ADR-011 - Checksum-gated Spider 1.0 train-only retrieval corpus
+
+- **Date:** 2026-08-30
+- **Status:** accepted
+- **Problem:** Few-shot experiments need labeled SQL demonstrations, but using Spider2 development/test examples or the legacy two-column CSV would introduce self-retrieval, schema leakage, or unverifiable provenance.
+- **Options:** retrieve from Spider2; reuse the legacy CSV; ingest mutable third-party mirrors; pin the official Spider 1.0 training archive and enforce a Spider2 firewall.
+- **Decision:** Pin the official Yale LILY Spider archive, use only `train_spider.json`, verify the archive/train/schema hashes and expected 7,000-example/140-database counts, and serialize deterministic source-ordinal entries. Before construction, require exact frozen Spider2 metadata coverage and reject any Spider2 ID, case-folded database, or normalized-question overlap. Verify generated indexes by manifest checksum before consumers load them.
+- **Reason:** Spider 1.0 train is the protocol-approved external labeled corpus. A fail-closed firewall makes the no-Spider2 rule executable and auditable instead of relying on naming conventions.
+- **Consequences:** RET-001 is reproducible and safe as a candidate corpus, but it does not select examples or change prompts. RET-002 must version random/similarity policies and log retrieved IDs per target. Exact normalized-question checks do not prove the absence of semantic near-duplicates or LLM pretraining contamination; those remain methodology limitations.
+
+## ADR-012 - Freeze fixed-random B3 and TF-IDF cosine B4 selectors
+
+- **Date:** 2026-08-30
+- **Status:** accepted
+- **Problem:** RET-002 needs an auditable control for the effect of demonstrations and a question-sensitive retrieval arm without adding an unpinned embedding service, model download, or dependency.
+- **Options:** sample new random examples per target; use one seeded fixed sample; introduce an external embedding model; use SQL skeleton similarity; use deterministic TF-IDF cosine similarity over training questions.
+- **Decision:** B3 uses one `random-fixed-v1` sample with `k=3` and seed 42 for every development target. B4 uses `tfidf-cosine-v1` with `k=3`, corpus-fitted IDF over normalized Spider 1.0 train questions, cosine ranking, and retrieval-ID tie-breaking. Both use the same full M-Schema few-shot prompt and checksum-verified RET-001 index.
+- **Reason:** Fixed B3 isolates the presence of demonstrations from target-aware selection. TF-IDF provides a transparent, deterministic vector-space similarity baseline that runs with the standard library and can be fully reconstructed from the frozen index.
+- **Consequences:** B4 measures lexical question similarity, not semantic embedding quality or SQL-structure similarity. Every selection must record target identity, retrieved IDs/databases, ranks, scores, index/manifest hashes, strategy, `k`, and seed. Provider-free audits establish determinism and coverage only; SQL accuracy requires separately authorized live B3/B4 development runs.
+- **Outcome:** Frozen B3 scored 4/31 and B4 scored 5/31, with both arms producing executable SQL for 23/31 targets. TF-IDF similarity adds `local272` over the fixed-random control but does not outperform the earlier B1 result and remains below B6R 6/31. RET-002 is complete; B4 is the input baseline for DSPY-001 rather than evidence that lexical retrieval alone is sufficient.

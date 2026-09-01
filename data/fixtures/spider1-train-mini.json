@@ -1,0 +1,12 @@
+[
+  {
+    "db_id": "school",
+    "question": "List every student name.",
+    "query": "SELECT name FROM students"
+  },
+  {
+    "db_id": "library",
+    "question": "How many books are available?",
+    "query": "SELECT count(*) FROM books WHERE available = 1"
+  }
+]

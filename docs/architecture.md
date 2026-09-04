@@ -54,8 +54,11 @@ manifest hashes are verified on load. A process-wide rolling limiter reserves
 LiteLLM-counted input plus maximum output tokens for every task and prompt-model
 call, reconciles successful reservations with observed usage, and honors
 structured or parsed Groq retry delays without logging provider identifiers.
-The offline path is implemented and
-audited, while the paid compilation artifact remains pending.
+The paid compile and exact 31-example development run are complete. MIPROv2
+selected the original/default instruction with 2/10 validation accuracy; B5
+scored 4/31 with 28/31 executable queries and therefore remains below B4 at
+5/31 and B6R at 6/31. Phase 5 begins with provider-free paired semantic-error
+analysis before typed planning, structural retrieval, or another paid run.
 Fixture annotations are the only current source of linker precision/recall/F1.
 
 ## Design rules

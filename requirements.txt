@@ -1,3 +1,8 @@
+# Legacy/demo convenience environment. This is not the canonical dependency
+# lock for the current research package; use requirements.lock or pyproject.toml
+# for the supported pipeline. The packages below also cover the preserved root
+# app and notebooks.
+
 # app.py
 mysql-connector-python
 pandas

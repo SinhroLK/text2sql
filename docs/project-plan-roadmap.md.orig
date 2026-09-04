@@ -1,5 +1,8 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
+> Historical recovery snapshot. It is not the authoritative project status;
+> use `docs/project-plan-roadmap.md` for the current roadmap and tracker.
+
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
 **Verzija plana:** 3.7
 **Datum:** 4. septembar 2026.

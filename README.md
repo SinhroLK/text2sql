@@ -2,7 +2,7 @@
 
 Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
-This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, LINK-002 provides a recall-repaired B6R arm, RET-001 provides a checksum-gated Spider 1.0 train-only retrieval index, and RET-002 provides completed B3/B4 few-shot experiments. The strict reference-SQL `EVAL-002` path remains optional.
+This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, LINK-002 provides a recall-repaired B6R arm, RET-001 provides a checksum-gated Spider 1.0 train-only retrieval index, RET-002 provides completed B3/B4 few-shot experiments, and DSPY-001 records the completed B5 optimization and development run. The strict reference-SQL `EVAL-002` path remains optional.
 
 ## Requirements
 
@@ -78,11 +78,13 @@ Implemented:
 - frozen B3 fixed-random and B4 TF-IDF cosine selectors and experiment configs;
 - few-shot M-Schema prompt integration and provider-free per-target retrieval audit.
 - frozen DSPY-001/B5 signature, database-disjoint 21/10 development split,
-  execution-result metric, offline audit CLI, and checksum-verified program artifacts.
+  execution-result metric, offline audit CLI, completed MIPROv2 compile, and
+  checksum-verified 31-example B5 result (4/31 correct, 28/31 executable).
 
 Not implemented yet:
 
-- paid MIPROv2 compilation and the resulting 31-example B5 development run;
+- SEM-001 paired semantic-error corpus;
+- typed semantic planning, SQL-skeleton retrieval, and the B7P first-pass arm;
 - SQL AST validation and sandbox execution;
 - security evaluation;
 - Gradio application built on the new pipeline.
@@ -148,7 +150,8 @@ DSPy-level bootstrapped/labeled demonstrations, and a database-disjoint
 21-example training/10-example validation split. The three permitted Spider 1.0
 demonstrations remain inside each inherited B4 context.
 
-Start a new paid compile:
+Start a new paid compile only to reproduce the frozen optimization as an
+independent paid run:
 
 ```bash
 PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli optimize
@@ -181,11 +184,17 @@ Recovery data lives under
 `artifacts/dspy/dspy001-b5/checkpoints/<run-id>/`; it contains an identity and
 status file, an integrity-ledger-backed LM cache, hash-only metric progress, and
 MIPRO diagnostic snapshots. It never contains the API key. On success the
-program and checksum-bound optimization manifest are still written under
-`artifacts/dspy/dspy001-b5/`. The paid compile has not completed, so B5 does
-not yet have a development accuracy result.
+program and checksum-bound optimization manifest are written under
+`artifacts/dspy/dspy001-b5/`.
 
-After compilation, run or resume exact 31-example generation and EVAL-003 scoring:
+The completed frozen compile selected the original/default instruction with a
+2/10 validation score. Its exact 31-example development run scored 4/31
+(12.90%) with 28/31 executable queries, below B4 at 5/31 and B6R at 6/31.
+The program, optimization manifest, predictions, and EVAL-003 report are
+checksum-bound; the Spider2 test split remains sealed.
+
+After a fresh compilation, run or resume exact 31-example generation and
+EVAL-003 scoring:
 
 ```bash
 PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli run

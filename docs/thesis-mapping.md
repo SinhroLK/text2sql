@@ -4,7 +4,7 @@
 |---|---|---|
 | Dataset loaders and split policy | Dataset and methodology | dataset version, checksums, split tests |
 | Schema serialization/linking | Proposed method | canonical schema, M-Schema, extractive-lexical-v1, B1/B2/B6/B6R frozen configurations, linking audit and tests |
-| Retrieval and DSPy | Prompt optimization | RET-001/RET-002 evidence; frozen DSPY-001 B5 config, signature, execution metric, 21/10 audit and tests; paid compile pending |
+| Retrieval and DSPy | Prompt optimization | RET-001/RET-002 evidence; completed DSPY-001 B5 compile, frozen program/manifest, 21/10 optimization split, 31-example result and tests |
 | Validator and refiner | Verification | B7 configuration and repair metrics |
 | Guardrails and sandbox | Security | S0/S1 and adversarial evaluation |
 | Experiment runner/evaluator | Results | EVAL-001 comparator, primary EVAL-003 official-result runner, optional EVAL-002 SQL audit, exact-ID summaries and frozen configurations |
@@ -34,9 +34,11 @@ the frozen rolling TPM policy, strict per-run replay cache,
 `tests/test_dspy_rate_limit.py`, and `tests/test_dspy_recovery.py`. It covers
 wait/retry accounting, explicit compatible resume, stochastic-key separation,
 integrity/secret/concurrency rejection, and non-cacheable truncations. Runtime
-dependency evidence pins and preflights Optuna 4.9.0 before paid requests. This
-supports methodology and reproducibility only; no B5 accuracy claim exists
-until the paid compile and complete development run are frozen.
+dependency evidence pins and preflights Optuna 4.9.0 before paid requests. The
+completed compile selected the original/default instruction with 2/10
+validation accuracy. The frozen 31-example B5 run scored 4/31 (12.90%) with
+28/31 executable queries; it is a negative optimization result below B4 at
+5/31 and B6R at 6/31.
 
 Those reduction figures are engineering measurements, not evidence of SQL accuracy or real schema recall. The project currently has trusted table/column relevance annotations only in fixtures; consequently fixture tests report precision/recall/F1, while frozen B6R supplies its own EVAL-003 claim: 6/31 (19.35%), including five non-empty and one empty-result match.
 

@@ -460,6 +460,9 @@ Zadaci:
 - pre provider run-a proveriti fixture slučajeve za JOIN, nested aggregation, temporal/window, set i recursive obrasce;
 - zamrznuti prompt, model, temperature/seed, token budžet, retriever i hash-eve kao novi B7P arm; B1/B4/B5/B6R artefakti ostaju neizmenjeni.
 
+GEN-001 se prvo implementira kao zamrznut offline B7P prompt/composer ugovor.
+MODEL-001 zatim bira model pod tim istim ugovorom, pre live B7P evaluacije.
+
 #### 5E - `MODEL-001`: capability gate
 
 - uporediti aktuelni model sa najviše dve unapred izabrane i zamrznute alternative pod identičnim B7P promptom i budžetom;
@@ -600,8 +603,8 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | SEM-001 | Napraviti upareni semantic-error corpus za B1/B6R/B4/B5 | 5 | P0 | NOT STARTED | DSPY-001, LINK-002 | 31-ID matrica, 27 kategorisanih B5 neuspeha, dominantni uzroci i checksumovi |
 | SEM-002 | Implementirati typed SemanticPlan i validator plana | 5 | P0 | NOT STARTED | SEM-001, SCHEMA-001 | fixture testovi, schema/JOIN validacija i auditabilni plan hash-evi |
 | RET-003 | Implementirati Spider1 train-only SQL-skeleton retrieval | 5 | P0 | NOT STARTED | SEM-001, RET-001 | skeleton indeks, leakage testovi i per-target retrieval audit |
-| GEN-001 | Implementirati i evaluirati single-query B7P | 5 | P0 | NOT STARTED | SEM-002, RET-003, LINK-002 | frozen 31/31 B7P; promotion gate >=8 correct, >=28 executable i >=2 nova non-empty pogotka prema B6R |
-| MODEL-001 | Proveriti capability najviše tri zamrznuta modela za B7P | 5 | P1 | NOT STARTED | GEN-001 | objavljeni svi development pokušaji, trošak i unapred definisan izbor |
+| MODEL-001 | Proveriti capability najviše tri zamrznuta modela za B7P | 5 | P1 | NOT STARTED | SEM-002, RET-003, LINK-002 | isti frozen B7P prompt/budžet za sve modele; objavljeni svi development pokušaji, trošak i unapred definisan izbor |
+| GEN-001 | Implementirati i evaluirati single-query B7P | 5 | P0 | NOT STARTED | SEM-002, RET-003, LINK-002, MODEL-001 | frozen 31/31 B7P sa izabranim modelom; promotion gate >=8 correct, >=28 executable i >=2 nova non-empty pogotka prema B6R |
 | SAFE-001 | Implementirati SQL AST validator | 5 | P0 | NOT STARTED | SEM-002, SCHEMA-001 | security i semantic-plan coverage unit testovi |
 | SAFE-002 | Implementirati read-only sandbox executor | 5 | P0 | NOT STARTED | SAFE-001 | integration test |
 | REF-001 | Implementirati izbor kandidata i refiner | 5 | P1 | NOT STARTED | GEN-001 promotion gate, SAFE-002 | B7 first-pass/final rezultat i audit razloga izbora/repair-a |

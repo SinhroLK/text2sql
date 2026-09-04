@@ -339,9 +339,9 @@ remains sealed.
 
 ## DSPY-001: B5 optimization over frozen B4
 
-The offline DSPY-001 implementation is complete and the task remains
-`IN PROGRESS` until an authorized paid compile produces a frozen B5 artifact
-and a complete development result. B5 consumes the exact B4 context: full
+DSPY-001 is complete. The paid compile produced a checksum-bound B5 program,
+and the frozen run covers all 31 development examples. B5 consumes the exact
+B4 context: full
 M-Schema plus three TF-IDF-selected, verified Spider 1.0 training
 demonstrations. It does not change the retrieval index or selector.
 
@@ -399,8 +399,9 @@ optimizer runtime versions exactly match the frozen config. This prevents a
 missing optional Optuna dependency from being discovered only after MIPROv2 has
 already generated candidates.
 
-The paid compile is a separate explicit command. With no resume flag it
-always creates a fresh, uniquely named cache:
+A fresh reproduction compile is a separate explicit paid command. With no
+resume flag it always creates a new, uniquely named cache and does not alter
+the evidentiary status of the frozen completed run:
 
 ```bash
 PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli optimize
@@ -463,5 +464,21 @@ PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli run
 ```
 
 The run command binds every checkpoint row to the config, program, database,
-and prompt hashes; it requires exact 31-ID coverage before EVAL-003 scoring. No
-completed live compile or B5 accuracy is claimed in this revision.
+and prompt hashes; it requires exact 31-ID coverage before EVAL-003 scoring.
+
+The completed MIPROv2 run selected the original/default instruction and reached
+2/10 validation accuracy. The frozen B5 development run scored 4/31 (12.90%)
+with 28/31 executable queries. Its 24 executable result mismatches show that
+the improvement over B4's 23/31 executable rate did not improve semantic
+accuracy; B4 remains at 5/31 and B6R remains best at 6/31.
+
+| Artifact | SHA-256 |
+|---|---|
+| Program state | `8fae3e1e9f59821565e2da001e480d7bd60b5de5cb31feec3ac06f67e69fce5b` |
+| Optimization manifest | `dd516c2d4c9454e61d3dd2bdc8d612a207e04ee6f72d29a60d134093ea5c3680` |
+| Predictions | `47fd965671ad8ae6a65c9e007649c4065c68803d10ce9f9e0cb114020ae697e7` |
+| EVAL-003 report | `878be5ed4fb0c6b96c2195ef16cf4bd19350c0a308eb58dc29aa91c408499f9e` |
+
+The next task is provider-free SEM-001 analysis of the 27 B5 failures. No
+further paid run should precede that analysis, and the 104-example test split
+remains sealed.

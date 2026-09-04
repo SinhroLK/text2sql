@@ -95,6 +95,7 @@ class OfficialGoldResultStore:
         evaluation_metadata_jsonl: str | Path,
         *,
         expected_metadata_sha256: str | None = None,
+        allowed_example_ids: Iterable[str] | None = None,
     ) -> "OfficialGoldResultStore":
         directory = Path(result_dir).expanduser().resolve()
         metadata_path = Path(evaluation_metadata_jsonl).expanduser().resolve()
@@ -119,6 +120,15 @@ class OfficialGoldResultStore:
                 actual_sha256=metadata_sha256,
             )
 
+        allowed_ids = (
+            None if allowed_example_ids is None else frozenset(allowed_example_ids)
+        )
+        if allowed_ids is not None and not allowed_ids:
+            raise EvaluationResourceError(
+                "empty_gold_result_scope",
+                "The requested gold-result scope is empty",
+            )
+
         metadata: dict[str, dict[str, Any]] = {}
         with metadata_path.open("r", encoding="utf-8") as stream:
             for line_number, line in enumerate(stream, start=1):
@@ -137,6 +147,8 @@ class OfficialGoldResultStore:
                         "invalid_evaluation_metadata",
                         f"Missing instance_id on evaluation metadata line {line_number}",
                     )
+                if allowed_ids is not None and example_id not in allowed_ids:
+                    continue
                 if example_id in metadata:
                     raise EvaluationResourceError(
                         "duplicate_reference_id",
@@ -144,6 +156,15 @@ class OfficialGoldResultStore:
                         example_id=example_id,
                     )
                 metadata[example_id] = record
+
+        if allowed_ids is not None:
+            missing_metadata = sorted(allowed_ids - metadata.keys())
+            if missing_metadata:
+                raise EvaluationResourceError(
+                    "evaluation_metadata_coverage_mismatch",
+                    "Evaluation metadata does not cover the requested gold-result scope",
+                    missing=missing_metadata,
+                )
 
         grouped: dict[str, list[Path]] = {}
         for path in sorted(directory.glob("*.csv")):
@@ -185,6 +206,14 @@ class OfficialGoldResultStore:
                 for path, condition in zip(paths, conditions, strict=True)
             )
             results[example_id] = OfficialGoldResult(example_id, variants, ignore_order)
+        if allowed_ids is not None:
+            missing_results = sorted(allowed_ids - results.keys())
+            if missing_results:
+                raise EvaluationResourceError(
+                    "gold_result_coverage_mismatch",
+                    "Official gold-result coverage is incomplete",
+                    missing=missing_results,
+                )
         return cls(results, directory, metadata_path)
 
     def get(self, example_id: str) -> OfficialGoldResult:

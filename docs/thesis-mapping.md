@@ -4,7 +4,7 @@
 |---|---|---|
 | Dataset loaders and split policy | Dataset and methodology | dataset version, checksums, split tests |
 | Schema serialization/linking | Proposed method | canonical schema, M-Schema, extractive-lexical-v1, B1/B2/B6/B6R frozen configurations, linking audit and tests |
-| Retrieval and DSPy | Prompt optimization | RET-001 frozen train-only index/leakage audit; completed RET-002 B3/B4 selectors, configs, audits and 31-target live results; future B5 |
+| Retrieval and DSPy | Prompt optimization | RET-001/RET-002 evidence; frozen DSPY-001 B5 config, signature, execution metric, 21/10 audit and tests; paid compile pending |
 | Validator and refiner | Verification | B7 configuration and repair metrics |
 | Guardrails and sandbox | Security | S0/S1 and adversarial evaluation |
 | Experiment runner/evaluator | Results | EVAL-001 comparator, primary EVAL-003 official-result runner, optional EVAL-002 SQL audit, exact-ID summaries and frozen configurations |
@@ -25,6 +25,18 @@ and two 31-target provider-free audits. Frozen live results add B3 4/31 and B4
 5/31 with 23/31 executable outputs in both arms. B4 improves on random by one
 example but remains below B6R; RET-002 is evidence of a modest retrieval effect,
 not strong absolute model quality.
+
+`DSPY-001` implementation evidence is ADR-013/ADR-014, the frozen
+`configs/optimization/dspy001-b5.toml`, `B5TextToSQL` signature, MIPROv2
+wrapper, execution-result metric, development-only gold-result scope, 31-target
+offline audit, and `tests/test_dspy_b5.py`. Token and recovery evidence adds
+the frozen rolling TPM policy, strict per-run replay cache,
+`tests/test_dspy_rate_limit.py`, and `tests/test_dspy_recovery.py`. It covers
+wait/retry accounting, explicit compatible resume, stochastic-key separation,
+integrity/secret/concurrency rejection, and non-cacheable truncations. Runtime
+dependency evidence pins and preflights Optuna 4.9.0 before paid requests. This
+supports methodology and reproducibility only; no B5 accuracy claim exists
+until the paid compile and complete development run are frozen.
 
 Those reduction figures are engineering measurements, not evidence of SQL accuracy or real schema recall. The project currently has trusted table/column relevance annotations only in fixtures; consequently fixture tests report precision/recall/F1, while frozen B6R supplies its own EVAL-003 claim: 6/31 (19.35%), including five non-empty and one empty-result match.
 

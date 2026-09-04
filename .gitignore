@@ -33,6 +33,7 @@ artifacts/**/*.jsonl
 artifacts/**/*.csv
 artifacts/**/*.log
 artifacts/**/*.json
+artifacts/dspy/**/checkpoints/
 !artifacts/**/.gitkeep
 
 # Distribution

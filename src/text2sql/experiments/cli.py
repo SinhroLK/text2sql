@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
-from text2sql.datasets import load_spider2_lite_sqlite
+from text2sql.datasets import load_and_validate_protocol, load_spider2_lite_sqlite
 from text2sql.evaluation import (
     EvaluationResourceError,
     OfficialGoldResultStore,
@@ -90,12 +90,21 @@ def main(argv: list[str] | None = None) -> int:
             PROJECT_ROOT,
             args.expected_dataset_manifest,
         )
+        protocol, _ = load_and_validate_protocol(args.dataset_config, PROJECT_ROOT)
+        development_ids = {
+            example.example_id for example in dataset.for_split("development")
+        }
         resolver = Spider2SQLiteDatabaseResolver(args.database_root)
         evaluator = Spider2GoldResultRunner(
             dataset=dataset,
             database_resolver=resolver,
             gold_results=OfficialGoldResultStore.from_official_directory(
-                args.gold_result_root, args.standards_jsonl
+                args.gold_result_root,
+                args.standards_jsonl,
+                expected_metadata_sha256=protocol["source"][
+                    "evaluation_manifest_sha256"
+                ],
+                allowed_example_ids=development_ids,
             ),
         )
         provider = GroqProvider(

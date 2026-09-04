@@ -335,3 +335,133 @@ sanitized Groq quota category and retry/reset details without exposing account
 IDs or key-like strings. The run resumed unchanged after the server-provided
 reset. The verified suite passes 108/108 tests and the 104-example test split
 remains sealed.
+
+
+## DSPY-001: B5 optimization over frozen B4
+
+The offline DSPY-001 implementation is complete and the task remains
+`IN PROGRESS` until an authorized paid compile produces a frozen B5 artifact
+and a complete development result. B5 consumes the exact B4 context: full
+M-Schema plus three TF-IDF-selected, verified Spider 1.0 training
+demonstrations. It does not change the retrieval index or selector.
+
+`configs/optimization/dspy001-b5.toml` pins DSPy 3.3.1, LiteLLM 1.99.0, Optuna 4.9.0, the B4 config checksum,
+the `B5TextToSQL` signature version, and an explicit MIPROv2 budget: 3
+candidates, 5 trials, zero DSPy-level bootstrapped demonstrations, zero
+labeled demonstrations, no minibatching, one optimizer thread, and seed 42. Explicit
+values avoid changes in DSPy's moving `auto` defaults.
+ Program-aware and tip-aware instruction proposers remain enabled;
+data-aware and few-shot-aware proposers are disabled because they concatenate
+multiple complete B4 contexts. The three verified Spider 1.0 examples remain
+inside every B4 context, but DSPy does not add another demonstration layer.
+
+The same config pins the observed Groq on-demand limit at 8,000 TPM, applies a
+0.90 safety margin (7,200-token rolling budget), uses a 60-second window plus a
+2-second buffer, and permits at most eight rate-limit retries. Each call
+reserves LiteLLM-counted input plus the 1,024-token maximum output before it is
+sent. A successful response replaces the reservation with actual prompt plus
+completion usage. Both MIPROv2 prompt-model and task-model calls share this
+process-wide limiter. Proactive waits and 429 retry waits emit sanitized JSON to
+stderr and their counts/durations are frozen in the optimization manifest.
+The real formatted task requests were audited provider-free: the largest input
+is 5,682 tokens and its conservative input-plus-output reservation is 6,706,
+which fits the 7,200-token safe budget.
+
+Optimization uses only the 31 development examples and splits them by database:
+
+| Fold | Databases | Examples |
+|---|---|---:|
+| Train | Airlines, city_legislation, music, oracle_sql | 21 |
+| Validation | electronic_sales, f1 | 10 |
+
+The metric exposes only EVAL-003 execution correctness. The gold-result store is
+scoped to these explicit development IDs before CSV loading; Spider2 gold SQL is
+never used as a demonstration or metric input. Metric audit records contain the
+example ID, score, status, generated-SQL SHA-256, and bootstrap flag, not SQL
+text.
+
+Run the provider-free audit:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli audit \
+  --report artifacts/reports/dspy001-b5-audit.json
+```
+
+The verified audit covers 21 training and 10 validation examples, makes zero
+provider calls, and reports zero test examples and zero gold SQL use. Its frozen
+config SHA-256 is
+`a1c90046058821d2b4df62e0363e09c3b89d9b381900e9ebb79e15b5983ccf7b`; the
+deterministic audit report SHA-256 is
+`ba8c7f5078150b908bb6a8bd496258dfafb249844e887b31b1a348f1947bfd1c`.
+
+Before dataset preparation or any paid request, the CLI verifies that all three
+optimizer runtime versions exactly match the frozen config. This prevents a
+missing optional Optuna dependency from being discovered only after MIPROv2 has
+already generated candidates.
+
+The paid compile is a separate explicit command. With no resume flag it
+always creates a fresh, uniquely named cache:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli optimize
+```
+
+Startup emits `b5_recovery_run_started` and a run ID. If that process is
+interrupted, continue only that run with:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli optimize \
+  --resume-run-id run-YYYYMMDDtHHMMSSz-xxxxxxxxxxxx
+```
+
+This is deterministic replay recovery, not a serialized live Optuna study:
+MIPROv2 restarts from seed 42, identical successful LM calls are replayed, and
+execution metrics are recomputed against checksum-bound databases/gold results.
+The per-run identity binds the full config and B4 config, runtime versions,
+program/limiter/cache/evaluator source, model parameters and endpoint, all
+train/validation IDs and prompt hashes, and dataset/evaluation resource
+manifests. A mismatch, age over 72 hours, completed run, concurrent process,
+missing committed entry, ledger/response tampering, or restricted-unpickle
+failure aborts instead of silently using the entry. `rollout_id` remains in
+the key, preventing stochastic candidates from collapsing into one sample.
+
+Only provider responses with a non-empty completion and
+`finish_reason="stop"` are cached. 429s, provider failures, empty responses,
+and max-token truncations are never cached; truncation is a terminal
+infrastructure error and is not passed to the execution metric. The cache
+request redacts credentials, persisted files are mode-restricted and scanned
+for `GROQ_API_KEY`, and cached usage is cleared on replay so provider tokens
+are not counted twice. The manifest reports provider attempts, cache
+hits/misses, replayed original token volume, waits, and retries separately.
+Cache files are ignored by Git.
+
+Recovery artifacts are written under
+`artifacts/dspy/dspy001-b5/checkpoints/<run-id>/`:
+
+- `run-state.json`: frozen identity, status, resume count, and progress count;
+- `lm-cache/cache-ledger.json` plus restricted disk entries: exact successful
+  provider responses with two-phase write state and response hashes;
+- `metric-progress.jsonl`: append-only example/status/score/SQL-hash records,
+  never generated SQL text;
+- `mipro/`: DSPy's diagnostic evaluated-program snapshots.
+
+A crash before a response exists necessarily repeats that provider call. A
+crash after the cache entry reaches disk but before ledger commit is recovered
+from its pending state. Recovery deliberately cannot guarantee that an
+unversioned provider deployment did not change between calls; the 72-hour
+window limits that exposure, and this limitation must be reported with the
+experiment.
+
+It requires `GROQ_API_KEY`. On success, it writes
+`artifacts/dspy/dspy001-b5/program-state.json` using DSPy's JSON state format
+and a checksum-bound `optimization-manifest.json`. Loading fails closed on
+config, version, program, or artifact hash mismatch. Then run or resume the
+frozen program with:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli run
+```
+
+The run command binds every checkpoint row to the config, program, database,
+and prompt hashes; it requires exact 31-ID coverage before EVAL-003 scoring. No
+completed live compile or B5 accuracy is claimed in this revision.

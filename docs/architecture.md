@@ -14,6 +14,7 @@ question + SQLite database
         -> linked M-Schema prompt (B6)
           or complete compact schema + linked detail (B6R)
           or full M-Schema + three verified Spider 1.0 demonstrations (B3/B4)
+        -> frozen DSPy signature/MIPROv2-compiled instruction (B5)
         -> provider candidate + usage metadata
         -> append-only prediction checkpoint and linking/retrieval audit
         -> separate EVAL-003 read-only execution/result comparison
@@ -42,6 +43,19 @@ few-shot M-Schema prompt and record every selected retrieval ID, database, rank,
 and score. Provider-free audits cover all 31 development targets; completed
 live results are B3 4/31 and B4 5/31. Neither retrieval work nor the B6R result permits
 opening the test split.
+
+DSPY-001 wraps the complete frozen B4 context in a typed `B5TextToSQL`
+signature. MIPROv2 optimizes instructions only, using a database-disjoint 21/10 partition of the 31 development examples.
+Its metric receives only official materialized-result execution correctness;
+extra bootstrapped and labeled DSPy demonstrations are fixed at zero because
+they would duplicate entire B4 contexts; the three inherited Spider 1.0
+retrieval examples remain inside each context. Program state and
+manifest hashes are verified on load. A process-wide rolling limiter reserves
+LiteLLM-counted input plus maximum output tokens for every task and prompt-model
+call, reconciles successful reservations with observed usage, and honors
+structured or parsed Groq retry delays without logging provider identifiers.
+The offline path is implemented and
+audited, while the paid compilation artifact remains pending.
 Fixture annotations are the only current source of linker precision/recall/F1.
 
 ## Design rules
@@ -56,6 +70,16 @@ Fixture annotations are the only current source of linker precision/recall/F1.
 - Development and test coverage is enforced by the dataset/evaluation boundaries.
 - Retrieval artifacts must verify as Spider 1.0 train-only before any selector can consume them.
 - B3/B4 selectors and index identities are frozen in config; every target records its exact selection.
+- B5 optimizer budgets, development folds, DSPy version, B4 config, and output state are checksum-bound.
+- DSPy, LiteLLM, and Optuna versions are validated before any paid optimizer request.
+- B5 prompt and task calls share one frozen rolling TPM budget and expose sanitized wait statistics.
+- B5 LM recovery caches are unique per fresh run and reusable only through an
+  explicit, identity-compatible, time-bounded resume.
+- Cache keys retain complete messages, model settings and stochastic rollout
+  identity; only complete successful responses are persisted.
+- Cache corruption, concurrent resume and identity/resource drift fail closed;
+  final 31-example B5 generation remains uncached.
+- Optimization gold results are loaded only for explicitly allowed development IDs.
 - Every component is callable from modules, scripts and tests without a notebook kernel.
 
 The target offline/online architecture, task dependencies and remaining safety/retrieval work are maintained in `docs/project-plan-roadmap.md`.

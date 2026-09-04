@@ -564,15 +564,12 @@ Zadaci:
 | R-07 | Refiner koristi osetljive DB greške | srednja/visok | sanitizovati poruke i koristiti samo sandbox |
 | R-08 | Previše komponenti ugrozi rok | visoka/visok | faze i MVP granica; Spider2-Snow i kompleksni agent su opcioni |
 | R-09 | API rezultati nisu deterministički | visoka/srednji | temperatura 0, seed gde postoji, više ponavljanja i sačuvani izlazi |
-| R-10 | Ponovljeno podešavanje na svih 31 development primera daje optimističan rezultat | visoka/visok | unapred opisati najviše dve B7P verzije, objaviti sve run-ove, zabraniti ID-specifična pravila i otvoriti test samo jednom posle freeze-a |
-| R-11 | Validan SQL prikrije semantički pogrešan rezultat | visoka/visok | odvojeno meriti plan, executable rate i EVAL-003; promotion zahteva stvarni accuracy dobitak, ne samo manje parser grešaka |
-| R-12 | Binarni execution signal je previše redak za prompt optimizaciju | visoka/srednji | typed plan i strukturne provere koristiti za dijagnostiku/rangiranje, ali zadržati EVAL-003 kao jedini primarni acceptance signal |
 
 ## 14. Tracker zadataka
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 20 zadataka je završeno; `DSPY-001` i Faza 4 su `DONE`. B5 4/31 je negativni rezultat, B6R 6/31 ostaje najbolji arm, a sledeći aktivni zadatak je provider-free `SEM-001` pre bilo kakvog novog paid run-a.
+**Sažetak stanja:** 19 zadataka je završeno; `DSPY-001` je `IN PROGRESS`. Program, execution metric, split, audit i artifact verifikacija su implementirani; sledeći aktivni korak je autorizovani MIPROv2 compile i zamrzavanje B5 rezultata.
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
@@ -596,15 +593,10 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | LINK-002 | Implementirati recall-first schema-linking repair | 3 | P1 | DONE | LINK-001 | frozen B6R: 31/31, 6/31 tačnih, 25/31 executable; 94.140/15.806 tokena, prediction/report checksumovi i analiza grešaka |
 | RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | DONE | DATA-001 | pinned Spider 1.0 train 7.000/140, index SHA-256 `82ee39e0...0389e`, full Spider2 ID/DB/question firewall i 8 testova |
 | RET-002 | Implementirati random i similarity few-shot | 4 | P0 | DONE | RET-001 | B3 4/31 i B4 5/31; oba 23/31 executable; frozen config/audit/prediction/report checksumovi |
-| DSPY-001 | Definisati i optimizovati DSPy program | 4 | P1 | DONE | RET-002, EVAL-001 | MIPROv2 best validation 2/10; frozen B5 31/31, 4/31 tačna, 28/31 executable; program/manifest/prediction/report checksumovi |
-| SEM-001 | Napraviti upareni semantic-error corpus za B1/B6R/B4/B5 | 5 | P0 | NOT STARTED | DSPY-001, LINK-002 | 31-ID matrica, 27 kategorisanih B5 neuspeha, dominantni uzroci i checksumovi |
-| SEM-002 | Implementirati typed SemanticPlan i validator plana | 5 | P0 | NOT STARTED | SEM-001, SCHEMA-001 | fixture testovi, schema/JOIN validacija i auditabilni plan hash-evi |
-| RET-003 | Implementirati Spider1 train-only SQL-skeleton retrieval | 5 | P0 | NOT STARTED | SEM-001, RET-001 | skeleton indeks, leakage testovi i per-target retrieval audit |
-| GEN-001 | Implementirati i evaluirati single-query B7P | 5 | P0 | NOT STARTED | SEM-002, RET-003, LINK-002 | frozen 31/31 B7P; promotion gate >=8 correct, >=28 executable i >=2 nova non-empty pogotka prema B6R |
-| MODEL-001 | Proveriti capability najviše tri zamrznuta modela za B7P | 5 | P1 | NOT STARTED | GEN-001 | objavljeni svi development pokušaji, trošak i unapred definisan izbor |
-| SAFE-001 | Implementirati SQL AST validator | 5 | P0 | NOT STARTED | SEM-002, SCHEMA-001 | security i semantic-plan coverage unit testovi |
+| DSPY-001 | Definisati i optimizovati DSPy program | 4 | P1 | IN PROGRESS | RET-002, EVAL-001 | offline B5 config/program/metric, 21/10 audit, token-aware limiter, strict per-run replay recovery, dependency preflight i ADR-013/014; paid compile/artifact pending |
+| SAFE-001 | Implementirati SQL AST validator | 5 | P0 | NOT STARTED | SCHEMA-001 | security unit testovi |
 | SAFE-002 | Implementirati read-only sandbox executor | 5 | P0 | NOT STARTED | SAFE-001 | integration test |
-| REF-001 | Implementirati izbor kandidata i refiner | 5 | P1 | NOT STARTED | GEN-001 promotion gate, SAFE-002 | B7 first-pass/final rezultat i audit razloga izbora/repair-a |
+| REF-001 | Implementirati izbor kandidata i refiner | 5 | P1 | NOT STARTED | SAFE-002 | B7 rezultat |
 | SEC-001 | Definisati threat model i adversarial skup | 6 | P0 | NOT STARTED | SAFE-002 | verzionisan test skup |
 | SEC-002 | Implementirati i evaluirati guardrails | 6 | P0 | NOT STARTED | SEC-001 | S0/S1 rezultati |
 | RUN-001 | Zamrznuti finalne konfiguracije | 7 | P0 | NOT STARTED | sve obavezne faze | release tag/commit |
@@ -1084,25 +1076,4 @@ Sledeće:
 1. pokrenuti novi plaćeni `optimize` i sačuvati ispisani run ID;
 2. ako se prekine, ponoviti isti command sa `--resume-run-id <run-id>`;
 3. nakon uspeha pokrenuti frozen B5 nad 31 development primerom i zaključiti rezultat/checksumove.
-
-### 2026-09-04 - DSPY-001/B5 završen i plan semantičkog oporavka
-
-- MIPROv2 run `run-20260903t183811z-107733379ff8` je uspešno završen sa 3 instruction kandidata i 5 trial-a; najbolji validation score je 20,00% (2/10);
-- izabrani `program-state.json` sadrži originalnu/default B5 instrukciju bez DSPy-level demonstracija, pa ponuđene instrukcije nisu dokazale dobitak pod zamrznutim budžetom;
-- finalni B5 run pokriva 31/31 development ID-jeva i postiže 4/31 (12,90%): tačni su `local202`, `local274`, `local275` i `local354`;
-- B5 ima 28/31 executable upita, naspram B4 23/31, ali 24 executable upita vraćaju pogrešan rezultat. Poboljšana je sintaksna/transportna pouzdanost, ne semantička tačnost;
-- B4 ostaje na 5/31, a B6R ostaje najbolji development arm na 6/31. B5 se čuva kao negativni rezultat i ne menja se retroaktivno;
-- B5 je potrošio 121.787 input i 15.777 output tokena; throttling i resumable checkpoint su uticali na trajanje, ne na scoring ili coverage;
-- artifact SHA-256:
-  - program: `8fae3e1e9f59821565e2da001e480d7bd60b5de5cb31feec3ac06f67e69fce5b`;
-  - optimization manifest: `dd516c2d4c9454e61d3dd2bdc8d612a207e04ee6f72d29a60d134093ea5c3680`;
-  - predictions: `47fd965671ad8ae6a65c9e007649c4065c68803d10ce9f9e0cb114020ae697e7`;
-  - report: `878be5ed4fb0c6b96c2195ef16cf4bd19350c0a308eb58dc29aa91c408499f9e`;
-- Spider2 test split ostaje zatvoren. Pošto je svih 31 development primera već korišćeno za razvoj, naredni dev rezultati se tretiraju kao engineering selection, ne kao nepristrasna procena generalizacije;
-- Faza 4 i `DSPY-001` su zatvoreni; Faza 5 sada prvo rešava kvalitet početnog upita kroz SEM-001/SEM-002/RET-003/GEN-001, a multi-candidate refiner ostaje uslovljen B7P promotion gate-om.
-
-Sledeće:
-
-1. implementirati provider-free `SEM-001` i kategorisati svih 27 B5 neuspeha bez korišćenja test skupa ili gold SQL-a;
-2. na osnovu dominantnih uzroka zamrznuti typed `SemanticPlan`, SQL-skeleton retriever i single-query B7P pre novog paid run-a;
-3. dozvoliti B7 multi-candidate/refiner rad samo ako B7P postigne najmanje 8/31, najmanje 28/31 executable i najmanje dva nova non-empty pogotka prema B6R.
+- paid compile i dalje nije završen i sledeći pokušaj kreće od početka.

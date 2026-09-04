@@ -52,7 +52,7 @@ predstavlja samo pozadinsku literaturu ili je planiran za kasniju fazu.
 | `PAPER-XIYAN-001` | `ACTIVE` | Y. Gao et al., *A Preview of XiYan-SQL: A Multi-Generator Ensemble Framework for Text-to-SQL*, arXiv:2411.08599, v3, 2025. <https://arxiv.org/abs/2411.08599> | Primarni metodološki izvor za SCHEMA-002 M-Schema reprezentaciju; ideje o više kandidata i refineru ostaju opcione. |
 | `CODE-XIYAN-MSCHEMA-001` | `ACTIVE` | Zvanični `XGenerationLab/M-Schema` repozitorijum, commit `755751451be841f7a54f8b08c0a1f818b041a1c0`, pristupljeno 2026-08-29, Apache-2.0. <https://github.com/XGenerationLab/M-Schema/tree/755751451be841f7a54f8b08c0a1f818b041a1c0> | Referenca za kompatibilnu sekcijsku sintaksu, pojednostavljene tipove i najviše tri reprezentativna primera; projektna implementacija je nezavisna, read-only i strože filtrira vrednosti. |
 | `PAPER-SCHEMA-001` | `ACTIVE` | M. Glass et al., *Extractive Schema Linking for Text-to-SQL*, arXiv:2501.17174, 2025. <https://arxiv.org/abs/2501.17174> | Metodološka osnova za extractive schema linking i kontrolisanje odnosa precision/recall. LINK-001 koristi nezavisni deterministički lexical/value baseline sa PK/FK closure-om i full-schema fallback-om; LINK-002/B6R dodaje recall-first hibridni kontekst posle negativnog B6 rezultata. Ne tvrdi se reprodukcija treniranog modela iz rada. |
-| `PAPER-DSPY-001` | `PLANNED` | O. Khattab et al., *DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines*, arXiv:2310.03714, 2023. <https://arxiv.org/abs/2310.03714> | Osnova za automatizovanu optimizaciju prompt programa umesto ručnog biranja prompta. |
+| `PAPER-DSPY-001` | `ACTIVE` | O. Khattab et al., *DSPy: Compiling Declarative Language Model Calls into Self-Improving Pipelines*, arXiv:2310.03714, 2023. <https://arxiv.org/abs/2310.03714> | Osnova za automatizovanu optimizaciju prompt programa umesto ručnog biranja prompta. |
 | `PAPER-P2SQL-001` | `PLANNED` | R. Pedro et al., *From Prompt Injections to SQL Injection Attacks: How Protected is Your LLM-Integrated Web Application?*, arXiv:2308.01990, v4, 2025. <https://arxiv.org/abs/2308.01990> | Osnova za prompt-to-SQL threat model, adversarial testove i input guardrails. |
 | `PAPER-CHASE-001` | `BACKGROUND` | M. Pourreza et al., *CHASE-SQL: Multi-Path Reasoning and Preference Optimized Candidate Selection in Text-to-SQL*, arXiv:2410.01943, 2024. <https://arxiv.org/abs/2410.01943> | Inspiracija za opciono generisanje više kandidata i izbor kandidata; puna multi-agent reprodukcija je van MVP obima. |
 | `PAPER-MACSQL-001` | `BACKGROUND` | B. Wang et al., *MAC-SQL: A Multi-Agent Collaborative Framework for Text-to-SQL*, arXiv:2312.11242, v6, 2025. <https://arxiv.org/abs/2312.11242> | Inspiracija za ograničeni refiner i rad sa greškama; puna multi-agent arhitektura je van MVP obima. |
@@ -129,7 +129,7 @@ analizirana pri formiranju aktuelne arhitekture. Kopije notebookova i skripti u
 | `INTERNAL-GENERATOR-001` | `LEGACY` | `csv_generator.py` | `08e8679a68a63dd2911eabc7e45c44bd015f245e8f3cc5af2335c04dae1dc17a` | Raniji generator eksperimentalnog CSV-a. |
 | `INTERNAL-CSV-001` | `LEGACY` | `spider_text_sql.csv` | `4871266860ff6f1a5b5608d890b137cbbe49950b03edd5aca9b410b1bab21e31` | Stari dataset; zabranjen za finalnu evaluaciju. |
 | `INTERNAL-README-001` | `LEGACY` | Originalni `README.md` | `ad76c8e88d10cd7983d9f49e13de81bc776c0b80675596295e1272e11b2f1d75` | Dokumentacija prethodnog prototipa. |
-| `INTERNAL-REQ-001` | `LEGACY` | Originalni `requirements.txt` | `75315830ca078820f7c8ef4ee98543c1e653758566e47f68ff0fc4b4373de2a3` | Evidencija zavisnosti prethodnog prototipa. |
+| `INTERNAL-REQ-001` | `LEGACY` | `requirements.txt` | `f4a5f6626d6cb55d591b054cf0f722e1bc6fe6bee355141cc747a5d2684c4114` | Legacy dependency list plus current pinned DSPY-001 block; original legacy SHA-256 was `75315830...de2a3`. |
 | `INTERNAL-GITIGNORE-001` | `LEGACY` | Originalni `.gitignore` | `5bde4c0778400138497dd87d36f6bd3d7c410c75b471b5cf78d2660559da27f8` | Ulaz za proveru ranijih pravila ignorisanja tajni i artefakata. |
 
 Sadržaj originalnog `.env` fajla nije analiziran niti evidentiran. Aktivni ključevi,
@@ -144,7 +144,9 @@ Za svaku biblioteku tada treba dodati zaključanu verziju iz `requirements.lock`
 |---|---|---|---|
 | `DOC-PYTHON-001` | `ACTIVE` | Python 3.11 dokumentacija: <https://docs.python.org/3.11/> | Standardna biblioteka, `sqlite3`, `dataclasses`, `tomllib`, CLI i testovi. |
 | `DOC-SQLITE-001` | `ACTIVE` | SQLite dokumentacija: <https://www.sqlite.org/docs.html> | EVAL-001 read-only execution/in-memory backup i SCHEMA-002 `mode=ro` + `query_only` bounded sampling, timeout i introspekcija. |
-| `DOC-DSPY-001` | `PLANNED` | Zvanična DSPy dokumentacija/repozitorijum: <https://github.com/stanfordnlp/dspy> | Implementacija i zaključavanje B5 programa u Fazi 4. |
+| `DOC-DSPY-001` | `ACTIVE` | Zvanična DSPy dokumentacija/repozitorijum: <https://github.com/stanfordnlp/dspy> | Implementacija i zaključavanje B5 programa u Fazi 4. |
+| `DOC-LITELLM-001` | `ACTIVE` | Zvanični LiteLLM repozitorijum: <https://github.com/BerriAI/litellm> | DSPy transport i eksplicitno brojanje input tokena za B5 rolling TPM limiter; zaključana verzija 1.99.0. |
+| `DOC-OPTUNA-001` | `ACTIVE` | Zvanični Optuna repozitorijum: <https://github.com/optuna/optuna> | MIPROv2 prompt-parameter search backend; direktno zaključana verzija 4.9.0 i preflight pre paid poziva. |
 | `DOC-GROQ-001` | `PLANNED` | Zvanična Groq API dokumentacija: <https://console.groq.com/docs> | Realni LLM adapter; tačan model ID i datum pristupa ulaze u run manifest. |
 | `DOC-GRADIO-001` | `PLANNED` | Zvanična Gradio dokumentacija: <https://www.gradio.app/docs> | Finalni demo koji koristi isti pipeline kao eksperimenti. |
 | `DOC-SQLGLOT-001` | `PLANNED` | Zvanična SQLGlot dokumentacija/repozitorijum: <https://github.com/tobymao/sqlglot> | Kandidat za AST parsiranje i validaciju; konačna odluka se evidentira ADR-om. |
@@ -161,7 +163,7 @@ Za svaku biblioteku tada treba dodati zaključanu verziju iz `requirements.lock`
 | M-Schema (`SCHEMA-002`) | `PAPER-XIYAN-001`, `CODE-XIYAN-MSCHEMA-001`, `DOC-SQLITE-001` |
 | Extractive schema linking (`LINK-001`, `LINK-002`) | `PAPER-SCHEMA-001` |
 | Similarity few-shot retrieval (`RET-001`, `RET-002`) | `LIT-RETRIEVAL-001`, `LIT-DYNAMIC-001`, `DATA-SPIDER1-001` |
-| DSPy optimizacija (`DSPY-001`) | `PAPER-DSPY-001`, `DOC-DSPY-001` |
+| DSPy optimizacija (`DSPY-001`) | `PAPER-DSPY-001`, `DOC-DSPY-001`, `DOC-LITELLM-001`, `DOC-OPTUNA-001` |
 | Više kandidata i refiner (`REFINE-001`) | `PAPER-XIYAN-001`, `PAPER-CHASE-001`, `PAPER-MACSQL-001` |
 | Prompt-to-SQL bezbednosna evaluacija (`SEC-002`) | `PAPER-P2SQL-001`, `LIT-SEC-001` |
 | AST validator i SQLite sandbox (`SAFE-001`, `SAFE-002`) | `DOC-SQLITE-001`; izabrani AST parser se dodaje nakon ADR odluke |
@@ -203,3 +205,7 @@ Zamenjuje ili je zamenjen izvorom:
 | 2026-08-30 | 1.9 | Aktiviran official Spider 1.0 train izvor za RET-001; zamrznuti su page/repository commit-i, CC BY-SA 4.0 licenca, archive/input/index hash-evi, 7.000/140 counts i zero-overlap Spider2 audit. |
 | 2026-08-30 | 2.0 | Aktiviran LIT-RETRIEVAL-001 za RET-002; evidentirani su transparentni TF-IDF cosine B4 baseline, fixed-random B3 kontrola i ograničenje da implementacija nije reprodukcija skeleton retrieval metode. |
 | 2026-08-31 | 2.1 | Evidentirani završeni RET-002 live rezultati: B3 4/31 i B4 5/31; potvrđen je mali dobitak similarity izbora uz ograničenje da B4 ne nadmašuje B1 niti B6R. |
+| 2026-09-01 | 2.2 | Aktivirani DSPy rad i dokumentacija za DSPY-001; zaključana je verzija 3.3.1, MIPROv2 budžet i razvojni execution-metric protokol, bez tvrdnje o još nepokrenutom live rezultatu. |
+| 2026-09-01 | 2.3 | Aktiviran LiteLLM 1.99.0 kao direktno zaključana zavisnost za B5 token counting; dokumentovan rolling 8.000 TPM limit, 7.200-token safety budžet i sanitized 429 retry-after statistika. |
+| 2026-09-02 | 2.4 | Aktiviran Optuna 4.9.0 za MIPROv2 search; dodat exact-version dependency preflight pre paid poziva i osvežen requirements.txt provenance hash. |
+| 2026-09-03 | 2.5 | Dodat ADR-014 za strogo per-run B5 replay keširanje: eksplicitni resume, potpuni identity hash, integritet/restricted loading, odvojeno provider/cache računovodstvo i dokumentovano ograničenje provider drift-a. |

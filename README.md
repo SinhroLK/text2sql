@@ -7,7 +7,7 @@ This project foundation uses a deterministic mock provider and a small SQLite fi
 ## Requirements
 
 - Python 3.11 or newer
-- Python dependencies installed from `requirements.lock` (including the official Groq SDK)
+- Python dependencies installed from `requirements.lock` (including DSPy 3.3.1, LiteLLM 1.99.0, Optuna 4.9.0, and the official Groq SDK)
 
 ## Quick start
 
@@ -77,10 +77,12 @@ Implemented:
 - version-controlled retrieval manifest and checksum-verifying artifact loader.
 - frozen B3 fixed-random and B4 TF-IDF cosine selectors and experiment configs;
 - few-shot M-Schema prompt integration and provider-free per-target retrieval audit.
+- frozen DSPY-001/B5 signature, database-disjoint 21/10 development split,
+  execution-result metric, offline audit CLI, and checksum-verified program artifacts.
 
 Not implemented yet:
 
-- DSPy optimization over the completed B4 foundation;
+- paid MIPROv2 compilation and the resulting 31-example B5 development run;
 - SQL AST validation and sandbox execution;
 - security evaluation;
 - Gradio application built on the new pipeline.
@@ -131,6 +133,63 @@ PYTHONPATH=src python3 -m text2sql.experiments.retrieval_cli \
 The audit records retrieved IDs, source databases, ranks and similarity scores,
 but does not call Groq or read Spider2 test outcomes. Completed development
 results are B3 4/31 and B4 5/31; the sealed test split was not opened.
+
+## DSPY-001 B5
+
+Audit the frozen B5 inputs without a provider key:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli audit \
+  --report artifacts/reports/dspy001-b5-audit.json
+```
+
+The frozen config uses MIPROv2 with 3 candidates and 5 trials, zero
+DSPy-level bootstrapped/labeled demonstrations, and a database-disjoint
+21-example training/10-example validation split. The three permitted Spider 1.0
+demonstrations remain inside each inherited B4 context.
+
+Start a new paid compile:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli optimize
+```
+
+The command prints a unique recovery run ID near startup. If the process is
+interrupted, resume that exact run (within 72 hours) with:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli optimize \
+  --resume-run-id run-YYYYMMDDtHHMMSSz-xxxxxxxxxxxx
+```
+
+A plain `optimize` command always starts an independent cache, so separate
+experiments cannot silently share model outputs. Resume restarts deterministic
+MIPROv2 orchestration and replays only identical successful LM calls; it is not
+an in-place Optuna snapshot. Cache identity covers config, code, dependency,
+model, endpoint, prompt, split, dataset, database and gold-result hashes.
+Different stochastic `rollout_id` values remain different cache keys.
+Corrupt, stale, mismatched, evicted, concurrent, secret-bearing, failed, empty,
+or truncated responses fail closed or are not cached.
+
+The optimizer also enforces the frozen 8,000 TPM Groq tier with a 90% rolling
+safety budget (7,200 tokens). Cache hits bypass both Groq and the limiter and
+are reported separately from provider usage. A 429 honors Groq's retry delay
+and is retried up to eight times. A `finish_reason="length"` response stops
+the run before it can be cached or scored.
+
+Recovery data lives under
+`artifacts/dspy/dspy001-b5/checkpoints/<run-id>/`; it contains an identity and
+status file, an integrity-ledger-backed LM cache, hash-only metric progress, and
+MIPRO diagnostic snapshots. It never contains the API key. On success the
+program and checksum-bound optimization manifest are still written under
+`artifacts/dspy/dspy001-b5/`. The paid compile has not completed, so B5 does
+not yet have a development accuracy result.
+
+After compilation, run or resume exact 31-example generation and EVAL-003 scoring:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli run
+```
 
 ## Execution evaluator
 

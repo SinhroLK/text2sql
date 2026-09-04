@@ -2,7 +2,7 @@
 mysql-connector-python
 pandas
 gradio
-groq
+groq==1.6.0
 python-dotenv
 sqlparse
 
@@ -17,3 +17,7 @@ evaluate
 # (groq, pandas, python-dotenv already listed above)
 
 # after installing run python -m spacy download en_core_web_sm
+# Current DSPY-001 optimizer dependencies
+dspy==3.3.1
+litellm==1.99.0
+optuna==4.9.0

@@ -1,3 +1,6 @@
-# Direct runtime dependency. The official Groq SDK uses httpx for transport,
-# avoiding the Cloudflare 1010 rejection observed with urllib.
+# Direct runtime dependencies. Groq provides transport; DSPy/LiteLLM provide
+# optimization plus explicit token counting for the B5 rate limiter.
+dspy==3.3.1
 groq==1.6.0
+litellm==1.99.0
+optuna==4.9.0

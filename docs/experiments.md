@@ -479,6 +479,40 @@ accuracy; B4 remains at 5/31 and B6R remains best at 6/31.
 | Predictions | `47fd965671ad8ae6a65c9e007649c4065c68803d10ce9f9e0cb114020ae697e7` |
 | EVAL-003 report | `878be5ed4fb0c6b96c2195ef16cf4bd19350c0a308eb58dc29aa91c408499f9e` |
 
-The next task is provider-free SEM-001 analysis of the 27 B5 failures. No
-further paid run should precede that analysis, and the 104-example test split
+SEM-001 was the next provider-free task and is now complete. No further paid
+run preceded that analysis, and the 104-example test split
 remains sealed.
+
+## SEM-001: paired semantic-error corpus
+
+SEM-001 is complete. Rebuild it without a provider key:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.analysis.cli
+```
+
+The frozen config checksum-verifies the prediction checkpoints and EVAL-003
+reports for B1, B6R, B4, and B5 before parsing. The analyzer rejects
+non-development scope, coverage drift, duplicates, cross-arm database/question
+mismatches, inconsistent evaluation status, and any label set that does not
+cover exactly the 27 B5 failures. It reads no gold SQL or Spider2 test example.
+
+The resulting exact 31-ID matrix contains 21 stable failures, eight
+prompt-sensitive examples, and two examples that are correct in every arm.
+Primary B5 failure categories are:
+
+| Category | Failures |
+|---|---:|
+| Aggregation/grouping | 6 |
+| Output shape | 5 |
+| JOIN path/cardinality | 4 |
+| Date/time/window | 3 |
+| Filter/literal | 3 |
+| Recursion/set operation | 3 |
+| Table/column | 3 |
+
+The config SHA-256 is `6a863f548d05b3ffdc02d18a9042f5c2ef860ca0d073fdcdeb3497f97806e6de`.
+The corpus JSONL SHA-256 is `b7a90912244ab3b648f97aceefcc730b27b25dbe6df3a52e2941a230d26cfe2f`,
+the Markdown SHA-256 is `5de448b775813e7a768fa4d4c2031e02636d500002c5f28ad346068b2fdc3236`,
+and the manifest SHA-256 is `df488e3097ac68c1ccba704ef8cc60736eb4436820c35cf4892f6fa11221093b`.
+These diagnostics motivate SEM-002 and RET-003; they do not replace EVAL-003.

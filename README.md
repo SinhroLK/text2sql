@@ -80,10 +80,11 @@ Implemented:
 - frozen DSPY-001/B5 signature, database-disjoint 21/10 development split,
   execution-result metric, offline audit CLI, completed MIPROv2 compile, and
   checksum-verified 31-example B5 result (4/31 correct, 28/31 executable).
+- completed provider-free SEM-001 paired error corpus over B1/B6R/B4/B5 with
+  exact 31-ID coverage and frozen labels for all 27 B5 failures.
 
 Not implemented yet:
 
-- SEM-001 paired semantic-error corpus;
 - typed semantic planning, SQL-skeleton retrieval, and the B7P first-pass arm;
 - SQL AST validation and sandbox execution;
 - security evaluation;
@@ -200,6 +201,29 @@ EVAL-003 scoring:
 PYTHONPATH=src .venv/bin/python -m text2sql.optimization.cli run
 ```
 
+## SEM-001 paired semantic-error analysis
+
+Rebuild the development-only error corpus without a provider key:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.analysis.cli
+```
+
+The analysis checksum-verifies the B1, B6R, B4, and B5 predictions and
+EVAL-003 reports before parsing, requires exact coverage of the same 31
+development IDs, and requires frozen primary/secondary labels for exactly the
+27 B5 failures. It neither loads gold SQL nor reads Spider2 test examples.
+
+The three dominant B5 failure categories are aggregation/grouping (6), output
+shape (5), and JOIN path/cardinality (4). Twenty-one examples fail in all four
+arms, eight are prompt-sensitive, and two are correct in every arm. The
+checksum-bound JSONL, Markdown matrix, and manifest are written under
+`artifacts/reports/`; the frozen labeling contract is
+`configs/analysis/sem001-paired-errors-v1.json`.
+
+SEM-001 is complete. The next implementation tasks are the typed SemanticPlan
+(SEM-002) and train-only SQL-skeleton retrieval (RET-003).
+
 ## Execution evaluator
 
 Create the fixture database and compare two SQL statements:
@@ -225,6 +249,7 @@ mode, and optional strict SQL audit mode are documented in `docs/spider2-evaluat
 - `src/text2sql/` - reusable pipeline code;
 - `src/text2sql/retrieval/` - train-only retrieval index and leakage firewall;
 - `configs/` - versioned experiment and security configuration;
+- `src/text2sql/analysis/` - provider-free SEM-001 paired error analysis;
 - `configs/datasets/spider2-lite-sqlite-metadata-manifest-v1.json` - frozen
   DATA-003 output contract;
 - `tests/` - tests that run without external services;

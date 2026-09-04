@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 3.7
+**Verzija plana:** 3.8
 **Datum:** 4. septembar 2026.
-**Status projekta:** Faza 4 je `DONE`: B5 je kompletiran sa 4/31 (12,90%) i nije nadmašio B4 5/31 ni aktuelni najbolji B6R 6/31. Sledeći aktivni zadatak je `SEM-001`, analiza semantičkih grešaka pre implementacije boljeg first-pass generatora B7P.
-**Poslednja provera:** 4. septembar 2026. - B5 program, manifest, 31/31 prediction checkpoint i EVAL-003 report su prisutni i checksumovani; B5 ima 28/31 executable, ali 24/31 izvršiva upita vraćaju pogrešan rezultat.
+**Status projekta:** Faza 5 je `IN PROGRESS`: `SEM-001` je završen nad 31 development primerom i svih 27 B5 neuspeha je kategorisano. Sledeći aktivni zadaci su typed `SemanticPlan` (`SEM-002`) i Spider 1.0 SQL-skeleton retrieval (`RET-003`).
+**Poslednja provera:** 4. septembar 2026. - SEM-001 ima exact 31-ID coverage, 0 provider poziva, 0 test primera i 0 gold SQL-a; dominantni B5 uzroci su agregacija/grupisanje (6), output shape (5) i JOIN putanja/kardinalnost (4).
 
 ### Istorija verzija
 
@@ -38,6 +38,7 @@
 | 3.5 | 2. septembar 2026. | Instaliran i pinovan Optuna 4.9.0 za MIPROv2; dodat dependency preflight pre paid poziva, requirements/config/manifest evidencija i 120 testova |
 | 3.6 | 3. septembar 2026. | Dodat strogi per-run B5 replay cache: eksplicitni compatible resume, full identity/integrity kontrole, non-cacheable greške/truncation, odvojeno provider računovodstvo, ADR-014 i 132 testa |
 | 3.7 | 4. septembar 2026. | Završen DSPY-001/B5 sa negativnim rezultatom 4/31; B6R ostaje najbolji na 6/31. Faza 5 je preusmerena na eksplicitno semantičko planiranje i bolji single-query B7P pre validator/refiner sloja. |
+| 3.8 | 4. septembar 2026. | Završen SEM-001: checksum-pinned B1/B6R/B4/B5 matrica, 27 kategorisanih B5 neuspeha, dominantni uzroci, provider-free CLI, tri nova testa i checksumovani JSONL/Markdown/manifest artefakti. |
 
 ## 1. Svrha dokumenta
 
@@ -427,7 +428,7 @@ Zadaci:
 
 **Trajanje:** 3 nedelje
 **Zavisnost:** Faze 3 i 4
-**Status:** `NOT STARTED`
+**Status:** `IN PROGRESS`
 
 **Dokaz koji menja plan:** B5 je smanjio broj execution grešaka sa B4-ovih 8 na 3, ali je 24/31 puta izvršio semantički pogrešan SQL. Zato sintaksna validacija i veći broj kandidata nisu prvi lek. Prvo se meri i popravlja način na koji sistem konstruiše početni upit.
 
@@ -438,6 +439,10 @@ Zadaci:
 - posebno evidentirati primere koji prelaze correct/incorrect između arm-ova i odvojiti stabilne greške od prompt-osetljivih grešaka;
 - ne koristiti Spider2 test, ne rekonstruisati nedostupni gold SQL i ne unositi pravila vezana za konkretan example ID;
 - izlaz je checksumovan JSONL/Markdown error corpus i rangirana lista najmanje tri dominantna semantička uzroka.
+
+**Status SEM-001:** `DONE` - exact 31-ID matrica sadrži svih 27 B5
+neuspeha; dominantni uzroci su agregacija/grupisanje (6), output shape (5) i
+JOIN putanja/kardinalnost (4). Dvadeset jedan primer je stable failure, a osam prompt-sensitive.
 
 #### 5B - `SEM-002`: typed semantic plan pre pisanja SQL-a
 
@@ -575,7 +580,7 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 20 zadataka je završeno; `DSPY-001` i Faza 4 su `DONE`. B5 4/31 je negativni rezultat, B6R 6/31 ostaje najbolji arm, a sledeći aktivni zadatak je provider-free `SEM-001` pre bilo kakvog novog paid run-a.
+**Sažetak stanja:** 21 zadatak je završen; `SEM-001` je `DONE`, a Faza 5 je `IN PROGRESS`. B6R 6/31 ostaje najbolji arm; sledeći aktivni zadaci su `SEM-002` i `RET-003` pre bilo kakvog novog paid run-a.
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
@@ -600,7 +605,7 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | DONE | DATA-001 | pinned Spider 1.0 train 7.000/140, index SHA-256 `82ee39e0...0389e`, full Spider2 ID/DB/question firewall i 8 testova |
 | RET-002 | Implementirati random i similarity few-shot | 4 | P0 | DONE | RET-001 | B3 4/31 i B4 5/31; oba 23/31 executable; frozen config/audit/prediction/report checksumovi |
 | DSPY-001 | Definisati i optimizovati DSPy program | 4 | P1 | DONE | RET-002, EVAL-001 | MIPROv2 best validation 2/10; frozen B5 31/31, 4/31 tačna, 28/31 executable; program/manifest/prediction/report checksumovi |
-| SEM-001 | Napraviti upareni semantic-error corpus za B1/B6R/B4/B5 | 5 | P0 | NOT STARTED | DSPY-001, LINK-002 | 31-ID matrica, 27 kategorisanih B5 neuspeha, dominantni uzroci i checksumovi |
+| SEM-001 | Napraviti upareni semantic-error corpus za B1/B6R/B4/B5 | 5 | P0 | DONE | DSPY-001, LINK-002 | 31-ID matrica, 27 labela; top uzroci 6/5/4; JSONL `b7a90912...cfe2f`, Markdown `5de448b7...3236`, manifest `df488e30...093b`; 135 testova |
 | SEM-002 | Implementirati typed SemanticPlan i validator plana | 5 | P0 | NOT STARTED | SEM-001, SCHEMA-001 | fixture testovi, schema/JOIN validacija i auditabilni plan hash-evi |
 | RET-003 | Implementirati Spider1 train-only SQL-skeleton retrieval | 5 | P0 | NOT STARTED | SEM-001, RET-001 | skeleton indeks, leakage testovi i per-target retrieval audit |
 | MODEL-001 | Proveriti capability najviše tri zamrznuta modela za B7P | 5 | P1 | NOT STARTED | SEM-002, RET-003, LINK-002 | isti frozen B7P prompt/budžet za sve modele; objavljeni svi development pokušaji, trošak i unapred definisan izbor |
@@ -1109,3 +1114,23 @@ Sledeće:
 1. implementirati provider-free `SEM-001` i kategorisati svih 27 B5 neuspeha bez korišćenja test skupa ili gold SQL-a;
 2. na osnovu dominantnih uzroka zamrznuti typed `SemanticPlan`, SQL-skeleton retriever i single-query B7P pre novog paid run-a;
 3. dozvoliti B7 multi-candidate/refiner rad samo ako B7P postigne najmanje 8/31, najmanje 28/31 executable i najmanje dva nova non-empty pogotka prema B6R.
+
+### 2026-09-04 - SEM-001 završen
+
+- dodat je verzionisani `sem001-paired-semantic-errors-v1` ugovor sa
+  checksumovima B1/B6R/B4/B5 prediction i EVAL-003 report artefakata;
+- provider-free analyzer odbija checksum drift, non-development scope,
+  duplicate/missing/extra ID-jeve, inconsistent baseline/status i nepotpunu
+  label coverage pre generisanja rezultata;
+- svih 31 development ID-jeva je spojeno u determinističku matricu, a svih 27
+  B5 neuspeha ima zamrznutu primarnu i opcionu sekundarnu kategoriju;
+- 21 primer je stable failure kroz sva četiri arma, osam je prompt-sensitive,
+  a dva su stable correct;
+- dominantni primarni uzroci su agregacija/grupisanje (6), output shape (5) i
+  JOIN putanja/kardinalnost (4);
+- corpus JSONL SHA-256 je `b7a90912244ab3b648f97aceefcc730b27b25dbe6df3a52e2941a230d26cfe2f`,
+  Markdown SHA-256 `5de448b775813e7a768fa4d4c2031e02636d500002c5f28ad346068b2fdc3236`,
+  a manifest SHA-256 `df488e3097ac68c1ccba704ef8cc60736eb4436820c35cf4892f6fa11221093b`;
+- analyzer je imao 0 provider poziva, nije učitao gold SQL niti Spider2 test primere.
+
+Sledeće: implementirati SEM-002 i RET-003 offline pre zamrzavanja B7P prompta.

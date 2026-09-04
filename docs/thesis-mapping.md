@@ -5,6 +5,7 @@
 | Dataset loaders and split policy | Dataset and methodology | dataset version, checksums, split tests |
 | Schema serialization/linking | Proposed method | canonical schema, M-Schema, extractive-lexical-v1, B1/B2/B6/B6R frozen configurations, linking audit and tests |
 | Retrieval and DSPy | Prompt optimization | RET-001/RET-002 evidence; completed DSPY-001 B5 compile, frozen program/manifest, 21/10 optimization split, 31-example result and tests |
+| Semantic error analysis | Error analysis and proposed method | SEM-001 checksum-pinned B1/B6R/B4/B5 matrix, frozen 27-failure labels, transition audit and dominant-cause report |
 | Validator and refiner | Verification | B7 configuration and repair metrics |
 | Guardrails and sandbox | Security | S0/S1 and adversarial evaluation |
 | Experiment runner/evaluator | Results | EVAL-001 comparator, primary EVAL-003 official-result runner, optional EVAL-002 SQL audit, exact-ID summaries and frozen configurations |
@@ -39,6 +40,14 @@ completed compile selected the original/default instruction with 2/10
 validation accuracy. The frozen 31-example B5 run scored 4/31 (12.90%) with
 28/31 executable queries; it is a negative optimization result below B4 at
 5/31 and B6R at 6/31.
+
+`SEM-001` evidence is the versioned labeling contract,
+`text2sql.analysis.semantic_errors`, its provider-free CLI and tests, and the
+checksum-bound 31-example JSONL/Markdown corpus. All 27 B5 failures have a
+primary and optional secondary category. The three leading primary causes are
+aggregation/grouping (6), output shape (5), and JOIN path/cardinality (4);
+21 examples are stable failures across B1/B6R/B4/B5 and eight are
+prompt-sensitive. No gold SQL or Spider2 test example is used.
 
 Those reduction figures are engineering measurements, not evidence of SQL accuracy or real schema recall. The project currently has trusted table/column relevance annotations only in fixtures; consequently fixture tests report precision/recall/F1, while frozen B6R supplies its own EVAL-003 claim: 6/31 (19.35%), including five non-empty and one empty-result match.
 

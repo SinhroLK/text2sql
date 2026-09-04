@@ -57,8 +57,11 @@ structured or parsed Groq retry delays without logging provider identifiers.
 The paid compile and exact 31-example development run are complete. MIPROv2
 selected the original/default instruction with 2/10 validation accuracy; B5
 scored 4/31 with 28/31 executable queries and therefore remains below B4 at
-5/31 and B6R at 6/31. Phase 5 begins with provider-free paired semantic-error
-analysis before typed planning, structural retrieval, or another paid run.
+5/31 and B6R at 6/31. SEM-001 then checksum-verifies and joins the B1, B6R,
+B4, and B5 artifacts into an exact 31-example paired matrix. Its frozen labels
+cover all 27 B5 failures without provider calls, gold SQL, or Spider2 test
+examples. The next Phase 5 work is typed planning (SEM-002) and structural
+retrieval (RET-003), before another paid run.
 Fixture annotations are the only current source of linker precision/recall/F1.
 
 ## Design rules

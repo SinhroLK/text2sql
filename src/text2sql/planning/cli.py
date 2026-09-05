@@ -9,6 +9,9 @@ from text2sql.schema import inspect_sqlite_schema
 from .semantic_plan import (
     SemanticPlanResolutionError,
     resolve_semantic_plan,
+    SEMANTIC_PLAN_VERSION,
+    SEMANTIC_PLAN_V2_VERSION,
+    SEMANTIC_PLAN_V3_VERSION,
 )
 
 
@@ -22,6 +25,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--question", required=True, help="Exact source question")
     parser.add_argument("--db-id", default=None, help="Optional database identifier")
+    parser.add_argument("--plan-version", choices=(SEMANTIC_PLAN_VERSION, SEMANTIC_PLAN_V2_VERSION, SEMANTIC_PLAN_V3_VERSION))
     return parser
 
 
@@ -34,6 +38,7 @@ def main(argv: list[str] | None = None) -> int:
             raw_response,
             schema,
             expected_question=args.question,
+            expected_plan_version=args.plan_version,
         )
     except (OSError, UnicodeError, ValueError) as error:
         payload: dict[str, object] = {

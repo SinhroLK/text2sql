@@ -2,6 +2,8 @@
 
 from .b7p import (
     B7P_COMPOSER_VERSION,
+    B7P_COMPOSER_V2_VERSION,
+    B7P_COMPOSER_V3_VERSION,
     B7P_PROMPT_VERSION,
     B7PComposer,
     B7PComposerConfig,
@@ -12,6 +14,8 @@ from .b7p import (
 
 __all__ = [
     "B7P_COMPOSER_VERSION",
+    "B7P_COMPOSER_V2_VERSION",
+    "B7P_COMPOSER_V3_VERSION",
     "B7P_PROMPT_VERSION",
     "B7PComposer",
     "B7PComposerConfig",

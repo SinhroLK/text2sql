@@ -4,7 +4,8 @@ import json
 import sqlite3
 import tempfile
 import unittest
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from unittest.mock import patch
 from pathlib import Path
 
 from text2sql.datasets import LoadedSpider2LiteDataset
@@ -472,6 +473,94 @@ class BaselineExperimentRunnerTest(unittest.TestCase):
         self.assertEqual(len(provider.inputs), calls_after_first)
         self.assertEqual(first, second)
         self.assertEqual(len(predictions.read_text().splitlines()), 2)
+
+    def test_resume_rejects_question_prompt_database_and_runtime_drift(self) -> None:
+        for drift in ("question", "prompt", "database", "runtime", "legacy", "record", "state"):
+            with self.subTest(drift=drift):
+                runner, provider = self._runner("B2")
+                predictions = self.root / f"drift-{drift}.jsonl"
+                report = self.root / f"drift-{drift}.json"
+                runner.run(predictions, report)
+                calls = len(provider.inputs)
+                rows = [json.loads(line) for line in predictions.read_text().splitlines()]
+                # Keep only one completed target: reject drift before the missing call.
+                predictions.write_text(json.dumps(rows[0]) + "\n")
+                if drift == "question":
+                    runner.dataset = replace(runner.dataset, examples=tuple(
+                        replace(item, question="Changed question") if item.example_id == "local002" else item
+                        for item in runner.dataset.examples
+                    ))
+                elif drift == "database":
+                    with sqlite3.connect(self.root / "databases/fixture.sqlite") as connection:
+                        connection.execute("UPDATE customers SET name='Bob'")
+                elif drift == "runtime":
+                    provider.max_tokens = runner.config.max_tokens + 1
+                elif drift in {"legacy", "record", "state"}:
+                    if drift == "legacy":
+                        rows[0].pop("run_contract_sha256")
+                    elif drift == "state":
+                        rows[0]["generation_status"] = "failed"
+                    else:
+                        rows[0]["generation"]["prompt_hash"] = "0" * 64
+                    predictions.write_text(json.dumps(rows[0]) + "\n")
+                if drift == "prompt":
+                    with patch("text2sql.pipeline.build_mschema_prompt", return_value="Changed prompt"):
+                        with self.assertRaises(ExperimentRunError):
+                            runner.run(predictions, report)
+                else:
+                    with self.assertRaises(ExperimentRunError):
+                        runner.run(predictions, report)
+                self.assertEqual(len(provider.inputs), calls)
+
+    def test_terminal_completion_failure_is_counted_and_not_retried(self) -> None:
+        from text2sql.providers.groq import GroqCompletionError
+        from text2sql.evaluation.spider2_runner import load_generated_sql_jsonl
+        runner, provider = self._runner("B0")
+        predictions = self.root / "failed.jsonl"
+        report = self.root / "failed-report.json"
+        with patch.object(provider, "generate", side_effect=GroqCompletionError(
+            "incomplete_completion", finish_reason="length",
+            usage={"prompt_tokens": 12, "completion_tokens": 3},
+        )) as generate:
+            result = runner.run(predictions, report)
+            self.assertEqual(generate.call_count, 2)
+            runner.run(predictions, report)
+            self.assertEqual(generate.call_count, 2)
+        self.assertEqual(result["generation_summary"]["failed_completions"], 2)
+        self.assertEqual(result["generation_summary"]["input_tokens"], 24)
+        self.assertEqual(result["generation_summary"]["output_tokens"], 6)
+        self.assertEqual(load_generated_sql_jsonl(predictions), {"local001": "", "local002": ""})
+        rows = [json.loads(line) for line in predictions.read_text().splitlines()]
+        self.assertTrue(all(row["generation_status"] == "failed" for row in rows))
+        self.assertTrue(all(row["generation"]["generated_sql"] == [] for row in rows))
+
+    def test_interrupted_first_call_preserves_manifest_and_blocks_drift(self) -> None:
+        from text2sql.providers import GroqProviderError
+        runner, provider = self._runner("B0")
+        predictions = self.root / "interrupted.jsonl"
+        report = self.root / "interrupted-report.json"
+        with patch.object(provider, "generate", side_effect=GroqProviderError("offline transport failure")):
+            with self.assertRaises(GroqProviderError):
+                runner.run(predictions, report)
+        self.assertTrue(Path(str(predictions) + ".run.json").is_file())
+        self.assertFalse(predictions.exists())
+        with patch("text2sql.pipeline.build_question_only_prompt", return_value="Changed"):
+            with self.assertRaises(ExperimentRunError):
+                runner.run(predictions, report)
+        self.assertEqual(provider.inputs, [])
+        runner.run(predictions, report)
+        self.assertEqual(len(provider.inputs), 2)
+
+    def test_checkpoint_rejects_concurrent_writer(self) -> None:
+        import fcntl
+        runner, provider = self._runner("B0")
+        predictions = self.root / "locked.jsonl"
+        with Path(str(predictions) + ".lock").open("a") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            with self.assertRaises(ExperimentRunError) as raised:
+                runner.run(predictions, self.root / "locked-report.json")
+        self.assertEqual(raised.exception.code, "checkpoint_locked")
+        self.assertEqual(provider.inputs, [])
 
     def test_checkpoint_rejects_test_or_unknown_id(self) -> None:
         runner, _ = self._runner("B0")

@@ -1,5 +1,7 @@
 # Architecture
 
+**Current development update:** the evaluator now rejects non-read-only preparation actions. Opt-in semantic-plan/B7P v2 admits audited inferred equality joins; v1 remains preserved. See [review follow-up](review-followup-2026-09-05.md) for the remaining scope limitations before MODEL-001.
+
 The current implementation supports baseline, full-schema, M-Schema, few-shot M-Schema, and linked and hybrid linked-M-Schema generation over the frozen Spider2-Lite SQLite development protocol. It also provides verified Spider 1.0 train-only lexical and structural indexes, deterministic B3/B4 selectors, a question-plus-plan RET-003 selector, provider-free per-target audits, a typed semantic-plan boundary, and the offline B7P composition boundary.
 
 ```text
@@ -70,7 +72,8 @@ and character bounds. The offline GEN-001 composer now combines those components
 with exact B6R recall-first evidence, selectively includes values only for plan
 filter columns, and freezes a deterministic one-query prompt plus audit. None of
 these components is wired into frozen B0-B6R arms or makes provider calls. The
-next task is MODEL-001 before a new paid B7P development run.
+next work is relational-scope and run-provenance correction before MODEL-001
+and a new paid B7P development run.
 Fixture annotations are the only current source of linker precision/recall/F1.
 
 ## Semantic-planning boundary

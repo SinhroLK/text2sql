@@ -1,5 +1,7 @@
 # Mapping implementation to the thesis
 
+**Review follow-up:** the evaluator isolation correction and opt-in join-evidence v2 are implementation evidence, not an accuracy improvement. See [review follow-up](review-followup-2026-09-05.md).
+
 | Project area | Thesis section | Evidence |
 |---|---|---|
 | Dataset loaders and split policy | Dataset and methodology | dataset version, checksums, split tests |

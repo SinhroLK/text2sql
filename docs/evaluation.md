@@ -19,9 +19,10 @@ For each SQL statement the evaluator:
 1. opens the source SQLite file in read-only mode;
 2. backs it up into a new in-memory SQLite connection;
 3. enables `PRAGMA query_only = ON`;
-4. executes exactly one statement with a progress-handler timeout;
-5. captures columns, rows, row count, duration and a structured error if needed;
-6. closes the in-memory copy.
+4. installs a SQLite authorizer that rejects non-read-only actions before execution;
+5. executes exactly one statement with a progress-handler timeout;
+6. captures columns, rows, row count, duration and a structured error if needed;
+7. closes the in-memory copy.
 
 Generated and reference SQL run in separate copies. Neither statement can change
 the source database or affect the other statement's result.
@@ -109,3 +110,8 @@ execution/comparison error with `2`.
   adds an outer progress-handler timeout for reproducibility.
 - SQL AST allowlisting, production sandboxing and security guardrails belong to
   later `SAFE-*`/`SEC-*` tasks, not EVAL-001.
+
+The authorizer also blocks ATTACH, VACUUM INTO, PRAGMA changes and file/extension
+functions. This closes the external-file side effect found in the review.
+Backup timeout and process/result-memory bounds still require SAFE-002 work.
+See [review follow-up](review-followup-2026-09-05.md).

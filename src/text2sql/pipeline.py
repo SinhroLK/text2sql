@@ -4,6 +4,8 @@ import hashlib
 import time
 import uuid
 from pathlib import Path
+from dataclasses import dataclass
+from typing import Any
 
 from text2sql.domain import GenerationInput, GenerationResult
 from text2sql.prompting import (
@@ -22,6 +24,8 @@ from text2sql.prompting import (
     build_recall_linked_mschema_prompt,
 )
 from text2sql.providers import SQLProvider
+from text2sql.providers.base import ProviderResponse
+from text2sql.providers.groq import GroqCompletionError
 from text2sql.schema import (
     MSCHEMA_VERSION,
     SCHEMA_LINKER_VERSION,
@@ -40,6 +44,14 @@ def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+@dataclass(frozen=True)
+class PreparedGeneration:
+    generation_input: GenerationInput
+    prompt_version: str
+    schema_hash: str
+    metadata: dict[str, Any]
+
+
 class Text2SQLPipeline:
     def __init__(self, provider: SQLProvider) -> None:
         self.provider = provider
@@ -47,7 +59,11 @@ class Text2SQLPipeline:
             tuple[Path, str, MSchemaSamplePolicy], MSchemaExamples
         ] = {}
 
-    def generate(
+    def clear_sample_cache(self) -> None:
+        """Start a run with fresh database value samples."""
+        self._mschema_cache.clear()
+
+    def prepare(
         self,
         question: str,
         database_path: str | Path,
@@ -58,7 +74,7 @@ class Text2SQLPipeline:
         schema_linking_policy: SchemaLinkingPolicy | None = None,
         few_shot_examples: tuple[FewShotExample, ...] = (),
         retrieval_audit: dict[str, object] | None = None,
-    ) -> GenerationResult:
+    ) -> PreparedGeneration:
         schema = inspect_sqlite_schema(database_path, db_id=db_id)
         schema_hash = canonical_schema_sha256(schema)
         linking_variants = {
@@ -183,28 +199,10 @@ class Text2SQLPipeline:
             model_id=self.provider.model_id,
         )
 
-        started = time.perf_counter()
-        response = self.provider.generate(generation_input)
-        latency_ms = round((time.perf_counter() - started) * 1000)
-        selected_sql = response.candidates[0] if response.candidates else None
-
-        return GenerationResult(
-            run_id=str(uuid.uuid4()),
-            db_id=schema.db_id,
-            question=question,
-            dialect=schema.dialect,
-            provider=self.provider.provider_name,
-            model_id=self.provider.model_id,
+        return PreparedGeneration(
+            generation_input=generation_input,
             prompt_version=prompt_version,
-            prompt_hash=_sha256(prompt),
             schema_hash=schema_hash,
-            generated_sql=response.candidates,
-            selected_sql=selected_sql,
-            validation_status="not_implemented",
-            execution_status="not_executed",
-            latency_ms=latency_ms,
-            input_tokens=response.input_tokens,
-            output_tokens=response.output_tokens,
             metadata={
                 "phase": (
                     4
@@ -230,7 +228,43 @@ class Text2SQLPipeline:
                     if sample_policy is not None
                     else None
                 ),
-                "provider": response.metadata,
+                "provider": {},
                 "retrieval": retrieval_audit,
             },
+        )
+
+    def generate(self, question, database_path, db_id=None, **kwargs) -> GenerationResult:
+        return self.generate_prepared(self.prepare(question, database_path, db_id, **kwargs))
+
+    def generate_prepared(self, prepared: PreparedGeneration) -> GenerationResult:
+        generation_input = prepared.generation_input
+        if generation_input.model_id != self.provider.model_id:
+            raise ValueError("Prepared input model differs from provider")
+        started = time.perf_counter()
+        try:
+            response = self.provider.generate(generation_input)
+        except GroqCompletionError as error:
+            response = ProviderResponse(
+                candidates=(), input_tokens=error.input_tokens,
+                output_tokens=error.output_tokens,
+                metadata={"completion_failure": error.code, "finish_reason": error.finish_reason},
+            )
+        return GenerationResult(
+            run_id=str(uuid.uuid4()),
+            db_id=generation_input.schema.db_id,
+            question=generation_input.question,
+            dialect=generation_input.schema.dialect,
+            provider=self.provider.provider_name,
+            model_id=self.provider.model_id,
+            prompt_version=prepared.prompt_version,
+            prompt_hash=_sha256(generation_input.prompt),
+            schema_hash=prepared.schema_hash,
+            generated_sql=response.candidates,
+            selected_sql=response.candidates[0] if response.candidates else None,
+            validation_status="not_implemented",
+            execution_status="not_executed",
+            latency_ms=round((time.perf_counter() - started) * 1000),
+            input_tokens=response.input_tokens,
+            output_tokens=response.output_tokens,
+            metadata={**prepared.metadata, "provider": response.metadata},
         )

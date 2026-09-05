@@ -1,0 +1,50 @@
+schema_version = 1
+composer_id = "gen001-b7p-composer-v2"
+prompt_version = "gen001-b7p-composer-v2"
+dialect = "sqlite"
+output_candidates = 1
+max_prompt_chars = 120000
+max_plan_chars = 16000
+max_demonstration_question_chars = 1000
+
+[dependencies]
+b6r_config_sha256 = "2bd504ab72119273cec01cdaeaef8664a32e3b949581a4061057cd221b552e6b"
+b6r_config_path = "configs/experiments/exp004-b6r.toml"
+semantic_plan_version = "semantic-plan-v2"
+semantic_plan_record_version = "semantic-plan-record-v2"
+structural_config_sha256 = "facb790f414fec022710bceccb6defe2536ed3d68a9d52f646122d90f45797aa"
+structural_config_path = "configs/retrieval/ret003-structural-v1.toml"
+structural_manifest_sha256 = "d6156bf6f274599c8a38bc452de86d7b80cf322f9615a2efc4fd215726d5914a"
+structural_manifest_path = "configs/retrieval/ret003-structural-manifest-v1.json"
+structural_index_id = "spider1-train-structural-v1"
+structural_index_sha256 = "e4a8407153f6cfefa48e2ffd28102908ebb2c57ca089efa5c03d218fa849952d"
+structural_version = "sql-skeleton-operators-v1"
+retrieval_strategy = "question-plan-hybrid-v1"
+
+[schema_evidence]
+mschema_examples_per_column = 3
+mschema_max_text_length = 50
+mschema_scan_rows_per_column = 24
+schema_linker_version = "extractive-lexical-v1"
+schema_link_max_tables = 8
+schema_link_max_columns_per_table = 256
+schema_link_minimum_columns_per_table = 4
+schema_link_min_score = 4
+schema_link_include_value_matches = true
+schema_link_include_foreign_key_closure = true
+schema_link_include_all_selected_table_columns = true
+schema_link_fallback_mode = "full_schema"
+
+[value_grounding]
+mode = "semantic-plan-filter-columns-v1"
+value_kinds = ["literal", "literal_list", "range", "relative_time"]
+max_columns = 16
+
+[runtime]
+model_selection = "pending-model001"
+temperature = 0.0
+max_tokens = 1024
+seed = 42
+reasoning_effort = "low"
+max_retries = 2
+timeout_seconds = 60.0

@@ -184,3 +184,45 @@
 - **Reason:** MODEL-001 can now compare candidates under one immutable evidence and output contract, while failures remain attributable to planning, retrieval, composition, or model choice.
 - **Consequences:** Prompt instructions request one read-only query but are not an AST security boundary; SAFE-001 remains required before application execution. Offline determinism and fixtures do not establish accuracy. GEN-001 stays in progress until MODEL-001 selects a frozen model and the exact 31-development-example B7P checkpoint is generated and scored.
 - **Outcome:** Six composer tests cover deterministic output, selective grounding, JOIN, nested aggregation/subquery, temporal/window, set and recursive plan shapes, provenance rejection, and dependency tampering. The frozen configuration SHA-256 is `6b60bdf833ab6c90cc16471b8b218df24087c4ea02faeaf4239de43ee0ef89ee`.
+
+
+## ADR-019 - Correct evaluator isolation and version inferred join evidence
+
+- **Date:** 2026-09-05
+- **Status:** accepted
+- **Problem:** `query_only` permits ATTACH to create external files before the executor rejects its result shape. Four development databases have no declared FKs, so the v1 plan rejects legitimate joins used by existing successful predictions.
+- **Decision:** Add a SQLite preparation authorizer to the current evaluator immediately. Preserve semantic-plan/composer v1 and introduce opt-in v2 joins with exact endpoints, a declared-FK or inferred-equality evidence kind, and a nonempty rationale. Record inferred joins as unverified assumptions; reject cross-version composition and repair. Reuse RET-003 because its structural features did not change.
+- **Consequences:** This does not complete SAFE-002, establish semantic correctness, or resolve independent query scopes. The new v2 composer configuration is an offline development revision; MODEL-001 waits for remaining compatibility and provenance work. Existing paid artifacts and v1 config identities are preserved. See [review follow-up](review-followup-2026-09-05.md).
+
+
+## ADR-020: Opt-in scoped semantic planning before MODEL-001
+
+**Date:** 2026-09-05
+
+**Decision:** Add a V3 query tree with independently validated SELECT scopes,
+set-operation children, and uncorrelated predicate subqueries. Keep V1/V2 wire
+formats and composer configurations intact. Reuse their scope-local schema
+validation and V2 join evidence; enforce stricter V3 operand/function contracts.
+
+**Consequences:** Structural retrieval and selective value grounding traverse the
+query tree. V3 composition remains offline and version-pinned. This removes the
+flat graph requirement for unrelated branches without claiming support for
+correlations, self-join aliases, or analytic windows. MODEL-001 still waits for
+run provenance, provider completion handling, and explicit failure accounting.
+See [scoped planning](scoped-semantic-planning.md) for limits and integration.
+
+
+## ADR-021: Freeze actual run inputs and count terminal completion failures
+
+**Date:** 2026-09-05
+
+**Decision:** Prepare all development prompts before generation; persist and
+validate a versioned run manifest covering runtime, code, dependencies, resources,
+and input hashes. Require single-writer checkpoint ownership and reject legacy or
+inconsistent records. A Groq text choice is usable only after a normal stop.
+Terminal completion failures retain their IDs and usage and are not resampled.
+
+**Consequences:** Historical checkpoint files remain evaluable but cannot be
+silently resumed under this new policy. Database hashing adds preflight work.
+Transport interruptions preserve an incomplete run. B7P still needs orchestration
+and per-stage accounting before MODEL-001. See [run contract](run-checkpoint-contract.md).

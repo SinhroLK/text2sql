@@ -1,15 +1,17 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 4.1
+**Verzija plana:** 4.4
 **Datum:** 5. septembar 2026.
-**Status projekta:** Faza 5 je `IN PROGRESS`: offline GEN-001/B7P composer ugovor je zamrznut uz završene `SEM-001`, `SEM-002` i `RET-003`. Sledeći aktivni zadatak je `MODEL-001`; live 31-example GEN-001 checkpoint još nije pokrenut.
-**Poslednja provera:** 5. septembar 2026. - `gen001-b7p-composer-v1` checksum-vezuje B6R/SEM-002/RET-003, revalidira plan/schema provenance, selektivno ground-uje filter kolone i deterministički gradi one-query prompt/audit bez provider poziva; svih 156 testova prolazi, a Spider2 test skup ostaje zatvoren.
+**Status projekta:** Faza 5 je `IN PROGRESS`: baseline run manifest/provenance, single-writer checkpoint i strogi Groq completion accounting su implementirani. Pre MODEL-001 ostaje offline B7P orchestrator sa plan-failure accounting i compatibility audit-om; live GEN-001 još nije pokrenut.
+**Poslednja provera:** 5. septembar 2026. - 182 offline testa prolaze. Detalji: [run/checkpoint contract](run-checkpoint-contract.md); MODEL-001 je `NOT STARTED`, GEN-001 je `IN PROGRESS`.
 
 ### Istorija verzija
 
 | Verzija | Datum | Promena |
 |---|---|---|
+| 4.4 | 5. septembar 2026. | Baseline run manifest, source/runtime/input provenance, checkpoint lock, terminal Groq completion failures i 182 offline testa; B7P orkestracija ostaje otvorena |
+| 4.3 | 5. septembar 2026. | Opt-in SEM-002/B7P V3 scoped plan, stroži predikati/agregati, 176 offline testova; MODEL-001 i dalje čeka review gate |
 | 1.0 | 13. avgust 2026. | Početna arhitektura, roadmap i backlog |
 | 1.1 | 13. avgust 2026. | Evidentirana implementacija Faze 0, ažurirani statusi i dodat dnevnik napretka |
 | 1.2 | 13. avgust 2026. | Zatvoren `SEC-000`: potvrđeno da `.env` nije verzionisan i da su ključevi i kredencijali zamenjeni |
@@ -42,6 +44,7 @@
 | 3.9 | 5. septembar 2026. | Završen SEM-002 offline: `semantic-plan-v1`, strict JSON parser, schema/FK/JOIN-graph validacija, jedna plan-only korekcija, auditabilni plan/schema hash-evi, CLI, ADR-016 i 144 testa. |
 | 4.0 | 5. septembar 2026. | Završen RET-003 offline: 7.000 train-only SQL skeleton/operator zapisa, frozen config/manifest, question-plus-plan hybrid ranking, per-component/per-target audit, bounded context, ADR-017 i 150 testova. |
 | 4.1 | 5. septembar 2026. | Zamrznut offline GEN-001/B7P composer: exact B6R/SEM-002/RET-003 provenance, selective grounding, deterministic one-query prompt/audit, ADR-018 i 156 testova; GEN-001 ostaje u toku do MODEL-001 i live 31-example evaluacije. |
+| 4.2 | 5. septembar 2026. | Review follow-up: authorizer sprečava evaluator file side effects; opt-in semantic-plan/B7P v2 razlikuje declared FK i inferred equality; 165 testova; MODEL-001 čeka preostale contract/provenance korekcije. |
 
 ## 1. Svrha dokumenta
 
@@ -488,6 +491,8 @@ schema hash, koristi selective filter-column grounding, gradi tačno jedan
 deterministički prompt/audit i ne poziva provider. Preostaju MODEL-001 izbor,
 31/31 live prediction checkpoint, EVAL-003 score i promotion odluka.
 
+**Review gate (v4.4):** Baseline provenance i direct Groq completion korekcije su završene. Pre MODEL-001 implementirati offline B7P orchestrator sa istom politikom, per-stage accounting i unsupported-plan compatibility audit. [Ugovor i failure policy](run-checkpoint-contract.md).
+
 #### 5E - `MODEL-001`: capability gate
 
 - uporediti aktuelni model sa najviše dve unapred izabrane i zamrznute alternative pod identičnim B7P promptom i budžetom;
@@ -600,7 +605,7 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 23 zadatka su završena; `SEM-001`, `SEM-002` i `RET-003` su `DONE`, offline deo `GEN-001` je završen, a Faza 5 ostaje `IN PROGRESS`. B6R 6/31 ostaje najbolji izmereni arm; sledeći aktivni zadatak je `MODEL-001` pod zamrznutim B7P ugovorom.
+**Sažetak stanja:** 23 zadatka su završena; `SEM-001`, `SEM-002` i `RET-003` su `DONE`, offline deo `GEN-001` je završen, a Faza 5 ostaje `IN PROGRESS`. B6R 6/31 ostaje najbolji izmereni arm; sledeći aktivni rad je review follow-up pre MODEL-001 (B7P orkestracija, per-stage failure accounting i plan compatibility audit).
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
@@ -1219,3 +1224,29 @@ spaja B6R evidence, validan SEM-002 plan i RET-003 demonstracije.
 
 Sledeće: sprovesti `MODEL-001` capability gate nad istim frozen composer
 ugovorom, zatim pokrenuti tačno jedan zamrznuti 31-example B7P checkpoint.
+
+### 2026-09-05 - Scoped planning review follow-up
+
+- V3 uvodi nezavisne SELECT scope-ove za set operacije i uncorrelated subqueries;
+- proverava lokalne identifikatore/join graf, projection arity i stroži predicate/aggregate ugovor;
+- B7P i RET-003 podržavaju scoped plan i nested value grounding; V1/V2 konfiguracije ostaju očuvane;
+- 176 offline testova prolazi; realni retrieval CLI smoke prolazi za UNION i scalar subquery;
+- nema provider poziva, novih score-ova ili pristupa holdout skupu.
+
+Sledeće: checkpoint provenance i provider completion handling, zatim eksplicitna
+odluka o nepodržanim planovima i failure accounting pre MODEL-001. Detalji su u
+[scoped planning](scoped-semantic-planning.md).
+
+### 2026-09-05 - Checkpoint provenance i completion follow-up
+
+- baseline runner priprema sve development promptove pre provider poziva i čuva
+  `.run.json` manifest sa runtime/input/source/dependency identitetom;
+- resume odbija drift, legacy provenance i nekonzistentne SQL/failure zapise;
+  advisory lock sprečava dva writer-a, a prekinut prvi poziv zadržava manifest;
+- direct Groq zahteva jedan kompletan text odgovor; terminal completion failure
+  ostaje u checkpoint-u i denominator-u, sa usage-om, bez resampling-a;
+- 182 offline testa prolaze; nema provider poziva niti novih experiment score-ova.
+
+Sledeće: offline B7P orchestrator sa planner/repair/SQL stage accounting i
+unsupported-plan audit, prema [run contract](run-checkpoint-contract.md), zatim
+MODEL-001. GEN-001 ostaje IN PROGRESS; MODEL-001 ostaje NOT STARTED.

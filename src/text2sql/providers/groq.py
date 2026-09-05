@@ -19,6 +19,17 @@ class GroqProviderError(RuntimeError):
     """Provider error that never includes credentials."""
 
 
+class GroqCompletionError(GroqProviderError):
+    """A terminal unusable completion, with usage retained for accounting."""
+
+    def __init__(self, code: str, *, finish_reason: str | None, usage: dict) -> None:
+        super().__init__(f"Groq completion rejected: {code}")
+        self.code = code
+        self.finish_reason = finish_reason
+        self.input_tokens = _count(usage.get("prompt_tokens"))
+        self.output_tokens = _count(usage.get("completion_tokens"))
+
+
 Transport = Callable[[str, dict[str, str], bytes, float], bytes]
 
 
@@ -148,26 +159,29 @@ class GroqProvider:
                     raise
                 self.sleep(2 ** attempt)
         response = _decode(raw)
-        choices = response.get("choices")
-        if not isinstance(choices, list) or not choices:
-            raise GroqProviderError("Groq API response contains no choices")
-        candidates = tuple(
-            message["content"].strip()
-            for choice in choices
-            if isinstance(choice, dict)
-            and isinstance((message := choice.get("message")), dict)
-            and isinstance(message.get("content"), str)
-            and message["content"].strip()
-        )
-        if not candidates:
-            raise GroqProviderError("Groq API response contains no SQL candidate text")
         usage = response.get("usage")
         usage = usage if isinstance(usage, dict) else {}
+        choices = response.get("choices")
+        if not isinstance(choices, list) or not choices:
+            raise GroqCompletionError("empty_completion", finish_reason=None, usage=usage)
+        choice = choices[0] if len(choices) == 1 and isinstance(choices[0], dict) else {}
+        reason = choice.get("finish_reason")
+        reason = reason if reason in ("stop", "length", "tool_calls", "content_filter", "function_call") else None
+        message = choice.get("message")
+        if len(choices) != 1 or reason != "stop":
+            raise GroqCompletionError("incomplete_completion", finish_reason=reason, usage=usage)
+        if not isinstance(message, dict) or message.get("tool_calls") or message.get("function_call") or message.get("refusal"):
+            raise GroqCompletionError("unsupported_completion", finish_reason=reason, usage=usage)
+        content = message.get("content")
+        if not isinstance(content, str) or not content.strip():
+            raise GroqCompletionError("empty_completion", finish_reason=reason, usage=usage)
+        candidates = (content.strip(),)
         return ProviderResponse(
             candidates=candidates,
             input_tokens=_count(usage.get("prompt_tokens")),
             output_tokens=_count(usage.get("completion_tokens")),
             metadata={
+                "finish_reason": reason,
                 "provider_request_id": response.get("id"),
                 "provider_model": response.get("model"),
                 "temperature": self.temperature,

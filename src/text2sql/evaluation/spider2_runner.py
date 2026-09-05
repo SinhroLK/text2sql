@@ -99,7 +99,13 @@ def load_generated_sql_jsonl(path: str | Path) -> dict[str, str]:
                     f"Duplicate generated SQL for {example_id}",
                     example_id=example_id,
                 )
-            if not isinstance(generated_sql, str) or not generated_sql.strip():
+            explicit_failure = (
+                record.get("schema_version") == 2
+                and record.get("generation_status") == "failed"
+                and record.get("failure_code") in {"incomplete_completion", "unsupported_completion", "empty_completion"}
+                and generated_sql == ""
+            )
+            if not isinstance(generated_sql, str) or (not generated_sql.strip() and not explicit_failure):
                 raise EvaluationResourceError(
                     "invalid_prediction",
                     f"generated_sql must be non-empty for {example_id}",

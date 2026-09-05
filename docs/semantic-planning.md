@@ -1,5 +1,7 @@
 # SEM-002 typed semantic planning
 
+**Version update:** v1 below remains supported unchanged. Opt-in `semantic-plan-v2` adds declared/inferred join evidence and version-preserving repair. See [v2 contract and limitations](review-followup-2026-09-05.md).
+
 SEM-002 inserts an explicit relational-intent contract between a natural-language
 question and later SQL composition. It is provider-independent and does not
 generate or execute SQL.
@@ -65,3 +67,8 @@ contract and validator behavior, not Text-to-SQL accuracy. RET-003 now consumes
 the plan's structural shape, and the offline GEN-001 composer revalidates and
 embeds the complete record. MODEL-001 and the live 31-example B7P development
 run remain necessary before any accuracy claim.
+
+
+The opt-in [V3 scoped planning contract](scoped-semantic-planning.md) adds independent
+set branches and uncorrelated subqueries. V1/V2 remain available; MODEL-001 is
+still pending the review gate.

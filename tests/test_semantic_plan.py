@@ -6,6 +6,7 @@ import json
 import sqlite3
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from text2sql.domain import (
@@ -16,6 +17,7 @@ from text2sql.domain import (
 )
 from text2sql.planning import (
     SEMANTIC_PLAN_VERSION,
+    SEMANTIC_PLAN_V2_VERSION,
     SemanticPlanParseError,
     SemanticPlanResolutionError,
     build_semantic_plan_prompt,
@@ -385,6 +387,111 @@ class SemanticPlanTest(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(result["status"], "valid")
         self.assertEqual(result["attempts"], 1)
+
+
+class SemanticPlanV2Test(unittest.TestCase):
+    def setUp(self) -> None:
+        original = _schema()
+        self.schema = replace(original, tables=tuple(
+            replace(table, foreign_keys=()) for table in original.tables
+        ))
+        self.payload = _valid_payload()
+        self.payload["plan_version"] = SEMANTIC_PLAN_V2_VERSION
+        self.payload["joins"][0].update(
+            evidence="inferred_equality",
+            rationale="orders.customer_id identifies the customer referenced by each order.",
+        )
+
+    def resolve(self, payload=None, **kwargs):
+        return resolve_semantic_plan(
+            _render(self.payload if payload is None else payload), self.schema,
+            expected_question=QUESTION, expected_plan_version=SEMANTIC_PLAN_V2_VERSION,
+            **kwargs,
+        )
+
+    def test_inferred_join_without_ddl_constraint_is_audited_as_assumption(self) -> None:
+        result = self.resolve()
+        audit = result.to_dict()
+        self.assertEqual(audit["record_version"], "semantic-plan-record-v2")
+        self.assertEqual(audit["join_assumptions"][0]["join_index"], 0)
+        self.assertFalse(audit["join_assumptions"][0]["semantically_verified"])
+        self.assertEqual(audit["join_assumptions"][0]["rationale"], self.payload["joins"][0]["rationale"])
+        self.assertEqual(parse_semantic_plan(serialize_semantic_plan(result.plan)), result.plan)
+        self.payload["joins"][0]["rationale"] += " The relationship still needs evaluation."
+        self.assertNotEqual(result.plan_sha256, self.resolve().plan_sha256)
+
+    def test_declared_evidence_must_exist_and_inferred_endpoints_must_be_valid(self) -> None:
+        variants = (
+            ("declared_foreign_key", "customer_id", "join_not_in_schema"),
+            ("inferred_equality", "missing", "unknown_column"),
+        )
+        for evidence, column, expected_code in variants:
+            with self.subTest(evidence=evidence):
+                self.payload["joins"][0]["evidence"] = evidence
+                self.payload["joins"][0]["right"]["column"] = column
+                with self.assertRaises(SemanticPlanResolutionError) as failure:
+                    self.resolve()
+                self.assertIn(expected_code, {i.code for i in failure.exception.issues})
+        self.payload["joins"][0]["evidence"] = "declared_foreign_key"
+        self.payload["joins"][0]["right"]["column"] = "customer_id"
+        result = resolve_semantic_plan(_render(self.payload), _schema(), expected_question=QUESTION)
+        self.assertEqual(result.to_dict()["join_assumptions"], [])
+
+    def test_evidence_cannot_bypass_source_connectivity_or_self_join_limits(self) -> None:
+        self.payload["sources"].append("products")
+        with self.assertRaises(SemanticPlanResolutionError) as failure:
+            self.resolve()
+        self.assertIn("disconnected_join_graph", {i.code for i in failure.exception.issues})
+        self.payload["sources"].remove("products")
+        self.payload["joins"][0]["right"] = _column("orders", "order_id")
+        with self.assertRaises(SemanticPlanResolutionError) as failure:
+            self.resolve()
+        self.assertIn("self_join_unsupported", {i.code for i in failure.exception.issues})
+
+    def test_v1_wire_format_and_declared_fk_requirement_are_preserved(self) -> None:
+        payload = _valid_payload()
+        plan = parse_semantic_plan(_render(payload))
+        self.assertEqual(json.loads(serialize_semantic_plan(plan)), payload)
+        with self.assertRaises(SemanticPlanResolutionError):
+            resolve_semantic_plan(_render(payload), self.schema, expected_question=QUESTION)
+        payload["joins"][0]["evidence"] = "inferred_equality"
+        with self.assertRaises(SemanticPlanParseError):
+            parse_semantic_plan(_render(payload))
+
+    def test_v2_requires_complete_evidence_and_never_downgrades_during_repair(self) -> None:
+        for key in ("evidence", "rationale"):
+            value = self.payload["joins"][0].pop(key)
+            with self.assertRaises(SemanticPlanParseError):
+                parse_semantic_plan(_render(self.payload))
+            self.payload["joins"][0][key] = value
+        self.payload["joins"][0]["rationale"] = " "
+        with self.assertRaises(SemanticPlanParseError):
+            parse_semantic_plan(_render(self.payload))
+        with self.assertRaises(SemanticPlanResolutionError) as failure:
+            resolve_semantic_plan(
+                "invalid JSON", _schema(), expected_question=QUESTION,
+                expected_plan_version=SEMANTIC_PLAN_V2_VERSION,
+                repair=lambda request: _render(_valid_payload()),
+            )
+        self.assertEqual(failure.exception.attempts, 2)
+        self.assertIn("plan_version_mismatch", {i.code for i in failure.exception.issues})
+
+    def test_v2_repair_contains_full_contract_and_succeeds_once(self) -> None:
+        calls = []
+        def repair(request):
+            calls.append(request)
+            self.assertIn("semantic-plan-v2", request.prompt)
+            self.assertIn("inferred_equality", request.prompt)
+            self.assertIn('"outputs"', request.prompt)
+            return _render(self.payload)
+        result = resolve_semantic_plan(
+            "invalid JSON", self.schema, expected_question=QUESTION,
+            expected_plan_version=SEMANTIC_PLAN_V2_VERSION, repair=repair,
+        )
+        self.assertTrue(result.repaired)
+        self.assertEqual(len(calls), 1)
+        prompt = build_semantic_plan_prompt(QUESTION, self.schema, plan_version=SEMANTIC_PLAN_V2_VERSION)
+        self.assertIn("not a verified constraint", prompt)
 
 
 if __name__ == "__main__":

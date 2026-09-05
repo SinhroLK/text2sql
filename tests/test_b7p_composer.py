@@ -480,6 +480,77 @@ timeout_seconds = 60.0
         with self.assertRaisesRegex(B7PComposerError, "schema hash"):
             self.composer.compose(question, self.database, changed, db_id="fixture")
 
+    def test_v2_composes_inferred_join_and_rejects_cross_version_plans(self) -> None:
+        config_path = self.config_path.with_name("gen001-b7p-composer-v2.toml")
+        config_path.write_text(
+            self.config_path.read_text().replace("composer-v1", "composer-v2")
+            .replace("semantic-plan-v1", "semantic-plan-v2")
+            .replace("semantic-plan-record-v1", "semantic-plan-record-v2")
+        )
+        composer = B7PComposer(load_b7p_composer_config(config_path), self.selector)
+        with sqlite3.connect(self.database) as connection:
+            connection.execute("CREATE TABLE memberships(customer_id INTEGER, active INTEGER)")
+        schema = inspect_sqlite_schema(self.database, db_id="fixture")
+        question = "List customer names with memberships"
+        payload = _base_payload(question)
+        payload["plan_version"] = "semantic-plan-v2"
+        payload["sources"] = ["customers", "memberships"]
+        payload["joins"] = [{
+            "left": _column("memberships", "customer_id"),
+            "right": _column("customers", "id"),
+            "join_type": "inner",
+            "evidence": "inferred_equality",
+            "rationale": "Membership customer identifiers refer to customers.id.",
+        }]
+        plan = resolve_semantic_plan(json.dumps(payload), schema, expected_question=question)
+        first = composer.compose(question, self.database, plan, db_id="fixture")
+        second = composer.compose(question, self.database, plan, db_id="fixture")
+        self.assertEqual(first.prompt_sha256, second.prompt_sha256)
+        self.assertIn("explicit assumptions", first.prompt)
+        self.assertFalse(first.to_audit_dict()["semantic_plan"]["join_assumptions"][0]["semantically_verified"])
+        with self.assertRaisesRegex(B7PComposerError, "plan version"):
+            self.composer.compose(question, self.database, plan, db_id="fixture")
+        v1 = resolve_semantic_plan(json.dumps(_base_payload(question)), schema, expected_question=question)
+        with self.assertRaisesRegex(B7PComposerError, "plan version"):
+            composer.compose(question, self.database, v1, db_id="fixture")
+
+    def test_v3_nested_grounding_and_union_composition(self) -> None:
+        from test_scoped_semantic_plan import predicate, subquery_payload, union_payload
+
+        config_path = self.config_path.with_name("gen001-b7p-composer-v3.toml")
+        config_path.write_text(
+            self.config_path.read_text().replace("composer-v1", "composer-v3")
+            .replace("semantic-plan-v1", "semantic-plan-v3")
+            .replace("semantic-plan-record-v1", "semantic-plan-record-v3")
+        )
+        composer = B7PComposer(load_b7p_composer_config(config_path), self.selector)
+        with sqlite3.connect(self.database) as connection:
+            connection.executescript(
+                "CREATE TABLE products(id INTEGER, name TEXT, price REAL);"
+                "INSERT INTO products VALUES(1, 'Book', 10), (2, 'Pen', 2);"
+            )
+        schema = inspect_sqlite_schema(self.database, db_id="fixture")
+        nested = subquery_payload()
+        nested["root"]["filters"][0]["subquery"]["filters"] = [
+            predicate("products", "price", "gt", "literal", 5)
+        ]
+        for payload in (union_payload(), nested):
+            with self.subTest(question=payload["question"]):
+                plan = resolve_semantic_plan(
+                    json.dumps(payload), schema, expected_question=payload["question"],
+                    expected_plan_version="semantic-plan-v3",
+                )
+                first = composer.compose(payload["question"], self.database, plan, db_id="fixture")
+                second = composer.compose(payload["question"], self.database, plan, db_id="fixture")
+                self.assertEqual(first.prompt_sha256, second.prompt_sha256)
+                audit = first.to_audit_dict()
+                self.assertFalse(audit["provider_called"])
+                self.assertEqual(audit["semantic_plan"]["record_version"], "semantic-plan-record-v3")
+                expected = ["products.price"] if payload is nested else []
+                self.assertEqual(audit["value_grounding"]["requested_columns"], expected)
+                with self.assertRaisesRegex(B7PComposerError, "plan version"):
+                    self.composer.compose(payload["question"], self.database, plan, db_id="fixture")
+
     def test_dependency_checksum_drift_is_rejected(self) -> None:
         self.config.b6r_config_path.write_text("changed\n", encoding="utf-8")
         with self.assertRaisesRegex(B7PComposerError, "B6R config checksum mismatch"):

@@ -143,6 +143,39 @@ class SQLiteExecutionEvaluatorTest(unittest.TestCase):
         self.assertEqual(result.status, "generated_execution_error")
         self.assertEqual(names, [("Alice",), ("Bob",)])
 
+    def test_rejected_statements_have_no_filesystem_side_effects(self) -> None:
+        attached = Path(self.temp_dir.name) / "attached.sqlite"
+        quoted = str(attached).replace("'", "''")
+        statements = (
+            f"ATTACH DATABASE '{quoted}' AS external",
+            f"VACUUM INTO '{quoted}'",
+            "PRAGMA query_only = OFF",
+            "PRAGMA journal_mode = WAL",
+            "CREATE TEMP TABLE unwanted (id INTEGER)",
+            "DROP TABLE customers",
+            "UPDATE customers SET first_name = 'Changed' RETURNING first_name",
+        )
+        before = self.database_path.read_bytes()
+        for sql in statements:
+            with self.subTest(sql=sql):
+                result = self.evaluator.executor.execute(self.database_path, sql)
+                self.assertFalse(result.succeeded)
+                self.assertFalse(attached.exists())
+                self.assertEqual(self.database_path.read_bytes(), before)
+
+    def test_authorizer_preserves_recursive_join_and_window_queries(self) -> None:
+        sql = """
+            WITH RECURSIVE numbers(n) AS (
+                SELECT 1 UNION ALL SELECT n + 1 FROM numbers WHERE n < 2
+            )
+            SELECT c.first_name, SUM(n.n) OVER (ORDER BY n.n)
+            FROM numbers n JOIN customers c ON c.customer_id = n.n
+            ORDER BY n.n
+        """
+        result = self.evaluator.executor.execute(self.database_path, sql)
+        self.assertTrue(result.succeeded, result.error_message)
+        self.assertEqual(result.rows, (("Alice", 1), ("Bob", 3)))
+
     def test_execution_accuracy_summary_requires_exact_id_coverage(self) -> None:
         correct = self.evaluate("SELECT 1", "SELECT 1")
         second_example = Text2SQLExample(

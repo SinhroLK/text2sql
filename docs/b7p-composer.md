@@ -1,5 +1,7 @@
 # GEN-001 offline B7P composer contract
 
+**Version update:** the v1 contract below remains preserved. Opt-in `gen001-b7p-composer-v2.toml` consumes v2 join evidence; it is an offline development revision pending relational-scope work and MODEL-001. See [review follow-up](review-followup-2026-09-05.md).
+
 The provider-independent portion of GEN-001 is implemented as
 `gen001-b7p-composer-v1`. It constructs one deterministic prompt from four
 verified inputs:
@@ -95,7 +97,13 @@ Six tests cover dependency drift, deterministic prompt construction, exact plan
 and schema provenance, selective value grounding, and JOIN, nested
 aggregation/subquery, temporal-window, set-operation and recursive plan shapes.
 
-The next task is MODEL-001. After model selection, GEN-001 still needs an exact
+The next work is the review follow-up linked above, before MODEL-001.
+After model selection, GEN-001 still needs an exact
 31-development-ID checkpoint, a 31-target plan/retrieval/composer audit,
 EVAL-003 scoring, and the predeclared promotion decision. The 104-example test
 split remains sealed.
+
+
+The opt-in [V3 scoped planning contract](scoped-semantic-planning.md) adds independent
+set branches and uncorrelated subqueries. V1/V2 remain available; MODEL-001 is
+still pending the review gate.

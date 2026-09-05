@@ -7,6 +7,29 @@ from pathlib import Path
 from .models import QueryExecutionResult
 
 
+# Authorizer action codes deny side effects during preparation, before execution.
+_READ_ACTIONS = frozenset({
+    sqlite3.SQLITE_SELECT, sqlite3.SQLITE_READ,
+    sqlite3.SQLITE_FUNCTION, sqlite3.SQLITE_RECURSIVE,
+})
+
+
+def _authorize_read_only(
+    action: int,
+    argument1: str | None,
+    argument2: str | None,
+    database: str | None,
+    trigger: str | None,
+) -> int:
+    if action not in _READ_ACTIONS:
+        return sqlite3.SQLITE_DENY
+    if action == sqlite3.SQLITE_FUNCTION and (argument2 or "").casefold() in {
+        "load_extension", "writefile", "readfile",
+    }:
+        return sqlite3.SQLITE_DENY
+    return sqlite3.SQLITE_OK
+
+
 class SQLiteQueryExecutor:
     """Execute one result-producing SQL statement in an isolated SQLite copy."""
 
@@ -37,6 +60,7 @@ class SQLiteQueryExecutor:
             source_connection = None
 
             memory_connection.execute("PRAGMA query_only = ON")
+            memory_connection.set_authorizer(_authorize_read_only)
             deadline = time.monotonic() + self.timeout_seconds
 
             def stop_after_deadline() -> int:

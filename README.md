@@ -1,5 +1,7 @@
 # Text-to-SQL research project
 
+**Development update (5 September):** evaluator side-effect rejection and an opt-in v2 join-evidence contract are implemented. Relational scopes and run provenance remain ahead of MODEL-001. See [review follow-up](docs/review-followup-2026-09-05.md).
+
 Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
 This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, LINK-002 provides a recall-repaired B6R arm, RET-001 provides a checksum-gated Spider 1.0 train-only retrieval index, RET-002 provides completed B3/B4 few-shot experiments, DSPY-001 records the completed B5 optimization and development run, SEM-001/SEM-002 provide error analysis plus a typed schema-validated relational plan, and RET-003 provides deterministic question-plus-plan structural retrieval. The strict reference-SQL `EVAL-002` path remains optional.

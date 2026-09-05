@@ -198,6 +198,20 @@ class Spider2EvaluationRunnerTest(unittest.TestCase):
             load_generated_sql_jsonl(path)
         self.assertEqual(raised.exception.code, "duplicate_prediction_id")
 
+    def test_explicit_failed_completion_stays_in_evaluation_denominator(self) -> None:
+        path = self.root / "failed-prediction.jsonl"
+        row = {"schema_version": 2, "example_id": "local001", "generated_sql": "",
+               "generation_status": "failed", "failure_code": "incomplete_completion"}
+        path.write_text(json.dumps(row) + "\n")
+        batch = self._runner().evaluate_batch(load_generated_sql_jsonl(path), split="development")
+        self.assertEqual(batch.total, 1)
+        self.assertEqual(batch.execution_errors, 1)
+        self.assertEqual(batch.execution_accuracy, 0.0)
+        row.pop("failure_code")
+        path.write_text(json.dumps(row) + "\n")
+        with self.assertRaises(EvaluationResourceError):
+            load_generated_sql_jsonl(path)
+
     def test_execution_error_is_propagated_and_counted(self) -> None:
         batch = self._runner().evaluate_batch(
             {"local001": "SELECT missing_column FROM customers"},

@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from text2sql.domain import GenerationInput, SchemaSnapshot
 from text2sql.providers import GroqProvider, GroqProviderError
-from text2sql.providers.groq import _status_error_message
+from text2sql.providers.groq import GroqCompletionError, _status_error_message
 
 
 INPUT = GenerationInput(
@@ -24,7 +24,7 @@ class GroqProviderTest(unittest.TestCase):
         def transport(endpoint, headers, body, timeout):
             captured.update(headers=headers, payload=json.loads(body))
             return json.dumps({
-                "choices": [{"message": {"content": " SELECT 1 "}}],
+                "choices": [{"finish_reason": "stop", "message": {"content": " SELECT 1 "}}],
                 "usage": {"prompt_tokens": 12, "completion_tokens": 3},
             }).encode()
 
@@ -44,7 +44,7 @@ class GroqProviderTest(unittest.TestCase):
             {
                 "id": "request-1",
                 "model": "test-model",
-                "choices": [{"message": {"content": "SELECT 1"}}],
+                "choices": [{"finish_reason": "stop", "message": {"content": "SELECT 1"}}],
                 "usage": {"prompt_tokens": 4, "completion_tokens": 2},
             }
         )
@@ -62,6 +62,26 @@ class GroqProviderTest(unittest.TestCase):
         self.assertEqual(client_type.call_args.kwargs["base_url"], "https://api.groq.com")
         self.assertEqual(completion.call_args.kwargs["model"], "test-model")
 
+    def test_incomplete_and_unsupported_completions_fail_without_retry(self) -> None:
+        for reason in ("length", "tool_calls", "content_filter", None, "unknown"):
+            with self.subTest(reason=reason):
+                calls = []
+                def transport(*args):
+                    calls.append(1)
+                    return json.dumps({
+                        "choices": [{"finish_reason": reason, "message": {"content": "SELECT 1"}}],
+                        "usage": {"prompt_tokens": 12, "completion_tokens": 3},
+                    }).encode()
+                with self.assertRaises(GroqCompletionError) as raised:
+                    GroqProvider(model_id="test-model", api_key="x", transport=transport).generate(INPUT)
+                self.assertEqual(len(calls), 1)
+                self.assertEqual((raised.exception.input_tokens, raised.exception.output_tokens), (12, 3))
+        for message in ({"content": " "}, {"content": "SELECT 1", "tool_calls": [{}]}, {"content": "SELECT 1", "refusal": "no"}):
+            with self.subTest(message=message):
+                raw = json.dumps({"choices": [{"finish_reason": "stop", "message": message}]}).encode()
+                with self.assertRaises(GroqCompletionError):
+                    GroqProvider(model_id="test-model", api_key="x", transport=lambda *_: raw).generate(INPUT)
+
     def test_requires_api_key(self) -> None:
         with patch.dict("os.environ", {}, clear=True):
             provider = GroqProvider(model_id="test-model", transport=lambda *_: b"")
@@ -77,7 +97,7 @@ class GroqProviderTest(unittest.TestCase):
         provider = GroqProvider(
             model_id="test-model", api_key="x", transport=lambda *_: b'{"choices":[]}'
         )
-        with self.assertRaisesRegex(GroqProviderError, "no choices"):
+        with self.assertRaisesRegex(GroqCompletionError, "empty_completion"):
             provider.generate(INPUT)
 
     def test_provider_error_does_not_expose_api_key(self) -> None:
@@ -122,7 +142,7 @@ class GroqProviderTest(unittest.TestCase):
             attempts.append(1)
             if len(attempts) < 3:
                 raise GroqProviderError("temporary transport failure")
-            return b'{"choices":[{"message":{"content":"SELECT 1"}}]}'
+            return b'{"choices":[{"finish_reason":"stop","message":{"content":"SELECT 1"}}]}'
 
         response = GroqProvider(
             model_id="test-model",

@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+import fcntl
+import hashlib
 import json
 import math
+import subprocess
+import sys
+import sqlite3
+from importlib import metadata
 from pathlib import Path
 from typing import Any
 
@@ -216,6 +222,9 @@ def _read_checkpoint(
                     "configuration",
                     example_id=example_id,
                 )
+            generation = record.get("generation")
+            if not isinstance(generation, dict) or not isinstance(generation.get("metadata"), dict):
+                raise ExperimentRunError("invalid_checkpoint", "Missing generation metadata", example_id=example_id)
             if config.baseline in {"B3", "B4"}:
                 retrieval = (
                     record.get("generation", {})
@@ -248,7 +257,7 @@ def _read_checkpoint(
             generated_sql = record.get("generated_sql")
             if (
                 not isinstance(generated_sql, str)
-                or not generated_sql.strip()
+                or (not generated_sql.strip() and not (record.get("schema_version") == 2 and record.get("generation_status") == "failed" and record.get("failure_code") in {"incomplete_completion", "unsupported_completion", "empty_completion"}))
             ):
                 raise ExperimentRunError(
                     "invalid_checkpoint",
@@ -316,7 +325,19 @@ class BaselineExperimentRunner:
                 "Only B3/B4 may receive a retrieval index",
             )
 
-    def run(
+    def run(self, predictions_path: str | Path, report_path: str | Path) -> dict[str, Any]:
+        predictions = Path(predictions_path).expanduser().resolve()
+        predictions.parent.mkdir(parents=True, exist_ok=True)
+        # Keep the lock file: unlinking it could let another writer lock a
+        # different inode while this writer still owns the original one.
+        with Path(str(predictions) + ".lock").open("a") as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError as error:
+                raise ExperimentRunError("checkpoint_locked", "Another writer owns this checkpoint") from error
+            return self._run(predictions, report_path)
+
+    def _run(
         self, predictions_path: str | Path, report_path: str | Path
     ) -> dict[str, Any]:
         predictions = Path(predictions_path).expanduser().resolve()
@@ -345,12 +366,21 @@ class BaselineExperimentRunner:
             config=self.config,
             expected_by_id=expected_by_id,
         )
+        # Prepare every development input before making any paid call. Clear
+        # samples so a repeated run cannot conceal database-value drift.
+        self.pipeline.clear_sample_cache()
+        prepared_by_id = {}
+        database_hashes = {}
         for example in examples:
-            if example.example_id in checkpoint:
-                continue
             database = self.evaluator.database_resolver.resolve(
                 example.db_id
             )
+            if example.db_id not in database_hashes:
+                with database.path.open("rb") as stream:
+                    database_hashes[example.db_id] = hashlib.file_digest(stream, "sha256").hexdigest()
+                wal = Path(str(database.path) + "-wal")
+                if wal.exists() and wal.stat().st_size:
+                    raise ExperimentRunError("mutable_database", "Checkpoint inputs require a database without a live WAL")
             uses_mschema = self.config.baseline in {
                 "B2", "B3", "B4", "B6", "B6R"
             }
@@ -382,7 +412,7 @@ class BaselineExperimentRunner:
                     )
                     for item in selection.entries
                 )
-            generated = self.pipeline.generate(
+            prepared_by_id[example.example_id] = self.pipeline.prepare(
                 example.question,
                 database.path,
                 db_id=example.db_id,
@@ -437,20 +467,134 @@ class BaselineExperimentRunner:
                 few_shot_examples=few_shot_examples,
                 retrieval_audit=retrieval_audit,
             )
-            if not generated.selected_sql:
+        runtime = {"provider": self.pipeline.provider.provider_name,
+                   "model_id": self.pipeline.provider.model_id,
+                   "implementation": type(self.pipeline.provider).__module__ + "." + type(self.pipeline.provider).__qualname__}
+        if runtime["provider"] != self.config.provider or runtime["model_id"] != self.config.model_id:
+            raise ExperimentRunError("runtime_configuration_mismatch", "Runtime provider/model differs from config")
+        for key in ("temperature", "max_tokens", "seed", "reasoning_effort", "max_retries", "timeout_seconds"):
+            value = getattr(self.pipeline.provider, key, None)
+            runtime[key] = value
+            if hasattr(self.pipeline.provider, key) and value != getattr(self.config, key):
+                raise ExperimentRunError("runtime_configuration_mismatch", f"Runtime {key} differs from config")
+        runtime["endpoint"] = getattr(self.pipeline.provider, "endpoint", None)
+        project_root = Path(__file__).resolve().parents[3]
+        implementation_files = sorted((project_root / "src/text2sql").rglob("*.py"))
+        implementation_files += sorted(project_root.glob("requirements*.txt"))
+        implementation_files += [project_root / "requirements.lock", project_root / "pyproject.toml"]
+        dependencies = {}
+        for package in ("groq", "httpx", "pydantic", "dspy", "litellm", "optuna"):
+            try:
+                dependencies[package] = metadata.version(package)
+            except metadata.PackageNotFoundError:
+                dependencies[package] = None
+        implementation_hashes = {
+            str(path.relative_to(project_root)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in implementation_files
+        }
+        contract = {
+            "implementation_sha256": implementation_hashes,
+            "runtime_versions": {"python": sys.version, "sqlite": sqlite3.sqlite_version, **dependencies},
+            "version": "baseline-checkpoint-v2",
+            "config_sha256": self.config.config_sha256,
+            "runtime": runtime,
+            "database_sha256": database_hashes,
+            "dataset_manifest": self.dataset.manifest,
+            "evaluation_manifest": self.evaluator.resource_manifest(split="development"),
+            "inputs": {
+                key: {"question": value.generation_input.question,
+                      "db_id": value.generation_input.schema.db_id,
+                      "schema_hash": value.schema_hash,
+                      "prompt_version": value.prompt_version,
+                      "prompt_hash": hashlib.sha256(value.generation_input.prompt.encode()).hexdigest(),
+                      "metadata": value.metadata}
+                for key, value in sorted(prepared_by_id.items())
+            },
+        }
+        contract_json = json.dumps(contract, sort_keys=True, separators=(",", ":"), allow_nan=False)
+        contract_hash = hashlib.sha256(contract_json.encode()).hexdigest()
+        contract = json.loads(contract_json)
+        for key, record in checkpoint.items():
+            if record.get("run_contract_sha256") != contract_hash:
+                raise ExperimentRunError("checkpoint_provenance_mismatch", "Checkpoint has missing or incompatible runtime/input provenance; use a new output path", example_id=key)
+            generation = record.get("generation")
+            expected = contract["inputs"][key]
+            if (
+                not isinstance(generation, dict)
+                or any(generation.get(field) != expected[field] for field in (
+                    "question", "db_id", "schema_hash", "prompt_version", "prompt_hash"
+                ))
+                or generation.get("model_id") != runtime["model_id"]
+                or generation.get("provider") != runtime["provider"]
+            ):
+                raise ExperimentRunError("checkpoint_provenance_mismatch", "Checkpoint generation identity differs from prepared input", example_id=key)
+            failure = record.get("failure_code")
+            provider_metadata = generation["metadata"].get("provider")
+            failed = record.get("generation_status") == "failed"
+            if (
+                record.get("schema_version") != 2
+                or record.get("generation_status") not in {"completed", "failed"}
+                or not isinstance(provider_metadata, dict)
+                or (failed and (
+                    failure not in {"incomplete_completion", "unsupported_completion", "empty_completion"}
+                    or provider_metadata.get("completion_failure") != failure
+                    or record["generated_sql"] != ""
+                    or generation.get("selected_sql") is not None
+                    or generation.get("generated_sql") != []
+                ))
+                or (not failed and (failure is not None or provider_metadata.get("completion_failure") is not None))
+            ):
+                raise ExperimentRunError("invalid_checkpoint", "Inconsistent checkpoint completion state", example_id=key)
+            if record["generated_sql"] != (generation.get("selected_sql") or ""):
+                raise ExperimentRunError("invalid_checkpoint", "Checkpoint SQL differs from generation record", example_id=key)
+        manifest_path = Path(str(predictions) + ".run.json")
+        if manifest_path.exists():
+            try:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except (ValueError, OSError) as error:
+                raise ExperimentRunError("invalid_run_manifest", "Run manifest cannot be read") from error
+            if not isinstance(manifest, dict) or manifest.get("contract") != contract or manifest.get("contract_sha256") != contract_hash:
+                raise ExperimentRunError("checkpoint_provenance_mismatch", "Run manifest differs from current runtime/input contract")
+        else:
+            if checkpoint:
+                raise ExperimentRunError("missing_run_manifest", "Existing checkpoint requires its original run manifest")
+            def git_value(*args):
+                try:
+                    result = subprocess.run(["git", *args], cwd=project_root, capture_output=True, text=True, check=True, timeout=5)
+                    return result.stdout.strip()
+                except (OSError, subprocess.SubprocessError):
+                    return None
+            revision = git_value("rev-parse", "HEAD")
+            status = git_value("status", "--porcelain", "--untracked-files=normal")
+            manifest = {"contract": contract, "contract_sha256": contract_hash,
+                        "project_revision": revision,
+                        "project_dirty": bool(status) if status is not None else None}
+            # Written before the first provider call. A damaged manifest fails
+            # closed; it is never inferred from whatever inputs exist later.
+            with manifest_path.open("x", encoding="utf-8") as stream:
+                stream.write(json.dumps(manifest, sort_keys=True, indent=2) + "\n")
+        for example in examples:
+            if example.example_id in checkpoint:
+                continue
+            generated = self.pipeline.generate_prepared(prepared_by_id[example.example_id])
+            failure = generated.metadata.get("provider", {}).get("completion_failure")
+            if not generated.selected_sql and not failure:
                 raise ExperimentRunError(
                     "empty_generation",
                     "Provider returned no selected SQL",
                     example_id=example.example_id,
                 )
             record = {
-                "schema_version": 1,
+                "schema_version": 2,
+                "run_contract_sha256": contract_hash,
+                "generation_status": "failed" if failure else "completed",
+                "failure_code": failure,
                 "experiment_id": self.config.experiment_id,
                 "config_sha256": self.config.config_sha256,
                 "baseline": self.config.baseline,
                 "example_id": example.example_id,
                 "db_id": example.db_id,
-                "generated_sql": generated.selected_sql,
+                "generated_sql": generated.selected_sql or "",
                 "generation": generated.to_dict(),
             }
             append_jsonl(predictions, record)
@@ -581,7 +725,10 @@ class BaselineExperimentRunner:
                 "timeout_seconds": self.config.timeout_seconds,
                 "config_sha256": self.config.config_sha256,
             },
+            "run_contract": contract,
+            "run_contract_sha256": contract_hash,
             "generation_summary": {
+                "failed_completions": sum(row.get("generation_status") == "failed" for row in checkpoint.values()),
                 "total": len(generations),
                 "input_tokens": input_tokens,
                 "output_tokens": output_tokens,

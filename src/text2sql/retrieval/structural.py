@@ -8,7 +8,7 @@ import tomllib
 from collections import Counter
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Sequence
 
 from text2sql.planning import SemanticPlan, ValidatedSemanticPlan, semantic_plan_sha256
 
@@ -19,6 +19,10 @@ from .index import (
     normalize_retrieval_text,
     sha256_file,
 )
+
+
+if TYPE_CHECKING:
+    from text2sql.planning.scoped_plan import ScopedSemanticPlan
 
 
 STRUCTURAL_INDEX_VERSION = "sql-skeleton-operators-v1"
@@ -324,8 +328,30 @@ def extract_sql_structure(sql: str) -> SQLStructuralSignature:
     )
 
 
-def semantic_plan_structure(plan: SemanticPlan | ValidatedSemanticPlan) -> SQLStructuralSignature:
+def semantic_plan_structure(plan: SemanticPlan | ScopedSemanticPlan | ValidatedSemanticPlan) -> SQLStructuralSignature:
     semantic = plan.plan if isinstance(plan, ValidatedSemanticPlan) else plan
+    from text2sql.planning.scoped_plan import ScopedSemanticPlan, SelectScope, SetScope, walk_scopes
+    if isinstance(semantic, ScopedSemanticPlan):
+        scopes = tuple(scope for _, scope in walk_scopes(semantic.root))
+        signatures = tuple(semantic_plan_structure(scope.body) for scope in scopes if isinstance(scope, SelectScope))
+        operators = {scope.operator for scope in scopes if isinstance(scope, SetScope)}
+        # Match the pinned SQL scanner's operator priority and SELECT-count tag.
+        operator = next((op for op in ("union_all", "union", "intersect", "except") if op in operators), "none")
+        return SQLStructuralSignature(
+            join_count=sum(item.join_count for item in signatures),
+            has_subquery=len(signatures) > 1,
+            has_cte=False,
+            has_aggregation=any(item.has_aggregation for item in signatures),
+            has_group_by=any(item.has_group_by for item in signatures),
+            has_having=any(item.has_having for item in signatures),
+            has_window=False,
+            set_operation=operator,
+            recursive=False,
+            has_ordering=any(item.has_ordering for item in signatures) or any(scope.ordering for scope in scopes if isinstance(scope, SetScope)),
+            has_limit=any(item.has_limit for item in signatures) or any(scope.limit is not None for scope in scopes if isinstance(scope, SetScope)),
+            has_temporal=any(item.has_temporal for item in signatures),
+            has_distinct=any(item.has_distinct for item in signatures),
+        )
     predicates = (*semantic.filters, *semantic.having)
     temporal = semantic.temporal.grain != "none" or semantic.temporal.window is not None or any(
         predicate.operator == "relative_time" or predicate.value_kind == "relative_time"

@@ -97,12 +97,13 @@ def main(argv: list[str] | None = None) -> int:
         args.plan.read_text(encoding="utf-8"),
         schema,
         expected_question=args.question,
+        expected_plan_version=config.semantic_plan_version,
     )
     composition = B7PComposer(
         config, QuestionPlanHybridSelector(structural, structural_config)
     ).compose(args.question, args.database, plan, db_id=args.db_id)
     audit = {
-        "status": "ready_for_model001",
+        "status": "composed_offline",
         **composition.to_audit_dict(),
         "prompt_output": str(args.prompt_output) if args.prompt_output else None,
     }

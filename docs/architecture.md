@@ -1,6 +1,6 @@
 # Architecture
 
-The current implementation supports baseline, full-schema, M-Schema, few-shot M-Schema, and linked and hybrid linked-M-Schema generation over the frozen Spider2-Lite SQLite development protocol. It also provides a verified Spider 1.0 train-only retrieval index plus deterministic B3/B4 selectors and provider-free per-target retrieval audits.
+The current implementation supports baseline, full-schema, M-Schema, few-shot M-Schema, and linked and hybrid linked-M-Schema generation over the frozen Spider2-Lite SQLite development protocol. It also provides a verified Spider 1.0 train-only retrieval index, deterministic B3/B4 selectors, provider-free per-target retrieval audits, and a provider-independent typed semantic-plan boundary for the future B7P arm.
 
 ```text
 question + SQLite database
@@ -60,9 +60,34 @@ scored 4/31 with 28/31 executable queries and therefore remains below B4 at
 5/31 and B6R at 6/31. SEM-001 then checksum-verifies and joins the B1, B6R,
 B4, and B5 artifacts into an exact 31-example paired matrix. Its frozen labels
 cover all 27 B5 failures without provider calls, gold SQL, or Spider2 test
-examples. The next Phase 5 work is typed planning (SEM-002) and structural
-retrieval (RET-003), before another paid run.
+examples. SEM-002 now defines a strict `semantic-plan-v1` JSON contract, exact
+schema and foreign-key/JOIN-graph validation, at most one plan-only correction,
+and deterministic plan plus schema-evidence hashes. The validated record exposes
+the metadata GEN-001 must attach to each prediction. It is not wired into the
+frozen B0-B6R arms and does not generate SQL or make provider calls. The next
+Phase 5 implementation is structural retrieval (RET-003), before B7P integration
+or another paid run.
 Fixture annotations are the only current source of linker precision/recall/F1.
+
+## Semantic-planning boundary
+
+```text
+question + canonical schema evidence
+        -> semantic-planner-v1 prompt (no SQL)
+        -> strict semantic-plan-v1 JSON parser
+        -> identifier + FK join graph + relational-shape validation
+        -> optional single plan-only correction
+        -> semantic-plan-record-v1
+             -> canonical plan SHA-256
+             -> canonical schema-evidence SHA-256
+             -> attempts, repair state, and structured initial issues
+```
+
+The boundary fails closed on Markdown/prose, contract drift, target identity
+mismatch, unknown identifiers, joins outside declared foreign keys, disconnected
+sources, inconsistent grouping/aliases/ties, and invalid recursive shape. V1
+does not support self joins or undeclared-FK joins; extending those cases requires
+a new version. See `docs/semantic-planning.md`.
 
 ## Design rules
 
@@ -86,6 +111,7 @@ Fixture annotations are the only current source of linker precision/recall/F1.
 - Cache corruption, concurrent resume and identity/resource drift fail closed;
   final 31-example B5 generation remains uncached.
 - Optimization gold results are loaded only for explicitly allowed development IDs.
+- Semantic plans are strict, versioned, schema-bound records and may be repaired at most once before SQL composition.
 - Every component is callable from modules, scripts and tests without a notebook kernel.
 
 The target offline/online architecture, task dependencies and remaining safety/retrieval work are maintained in `docs/project-plan-roadmap.md`.

@@ -2,7 +2,7 @@
 
 Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
-This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, LINK-002 provides a recall-repaired B6R arm, RET-001 provides a checksum-gated Spider 1.0 train-only retrieval index, RET-002 provides completed B3/B4 few-shot experiments, and DSPY-001 records the completed B5 optimization and development run. The strict reference-SQL `EVAL-002` path remains optional.
+This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, LINK-002 provides a recall-repaired B6R arm, RET-001 provides a checksum-gated Spider 1.0 train-only retrieval index, RET-002 provides completed B3/B4 few-shot experiments, DSPY-001 records the completed B5 optimization and development run, and SEM-001/SEM-002 provide error analysis plus a typed, schema-validated relational plan. The strict reference-SQL `EVAL-002` path remains optional.
 
 ## Requirements
 
@@ -82,10 +82,13 @@ Implemented:
   checksum-verified 31-example B5 result (4/31 correct, 28/31 executable).
 - completed provider-free SEM-001 paired error corpus over B1/B6R/B4/B5 with
   exact 31-ID coverage and frozen labels for all 27 B5 failures.
+- versioned SEM-002 `SemanticPlan`, strict JSON parser, schema/FK/JOIN-graph
+  validator, one plan-only repair boundary, deterministic plan/schema hashes,
+  provider-free validation CLI, and offline fixtures.
 
 Not implemented yet:
 
-- typed semantic planning, SQL-skeleton retrieval, and the B7P first-pass arm;
+- SQL-skeleton retrieval and the B7P first-pass arm;
 - SQL AST validation and sandbox execution;
 - security evaluation;
 - Gradio application built on the new pipeline.
@@ -221,8 +224,32 @@ checksum-bound JSONL, Markdown matrix, and manifest are written under
 `artifacts/reports/`; the frozen labeling contract is
 `configs/analysis/sem001-paired-errors-v1.json`.
 
-SEM-001 is complete. The next implementation tasks are the typed SemanticPlan
-(SEM-002) and train-only SQL-skeleton retrieval (RET-003).
+SEM-001 is complete and supplies the failure evidence used by SEM-002.
+
+## SEM-002 typed semantic planning
+
+SEM-002 is implemented provider-free. It defines `semantic-plan-v1` for output
+shape, sources, joins, predicates/literals, aggregation/grouping, ordering,
+limits/ties, temporal logic, recursion/set operations, and explicit
+uncertainties. Plans are strict JSON and must validate against exact canonical
+schema identifiers and declared foreign-key paths before SQL composition.
+
+Validate and hash a plan against a local SQLite schema with:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.planning.cli \
+  --plan path/to/plan.json \
+  --database path/to/database.sqlite \
+  --db-id database_id \
+  --question "The exact source question"
+```
+
+An invalid initial plan may receive exactly one caller-supplied plan-only
+correction; a second invalid response fails closed. A successful record includes
+the canonical plan hash and canonical schema-evidence hash for later GEN-001
+prediction metadata. SEM-002 makes no provider call and does not yet improve or
+score SQL. See `docs/semantic-planning.md`. The next implementation task is
+train-only SQL-skeleton retrieval (`RET-003`).
 
 ## Execution evaluator
 
@@ -250,6 +277,7 @@ mode, and optional strict SQL audit mode are documented in `docs/spider2-evaluat
 - `src/text2sql/retrieval/` - train-only retrieval index and leakage firewall;
 - `configs/` - versioned experiment and security configuration;
 - `src/text2sql/analysis/` - provider-free SEM-001 paired error analysis;
+- `src/text2sql/planning/` - typed SEM-002 plan, validation, repair boundary, and CLI;
 - `configs/datasets/spider2-lite-sqlite-metadata-manifest-v1.json` - frozen
   DATA-003 output contract;
 - `tests/` - tests that run without external services;
@@ -260,6 +288,7 @@ mode, and optional strict SQL audit mode are documented in `docs/spider2-evaluat
   repository, documentation source and legacy input used by the project;
 - `docs/evaluation.md` - EVAL-001 execution and comparison contract;
 - `docs/schema-linking.md` - LINK-001 algorithm, frozen policy, offline audit, and B6 commands;
+- `docs/semantic-planning.md` - SEM-002 contract, validation boundary, and limitations;
 - `docs/spider2-evaluation-runner.md` - EVAL-003 default workflow and optional EVAL-002 audit mode;
 - `artifacts/` - generated results, excluded from Git by default.
 

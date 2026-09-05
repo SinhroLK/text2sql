@@ -6,6 +6,7 @@
 | Schema serialization/linking | Proposed method | canonical schema, M-Schema, extractive-lexical-v1, B1/B2/B6/B6R frozen configurations, linking audit and tests |
 | Retrieval and DSPy | Prompt optimization | RET-001/RET-002 evidence; completed DSPY-001 B5 compile, frozen program/manifest, 21/10 optimization split, 31-example result and tests |
 | Semantic error analysis | Error analysis and proposed method | SEM-001 checksum-pinned B1/B6R/B4/B5 matrix, frozen 27-failure labels, transition audit and dominant-cause report |
+| Typed semantic planning | Proposed method | SEM-002 versioned plan, strict parser, schema/FK/JOIN validation, bounded repair and deterministic provenance hashes |
 | Validator and refiner | Verification | B7 configuration and repair metrics |
 | Guardrails and sandbox | Security | S0/S1 and adversarial evaluation |
 | Experiment runner/evaluator | Results | EVAL-001 comparator, primary EVAL-003 official-result runner, optional EVAL-002 SQL audit, exact-ID summaries and frozen configurations |
@@ -48,6 +49,14 @@ primary and optional secondary category. The three leading primary causes are
 aggregation/grouping (6), output shape (5), and JOIN path/cardinality (4);
 21 examples are stable failures across B1/B6R/B4/B5 and eight are
 prompt-sensitive. No gold SQL or Spider2 test example is used.
+
+`SEM-002` evidence is `text2sql.planning.semantic_plan`, the provider-free
+validation CLI, `docs/semantic-planning.md`, and `tests/test_semantic_plan.py`.
+The implementation separates relational intent from SQL composition, validates
+exact schema identifiers and connected foreign-key paths, allows at most one
+plan-only correction, and records deterministic plan and schema-evidence hashes.
+Its fixture coverage is implementation evidence only; no model or benchmark
+accuracy claim is attached until RET-003 and GEN-001 integrate the contract.
 
 Those reduction figures are engineering measurements, not evidence of SQL accuracy or real schema recall. The project currently has trusted table/column relevance annotations only in fixtures; consequently fixture tests report precision/recall/F1, while frozen B6R supplies its own EVAL-003 claim: 6/31 (19.35%), including five non-empty and one empty-result match.
 

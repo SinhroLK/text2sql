@@ -24,6 +24,7 @@ text2sql-run-baseline = "text2sql.experiments.cli:main"
 text2sql-audit-linking = "text2sql.experiments.linking_cli:main"
 text2sql-audit-retrieval = "text2sql.experiments.retrieval_cli:main"
 text2sql-audit-semantic-errors = "text2sql.analysis.cli:main"
+text2sql-validate-semantic-plan = "text2sql.planning.cli:main"
 text2sql-prepare-retrieval = "text2sql.retrieval.cli:main"
 text2sql-optimize-b5 = "text2sql.optimization.cli:main"
 

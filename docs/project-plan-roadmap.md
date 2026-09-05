@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 3.8
-**Datum:** 4. septembar 2026.
-**Status projekta:** Faza 5 je `IN PROGRESS`: `SEM-001` je završen nad 31 development primerom i svih 27 B5 neuspeha je kategorisano. Sledeći aktivni zadaci su typed `SemanticPlan` (`SEM-002`) i Spider 1.0 SQL-skeleton retrieval (`RET-003`).
-**Poslednja provera:** 4. septembar 2026. - SEM-001 ima exact 31-ID coverage, 0 provider poziva, 0 test primera i 0 gold SQL-a; dominantni B5 uzroci su agregacija/grupisanje (6), output shape (5) i JOIN putanja/kardinalnost (4).
+**Verzija plana:** 3.9
+**Datum:** 5. septembar 2026.
+**Status projekta:** Faza 5 je `IN PROGRESS`: `SEM-001` i `SEM-002` su završeni. Typed `SemanticPlan` je provider-free, schema-bound i spreman za RET-003/GEN-001 integraciju; sledeći aktivni zadatak je Spider 1.0 SQL-skeleton retrieval (`RET-003`).
+**Poslednja provera:** 5. septembar 2026. - `semantic-plan-v1` ima strict parser, schema/FK/JOIN-graph validaciju, najviše jednu plan-only korekciju i determinističke plan/schema hash-eve; svih 144 testa prolazi, bez provider poziva ili otvaranja Spider2 test skupa.
 
 ### Istorija verzija
 
@@ -39,6 +39,7 @@
 | 3.6 | 3. septembar 2026. | Dodat strogi per-run B5 replay cache: eksplicitni compatible resume, full identity/integrity kontrole, non-cacheable greške/truncation, odvojeno provider računovodstvo, ADR-014 i 132 testa |
 | 3.7 | 4. septembar 2026. | Završen DSPY-001/B5 sa negativnim rezultatom 4/31; B6R ostaje najbolji na 6/31. Faza 5 je preusmerena na eksplicitno semantičko planiranje i bolji single-query B7P pre validator/refiner sloja. |
 | 3.8 | 4. septembar 2026. | Završen SEM-001: checksum-pinned B1/B6R/B4/B5 matrica, 27 kategorisanih B5 neuspeha, dominantni uzroci, provider-free CLI, tri nova testa i checksumovani JSONL/Markdown/manifest artefakti. |
+| 3.9 | 5. septembar 2026. | Završen SEM-002 offline: `semantic-plan-v1`, strict JSON parser, schema/FK/JOIN-graph validacija, jedna plan-only korekcija, auditabilni plan/schema hash-evi, CLI, ADR-016 i 144 testa. |
 
 ## 1. Svrha dokumenta
 
@@ -451,6 +452,11 @@ JOIN putanja/kardinalnost (4). Dvadeset jedan primer je stable failure, a osam p
 - odbiti plan koji koristi nepostojeće identifikatore ili nepovezivu JOIN putanju; dozvoliti jednu korekciju samog plana pre SQL generisanja;
 - sačuvati plan i hash schema evidence-a uz svaku predikciju da bi greška mogla da se locira pre ili posle SQL composer-a.
 
+**Status SEM-002:** `DONE` - provider-independent `semantic-plan-v1` pokriva
+sva zahtevana polja, fail-closed validaciju i jednu plan-only korekciju.
+`semantic-plan-record-v1` čuva plan, plan/schema hash-eve i repair audit.
+Nisu učitani Spider2 development/test primeri niti gold SQL.
+
 #### 5C - `RET-003`: retrieval po SQL strukturi
 
 - iz Spider 1.0 train SQL-a provider-free izvesti normalizovan skeleton i oznake operatora: broj JOIN-ova, subquery/CTE, agregacija, HAVING, window, set/recursive operacije, ordering/limit i vremenska logika;
@@ -580,7 +586,7 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 21 zadatak je završen; `SEM-001` je `DONE`, a Faza 5 je `IN PROGRESS`. B6R 6/31 ostaje najbolji arm; sledeći aktivni zadaci su `SEM-002` i `RET-003` pre bilo kakvog novog paid run-a.
+**Sažetak stanja:** 22 zadatka su završena; `SEM-001` i `SEM-002` su `DONE`, a Faza 5 je `IN PROGRESS`. B6R 6/31 ostaje najbolji arm; sledeći aktivni zadatak je `RET-003` pre GEN-001 integracije ili novog paid run-a.
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
@@ -606,7 +612,7 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | RET-002 | Implementirati random i similarity few-shot | 4 | P0 | DONE | RET-001 | B3 4/31 i B4 5/31; oba 23/31 executable; frozen config/audit/prediction/report checksumovi |
 | DSPY-001 | Definisati i optimizovati DSPy program | 4 | P1 | DONE | RET-002, EVAL-001 | MIPROv2 best validation 2/10; frozen B5 31/31, 4/31 tačna, 28/31 executable; program/manifest/prediction/report checksumovi |
 | SEM-001 | Napraviti upareni semantic-error corpus za B1/B6R/B4/B5 | 5 | P0 | DONE | DSPY-001, LINK-002 | 31-ID matrica, 27 labela; top uzroci 6/5/4; JSONL `b7a90912...cfe2f`, Markdown `5de448b7...3236`, manifest `df488e30...093b`; 135 testova |
-| SEM-002 | Implementirati typed SemanticPlan i validator plana | 5 | P0 | NOT STARTED | SEM-001, SCHEMA-001 | fixture testovi, schema/JOIN validacija i auditabilni plan hash-evi |
+| SEM-002 | Implementirati typed SemanticPlan i validator plana | 5 | P0 | DONE | SEM-001, SCHEMA-001 | `semantic-plan-v1`, strict parser, schema/FK/JOIN validacija, one-repair ceiling, plan/schema hash audit, CLI i 9 novih testova; 144 ukupno |
 | RET-003 | Implementirati Spider1 train-only SQL-skeleton retrieval | 5 | P0 | NOT STARTED | SEM-001, RET-001 | skeleton indeks, leakage testovi i per-target retrieval audit |
 | MODEL-001 | Proveriti capability najviše tri zamrznuta modela za B7P | 5 | P1 | NOT STARTED | SEM-002, RET-003, LINK-002 | isti frozen B7P prompt/budžet za sve modele; objavljeni svi development pokušaji, trošak i unapred definisan izbor |
 | GEN-001 | Implementirati i evaluirati single-query B7P | 5 | P0 | NOT STARTED | SEM-002, RET-003, LINK-002, MODEL-001 | frozen 31/31 B7P sa izabranim modelom; promotion gate >=8 correct, >=28 executable i >=2 nova non-empty pogotka prema B6R |
@@ -1134,3 +1140,25 @@ Sledeće:
 - analyzer je imao 0 provider poziva, nije učitao gold SQL niti Spider2 test primere.
 
 Sledeće: implementirati SEM-002 i RET-003 offline pre zamrzavanja B7P prompta.
+
+### 2026-09-05 - SEM-002 typed semantic plan završen
+
+- dodat je provider-independent `semantic-plan-v1` sa eksplicitnim output,
+  source/JOIN, filter/literal, aggregation/GROUP BY/HAVING, ordering/limit/ties,
+  temporal grain/window, recursion/set-operation i uncertainty poljima;
+- strict JSON parser odbija Markdown/prozu, contract drift, non-finite vrednosti
+  i nekonzistentne typed kombinacije pre validacije;
+- validator vezuje plan za exact question/database/dialect i kanonsku šemu,
+  odbija nepostojeće identifikatore, JOIN van deklarisanog FK-a, nepovezan JOIN
+  graf, neispravne alias/grouping/ties veze i neispravan recursive shape;
+- dozvoljena je tačno jedna caller-supplied plan-only korekcija; drugi
+  neispravan odgovor fail-closed prekida workflow;
+- `semantic-plan-record-v1` čuva canonical plan SHA-256, canonical schema
+  evidence SHA-256, broj pokušaja, repair status i inicijalne structured greške;
+- provider-free CLI i devet fixture testova pokrivaju JOIN, aggregation/grouping,
+  temporal/window, recursion/set operation, hashing, parsing i repair ceiling;
+- svih 144 testova prolazi; nije bilo provider poziva niti učitavanja Spider2
+  development/test primera ili gold SQL-a. Frozen B0-B6R artefakti nisu menjani.
+
+Sledeće: implementirati RET-003 offline i zatim integrisati SEM-002/RET-003 u
+GEN-001/B7P pre bilo kakvog novog paid run-a.

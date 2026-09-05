@@ -515,4 +515,30 @@ The config SHA-256 is `6a863f548d05b3ffdc02d18a9042f5c2ef860ca0d073fdcdeb3497f97
 The corpus JSONL SHA-256 is `b7a90912244ab3b648f97aceefcc730b27b25dbe6df3a52e2941a230d26cfe2f`,
 the Markdown SHA-256 is `5de448b775813e7a768fa4d4c2031e02636d500002c5f28ad346068b2fdc3236`,
 and the manifest SHA-256 is `df488e3097ac68c1ccba704ef8cc60736eb4436820c35cf4892f6fa11221093b`.
-These diagnostics motivate SEM-002 and RET-003; they do not replace EVAL-003.
+These diagnostics motivated SEM-002 and RET-003; they do not replace EVAL-003.
+
+## SEM-002: typed semantic-plan contract
+
+SEM-002 is complete as an offline, provider-independent implementation. The
+`semantic-plan-v1` contract represents requested output, source tables,
+foreign-key joins, filters/literals, aggregation and grouping, ordering/limit
+and ties, temporal grain/window, recursion/set operations, and explicit
+uncertainties before SQL is written.
+
+The strict parser rejects prose, Markdown fences, missing or unknown fields,
+invalid enum/value combinations, and non-finite JSON values. The validator binds
+the plan to the exact question, database, dialect, canonical identifiers,
+declared sources, foreign-key edges, connected JOIN graph, aliases, grouping,
+ties, and recursive set shape. One caller-provided plan-only correction is
+permitted; the second invalid response terminates validation.
+
+Every valid result contains deterministic canonical plan and schema-evidence
+SHA-256 values plus attempts, repair state, and initial structured issues. The
+future GEN-001 runner must attach this complete record to each prediction. Nine
+offline tests cover join failures, aggregation/grouping, temporal and recursive
+plans, strict parsing, hash provenance, the repair ceiling, and CLI validation;
+the complete project suite contains 144 passing tests.
+
+SEM-002 made zero provider calls and read no Spider2 development/test example or
+gold SQL. It establishes a general planning contract, not a benchmark result or
+an accuracy improvement. RET-003 and GEN-001 remain necessary before B7P can be evaluated.

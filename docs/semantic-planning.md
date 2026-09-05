@@ -61,5 +61,7 @@ PYTHONPATH=src .venv/bin/python -m text2sql.planning.cli \
 The offline fixtures cover valid and invalid joins, aggregation/grouping,
 ordering/ties, temporal intent, recursive/set-operation shape, deterministic
 hashing, strict parsing, the one-repair ceiling, and the CLI. They establish the
-contract and validator behavior, not Text-to-SQL accuracy. RET-003 and GEN-001
-must integrate this contract before a live B7P development run.
+contract and validator behavior, not Text-to-SQL accuracy. RET-003 now consumes
+the plan's structural shape, and the offline GEN-001 composer revalidates and
+embeds the complete record. MODEL-001 and the live 31-example B7P development
+run remain necessary before any accuracy claim.

@@ -2,7 +2,7 @@
 
 Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
-This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, LINK-002 provides a recall-repaired B6R arm, RET-001 provides a checksum-gated Spider 1.0 train-only retrieval index, RET-002 provides completed B3/B4 few-shot experiments, DSPY-001 records the completed B5 optimization and development run, and SEM-001/SEM-002 provide error analysis plus a typed, schema-validated relational plan. The strict reference-SQL `EVAL-002` path remains optional.
+This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, LINK-002 provides a recall-repaired B6R arm, RET-001 provides a checksum-gated Spider 1.0 train-only retrieval index, RET-002 provides completed B3/B4 few-shot experiments, DSPY-001 records the completed B5 optimization and development run, SEM-001/SEM-002 provide error analysis plus a typed schema-validated relational plan, and RET-003 provides deterministic question-plus-plan structural retrieval. The strict reference-SQL `EVAL-002` path remains optional.
 
 ## Requirements
 
@@ -85,10 +85,18 @@ Implemented:
 - versioned SEM-002 `SemanticPlan`, strict JSON parser, schema/FK/JOIN-graph
   validator, one plan-only repair boundary, deterministic plan/schema hashes,
   provider-free validation CLI, and offline fixtures.
+- deterministic 7,000-entry SQL-skeleton/operator index derived from verified
+  Spider 1.0 train SQL, with a frozen manifest and recomputing loader;
+- question-plus-`SemanticPlan` hybrid ranking with per-component audit,
+  structural-match filtering, and demonstration count/size bounds.
+- provider-free `gen001-b7p-composer-v1` prompt composition combining B6R
+  evidence, a validated SEM-002 plan, bounded RET-003 demonstrations, selective
+  value grounding, exact dependency/provenance checks, and one-candidate audit.
 
 Not implemented yet:
 
-- SQL-skeleton retrieval and the B7P first-pass arm;
+- MODEL-001 capability selection and the live 31-example GEN-001/B7P run;
+- the GEN-001 promotion decision and checkpoint/report artifacts;
 - SQL AST validation and sandbox execution;
 - security evaluation;
 - Gradio application built on the new pipeline.
@@ -139,6 +147,21 @@ PYTHONPATH=src python3 -m text2sql.experiments.retrieval_cli \
 The audit records retrieved IDs, source databases, ranks and similarity scores,
 but does not call Groq or read Spider2 test outcomes. Completed development
 results are B3 4/31 and B4 5/31; the sealed test split was not opened.
+
+Build and verify the RET-003 structure index from that exact RET-001 artifact:
+
+```bash
+PYTHONPATH=src python3 -m text2sql.retrieval.structural_cli
+```
+
+The structural artifact contains normalized skeletons and operator signatures,
+not duplicate question/SQL text. The hybrid selector combines question TF-IDF
+with operators derived from a validated `SemanticPlan`, audits both raw and
+weighted components, returns at most three demonstrations, and enforces SQL-size
+budgets. No structural match produces no demonstrations rather than the full B4
+context. RET-003 is provider-free implementation evidence; its current
+per-target audit is fixture-backed until GEN-001 produces frozen development
+plans. See `docs/structural-retrieval.md`.
 
 ## DSPY-001 B5
 
@@ -248,8 +271,36 @@ An invalid initial plan may receive exactly one caller-supplied plan-only
 correction; a second invalid response fails closed. A successful record includes
 the canonical plan hash and canonical schema-evidence hash for later GEN-001
 prediction metadata. SEM-002 makes no provider call and does not yet improve or
-score SQL. See `docs/semantic-planning.md`. The next implementation task is
-train-only SQL-skeleton retrieval (`RET-003`).
+score SQL. See `docs/semantic-planning.md`. RET-003 and the offline GEN-001
+composer now consume this plan shape.
+
+## GEN-001 offline B7P composer
+
+The provider-independent `gen001-b7p-composer-v1` contract is frozen. It binds
+the exact B6R and RET-003 dependencies, requires a checksum-valid SEM-002 plan,
+and produces a deterministic prompt containing the complete compact schema,
+linked detailed M-Schema, zero to three structural demonstrations, selective
+filter-column values, and the exact question. It requests exactly one read-only
+SQLite query and records prompt/schema/plan/retrieval/dependency hashes.
+
+After building RET-001 and RET-003, compose and audit a prompt without a
+provider call:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.generation.cli \
+  --plan path/to/semantic-plan.json \
+  --database path/to/database.sqlite \
+  --db-id database_id \
+  --question "The exact source question" \
+  --prompt-output artifacts/prompts/b7p.txt \
+  --audit-output artifacts/reports/b7p-composer-audit.json
+```
+
+Six fixtures cover JOIN, nested aggregation/subquery, temporal-window, set and
+recursive shapes plus grounding and provenance failures. This is not yet a B7P
+accuracy result: MODEL-001 must choose a model under the same frozen contract,
+then GEN-001 must produce and score the exact 31-development-ID checkpoint. See
+`docs/b7p-composer.md`.
 
 ## Execution evaluator
 
@@ -274,7 +325,8 @@ mode, and optional strict SQL audit mode are documented in `docs/spider2-evaluat
 ## Repository map
 
 - `src/text2sql/` - reusable pipeline code;
-- `src/text2sql/retrieval/` - train-only retrieval index and leakage firewall;
+- `src/text2sql/generation/` - provider-free GEN-001 B7P composition contract and CLI;
+- `src/text2sql/retrieval/` - train-only indexes, leakage firewall, and structural selector;
 - `configs/` - versioned experiment and security configuration;
 - `src/text2sql/analysis/` - provider-free SEM-001 paired error analysis;
 - `src/text2sql/planning/` - typed SEM-002 plan, validation, repair boundary, and CLI;
@@ -288,8 +340,10 @@ mode, and optional strict SQL audit mode are documented in `docs/spider2-evaluat
   repository, documentation source and legacy input used by the project;
 - `docs/evaluation.md` - EVAL-001 execution and comparison contract;
 - `docs/schema-linking.md` - LINK-001 algorithm, frozen policy, offline audit, and B6 commands;
+- `docs/b7p-composer.md` - frozen B7P prompt, evidence, audit, and remaining live steps;
 - `docs/semantic-planning.md` - SEM-002 contract, validation boundary, and limitations;
 - `docs/spider2-evaluation-runner.md` - EVAL-003 default workflow and optional EVAL-002 audit mode;
+- `docs/structural-retrieval.md` - RET-003 extraction, ranking, audit, and bounds;
 - `artifacts/` - generated results, excluded from Git by default.
 
 ## Optional Groq smoke run

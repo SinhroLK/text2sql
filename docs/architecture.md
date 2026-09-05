@@ -1,6 +1,6 @@
 # Architecture
 
-The current implementation supports baseline, full-schema, M-Schema, few-shot M-Schema, and linked and hybrid linked-M-Schema generation over the frozen Spider2-Lite SQLite development protocol. It also provides a verified Spider 1.0 train-only retrieval index, deterministic B3/B4 selectors, provider-free per-target retrieval audits, and a provider-independent typed semantic-plan boundary for the future B7P arm.
+The current implementation supports baseline, full-schema, M-Schema, few-shot M-Schema, and linked and hybrid linked-M-Schema generation over the frozen Spider2-Lite SQLite development protocol. It also provides verified Spider 1.0 train-only lexical and structural indexes, deterministic B3/B4 selectors, a question-plus-plan RET-003 selector, provider-free per-target audits, a typed semantic-plan boundary, and the offline B7P composition boundary.
 
 ```text
 question + SQLite database
@@ -60,13 +60,17 @@ scored 4/31 with 28/31 executable queries and therefore remains below B4 at
 5/31 and B6R at 6/31. SEM-001 then checksum-verifies and joins the B1, B6R,
 B4, and B5 artifacts into an exact 31-example paired matrix. Its frozen labels
 cover all 27 B5 failures without provider calls, gold SQL, or Spider2 test
-examples. SEM-002 now defines a strict `semantic-plan-v1` JSON contract, exact
+examples. SEM-002 defines a strict `semantic-plan-v1` JSON contract, exact
 schema and foreign-key/JOIN-graph validation, at most one plan-only correction,
 and deterministic plan plus schema-evidence hashes. The validated record exposes
-the metadata GEN-001 must attach to each prediction. It is not wired into the
-frozen B0-B6R arms and does not generate SQL or make provider calls. The next
-Phase 5 implementation is structural retrieval (RET-003), before B7P integration
-or another paid run.
+the metadata GEN-001 must attach to each prediction. RET-003 now deterministically
+derives SQL skeletons and operator tags for all 7,000 verified training entries,
+then combines question TF-IDF with the validated plan shape under strict result
+and character bounds. The offline GEN-001 composer now combines those components
+with exact B6R recall-first evidence, selectively includes values only for plan
+filter columns, and freezes a deterministic one-query prompt plus audit. None of
+these components is wired into frozen B0-B6R arms or makes provider calls. The
+next task is MODEL-001 before a new paid B7P development run.
 Fixture annotations are the only current source of linker precision/recall/F1.
 
 ## Semantic-planning boundary
@@ -88,6 +92,43 @@ mismatch, unknown identifiers, joins outside declared foreign keys, disconnected
 sources, inconsistent grouping/aliases/ties, and invalid recursive shape. V1
 does not support self joins or undeclared-FK joins; extending those cases requires
 a new version. See `docs/semantic-planning.md`.
+
+## Structural-retrieval boundary
+
+```text
+verified RET-001 Spider 1.0 train index
+        -> literal/identifier-blind SQL skeleton + operator signature
+validated semantic-plan-v1 + target question
+        -> target signature + question TF-IDF vector
+        -> auditable weighted question/structure ranking
+        -> structural threshold + per-SQL/total-character bounds
+        -> zero to three demonstrations for GEN-001
+```
+
+The derived artifact repeats no question or SQL text and is recomputed on load.
+No structural match returns an empty selection. Audit scope is fixture or
+development only; test targets and gold SQL are rejected. See
+`docs/structural-retrieval.md`.
+
+## B7P composition boundary
+
+```text
+question + target SQLite database + validated semantic-plan-record-v1
+        -> verify B6R/SEM-002/RET-003 dependency hashes and versions
+        -> complete compact schema + recall-linked detailed M-Schema
+        -> sample values only for literal/range/relative-time filter columns
+        -> question-plan-hybrid-v1 demonstrations (zero to three)
+        -> deterministic gen001-b7p-composer-v1 prompt
+        -> prompt/evidence/plan/retrieval audit (no provider call)
+```
+
+The composer revalidates the plan against the exact database and schema hash,
+rechecks the canonical plan hash, and fails closed on dependency or size drift.
+Its prompt requests exactly one read-only SQLite query. That instruction is not
+an SQL security boundary: AST validation remains SAFE-001. The model remains
+explicitly `pending-model001`, and no accuracy or executable-rate claim exists
+until a frozen model produces the exact 31-development-ID checkpoint. See
+`docs/b7p-composer.md`.
 
 ## Design rules
 
@@ -112,6 +153,8 @@ a new version. See `docs/semantic-planning.md`.
   final 31-example B5 generation remains uncached.
 - Optimization gold results are loaded only for explicitly allowed development IDs.
 - Semantic plans are strict, versioned, schema-bound records and may be repaired at most once before SQL composition.
+- RET-003 binds both source hashes, audits every score component, and never falls back to an unbounded B4 context.
+- B7P composition requires exact plan/schema/dependency identity and records one deterministic prompt audit before provider use.
 - Every component is callable from modules, scripts and tests without a notebook kernel.
 
 The target offline/online architecture, task dependencies and remaining safety/retrieval work are maintained in `docs/project-plan-roadmap.md`.

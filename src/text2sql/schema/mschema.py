@@ -7,7 +7,7 @@ import re
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Mapping, TypeAlias
+from typing import Collection, Mapping, TypeAlias
 
 from text2sql.domain import SchemaSnapshot
 
@@ -94,6 +94,8 @@ def sample_sqlite_mschema_values(
     database_path: str | Path,
     schema: SchemaSnapshot,
     policy: MSchemaSamplePolicy = MSchemaSamplePolicy(),
+    *,
+    columns: Collection[tuple[str, str]] | None = None,
 ) -> dict[tuple[str, str], tuple[SampleValue, ...]]:
     validate_canonical_schema(schema)
     path = Path(database_path).expanduser().resolve()
@@ -101,6 +103,16 @@ def sample_sqlite_mschema_values(
         raise FileNotFoundError(f"SQLite database does not exist: {path}")
     if policy.examples_per_column == 0:
         return {}
+
+    real_columns = {
+        (table.name, column.name)
+        for table in schema.tables
+        for column in table.columns
+    }
+    requested_columns = real_columns if columns is None else set(columns)
+    unknown = sorted(requested_columns - real_columns)
+    if unknown:
+        raise ValueError(f"M-Schema sampling requested unknown columns: {unknown!r}")
 
     sampled: dict[tuple[str, str], tuple[SampleValue, ...]] = {}
     connection = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
@@ -116,6 +128,8 @@ def sample_sqlite_mschema_values(
                 _quote_identifier(column.name) for column in primary_key
             ) or "rowid"
             for column in table.columns:
+                if (table.name, column.name) not in requested_columns:
+                    continue
                 if _is_sensitive_column(column.name):
                     continue
                 quoted_column = _quote_identifier(column.name)

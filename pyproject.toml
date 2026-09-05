@@ -26,6 +26,8 @@ text2sql-audit-retrieval = "text2sql.experiments.retrieval_cli:main"
 text2sql-audit-semantic-errors = "text2sql.analysis.cli:main"
 text2sql-validate-semantic-plan = "text2sql.planning.cli:main"
 text2sql-prepare-retrieval = "text2sql.retrieval.cli:main"
+text2sql-prepare-structural-retrieval = "text2sql.retrieval.structural_cli:main"
+text2sql-compose-b7p = "text2sql.generation.cli:main"
 text2sql-optimize-b5 = "text2sql.optimization.cli:main"
 
 [tool.setuptools.packages.find]

@@ -4,9 +4,10 @@
 |---|---|---|
 | Dataset loaders and split policy | Dataset and methodology | dataset version, checksums, split tests |
 | Schema serialization/linking | Proposed method | canonical schema, M-Schema, extractive-lexical-v1, B1/B2/B6/B6R frozen configurations, linking audit and tests |
-| Retrieval and DSPy | Prompt optimization | RET-001/RET-002 evidence; completed DSPY-001 B5 compile, frozen program/manifest, 21/10 optimization split, 31-example result and tests |
+| Retrieval and DSPy | Prompt optimization | RET-001/RET-002 evidence; RET-003 skeleton/operator index and audited question-plus-plan selector; completed DSPY-001 B5 evidence |
 | Semantic error analysis | Error analysis and proposed method | SEM-001 checksum-pinned B1/B6R/B4/B5 matrix, frozen 27-failure labels, transition audit and dominant-cause report |
 | Typed semantic planning | Proposed method | SEM-002 versioned plan, strict parser, schema/FK/JOIN validation, bounded repair and deterministic provenance hashes |
+| B7P SQL composition | Proposed method | GEN-001 frozen provider-independent composer, B6R/SEM-002/RET-003 dependency binding, selective grounding, deterministic prompt/audit and fixtures |
 | Validator and refiner | Verification | B7 configuration and repair metrics |
 | Guardrails and sandbox | Security | S0/S1 and adversarial evaluation |
 | Experiment runner/evaluator | Results | EVAL-001 comparator, primary EVAL-003 official-result runner, optional EVAL-002 SQL audit, exact-ID summaries and frozen configurations |
@@ -27,6 +28,14 @@ and two 31-target provider-free audits. Frozen live results add B3 4/31 and B4
 5/31 with 23/31 executable outputs in both arms. B4 improves on random by one
 example but remains below B6R; RET-002 is evidence of a modest retrieval effect,
 not strong absolute model quality.
+`RET-003` evidence is ADR-017, the checksum-bound 7,000-entry
+`sql-skeleton-operators-v1` artifact, exact-recomputing verified loader,
+`QuestionPlanHybridSelector`, per-target score audit, frozen count/character
+bounds, `docs/structural-retrieval.md`, and
+`tests/test_structural_retrieval.py`. Its current fixture coverage proves
+determinism and boundary enforcement only. The first real 31-target retrieval
+audit belongs to GEN-001 because frozen development plans do not yet exist.
+
 
 `DSPY-001` implementation evidence is ADR-013/ADR-014, the frozen
 `configs/optimization/dspy001-b5.toml`, `B5TextToSQL` signature, MIPROv2
@@ -55,8 +64,18 @@ validation CLI, `docs/semantic-planning.md`, and `tests/test_semantic_plan.py`.
 The implementation separates relational intent from SQL composition, validates
 exact schema identifiers and connected foreign-key paths, allows at most one
 plan-only correction, and records deterministic plan and schema-evidence hashes.
-Its fixture coverage is implementation evidence only; no model or benchmark
-accuracy claim is attached until RET-003 and GEN-001 integrate the contract.
+Its fixture coverage is implementation evidence only; RET-003 now consumes its
+shape, and the offline GEN-001 composer revalidates its exact record before
+prompt construction.
+
+The offline `GEN-001` evidence is ADR-018,
+`configs/generation/gen001-b7p-composer-v1.toml`,
+`text2sql.generation.b7p`, `docs/b7p-composer.md`, and
+`tests/test_b7p_composer.py`. The frozen composer combines exact B6R schema
+evidence, a checksum-valid SEM-002 record, bounded RET-003 demonstrations, and
+values sampled only for plan filter columns. It proves deterministic composition
+and provenance enforcement, not SQL quality. MODEL-001, the 31-example B7P run,
+and EVAL-003 scoring remain required before a benchmark claim.
 
 Those reduction figures are engineering measurements, not evidence of SQL accuracy or real schema recall. The project currently has trusted table/column relevance annotations only in fixtures; consequently fixture tests report precision/recall/F1, while frozen B6R supplies its own EVAL-003 claim: 6/31 (19.35%), including five non-empty and one empty-result match.
 

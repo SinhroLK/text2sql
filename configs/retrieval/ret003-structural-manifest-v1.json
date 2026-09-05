@@ -1,0 +1,55 @@
+{
+  "artifact": {
+    "contains_question_or_sql": false,
+    "filename": "structural-index.jsonl",
+    "format": "deterministic-jsonl",
+    "ordering": "source-ordinal",
+    "sha256": "e4a8407153f6cfefa48e2ffd28102908ebb2c57ca089efa5c03d218fa849952d"
+  },
+  "config_sha256": "facb790f414fec022710bceccb6defe2536ed3d68a9d52f646122d90f45797aa",
+  "counts": {
+    "entries": 7000,
+    "operator_tags": {
+      "aggregation": 3270,
+      "distinct": 721,
+      "group_by": 1775,
+      "having": 427,
+      "joins_total": 3793,
+      "limit": 1107,
+      "ordering": 1628,
+      "set:except": 209,
+      "set:intersect": 250,
+      "set:union": 67,
+      "subquery": 1019,
+      "temporal": 356
+    }
+  },
+  "index_id": "spider1-train-structural-v1",
+  "leakage_audit": {
+    "database_overlaps": 0,
+    "instance_id_overlaps": 0,
+    "normalized_question_overlaps": 0,
+    "source_split_verified_train": true,
+    "spider2_examples_allowed": false,
+    "spider2_metadata_sha256": "9951e147543c819597dec0336c486612171e36c73ddc5b7e8b387e6f20b6c9f0",
+    "spider2_split_manifest_sha256": "36cbd3a18c359ad3e23662c73b0e9976af9f7a77e6174183c70c855a7b766518"
+  },
+  "policy": {
+    "max_results": 3,
+    "max_sql_chars": 2000,
+    "max_total_sql_chars": 4500,
+    "minimum_structure_score": 0.3,
+    "question_weight": 0.45,
+    "require_structural_match": true,
+    "structure_weight": 0.55
+  },
+  "schema_version": 1,
+  "source": {
+    "dataset_id": "spider1",
+    "index_id": "spider1-train-retrieval-v1",
+    "index_sha256": "82ee39e03792647fa7efeddf1fcd293ca068f0fc879d9a88cc27c8546550389e",
+    "manifest_sha256": "0d24040c28a8a63c024eb80d571554aa57209e864c29c7b41737cc6f5fabbd59",
+    "split": "train"
+  },
+  "structural_version": "sql-skeleton-operators-v1"
+}

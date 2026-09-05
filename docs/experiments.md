@@ -541,4 +541,77 @@ the complete project suite contains 144 passing tests.
 
 SEM-002 made zero provider calls and read no Spider2 development/test example or
 gold SQL. It establishes a general planning contract, not a benchmark result or
-an accuracy improvement. RET-003 and GEN-001 remain necessary before B7P can be evaluated.
+an accuracy improvement. RET-003 and the offline composer are now complete;
+MODEL-001 and the live GEN-001 checkpoint remain necessary before B7P can be
+evaluated.
+
+## RET-003: plan-conditioned SQL-structure retrieval
+
+RET-003 is complete as an offline retrieval component. Rebuild its frozen
+Spider 1.0 train-derived artifact without a provider key:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.retrieval.structural_cli
+```
+
+The command first verifies the RET-001 index and its version-controlled manifest,
+then rechecks that the source is Spider 1.0 train-only and that the existing
+Spider2 ID/database/normalized-question overlap counts are zero. It derives
+7,000 normalized SQL skeletons and operator signatures without reading any
+Spider2 target, gold SQL, or result outcome. The compact artifact does not repeat
+source questions or SQL and is exact-recomputed by its verified loader.
+
+The frozen selector combines question TF-IDF (weight 0.45) with plan/operator
+shape (weight 0.55). Structural similarity combines operator-tag Jaccard (70%)
+and join-count proximity (30%). Its threshold is 0.30, with at most three
+demonstrations, 2,000 SQL characters per demonstration, and 4,500 combined.
+Each selected item audits both raw scores, both weighted components, the total,
+matched/missing/extra tags, and join counts. No qualifying structure produces an
+empty selection instead of a B4-context fallback.
+
+| Artifact | SHA-256 |
+|---|---|
+| Structural JSONL | `e4a8407153f6cfefa48e2ffd28102908ebb2c57ca089efa5c03d218fa849952d` |
+| Generated structural manifest | `d6156bf6f274599c8a38bc452de86d7b80cf322f9615a2efc4fd215726d5914a` |
+
+The per-target audit API is covered over validated fixture plans and rejects
+test scope. A real 31-development-target audit is deliberately not fabricated:
+GEN-001 must create and freeze it together with the first 31 validated plans.
+Therefore these checks establish deterministic behavior, provenance, leakage
+safety, and bounded context only. They are not a B7P accuracy result and made no
+provider call; the 104-example test split remains sealed.
+
+## GEN-001: provider-independent B7P composer
+
+The offline part of GEN-001 is implemented and frozen as
+`gen001-b7p-composer-v1`. Its configuration SHA-256 is
+`6b60bdf833ab6c90cc16471b8b218df24087c4ea02faeaf4239de43ee0ef89ee`.
+Before composing a prompt it verifies the exact B6R, SEM-002, RET-003 config,
+index and manifest identities, then revalidates the semantic plan against the
+target SQLite schema and its recorded hashes.
+
+The composed prompt contains the complete compact identifier inventory,
+recall-linked detailed M-Schema, bounded question-plus-plan demonstrations,
+the canonical plan, selective values for plan filter columns only, and the exact
+question. It requests one read-only SQLite `SELECT`/`WITH` query. The audit
+records prompt, plan, schema, retrieval, grounding and dependency hashes and
+explicitly records that no provider was called.
+
+Compose an offline prompt with:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.generation.cli \
+  --plan path/to/semantic-plan.json \
+  --database path/to/database.sqlite \
+  --db-id database_id \
+  --question "The exact source question" \
+  --prompt-output artifacts/prompts/b7p.txt \
+  --audit-output artifacts/reports/b7p-composer-audit.json
+```
+
+Six fixtures cover deterministic composition, selective grounding, JOIN,
+nested aggregation/subquery, temporal/window, set and recursive structures,
+plus fail-closed provenance and dependency checks. GEN-001 remains `IN PROGRESS`:
+the config deliberately says `pending-model001`, and neither a 31-target
+prediction checkpoint nor an accuracy/executable-rate result exists. MODEL-001
+is the next task; the sealed 104-example test split remains unopened.

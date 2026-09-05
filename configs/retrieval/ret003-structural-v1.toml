@@ -1,0 +1,23 @@
+schema_version = 1
+index_id = "spider1-train-structural-v1"
+structural_version = "sql-skeleton-operators-v1"
+
+[source]
+dataset_id = "spider1"
+split = "train"
+index_id = "spider1-train-retrieval-v1"
+index_sha256 = "82ee39e03792647fa7efeddf1fcd293ca068f0fc879d9a88cc27c8546550389e"
+manifest_sha256 = "0d24040c28a8a63c024eb80d571554aa57209e864c29c7b41737cc6f5fabbd59"
+expected_entries = 7000
+
+[policy]
+max_results = 3
+question_weight = 0.45
+structure_weight = 0.55
+minimum_structure_score = 0.30
+max_sql_chars = 2000
+max_total_sql_chars = 4500
+require_structural_match = true
+
+[artifact]
+filename = "structural-index.jsonl"

@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 3.9
+**Verzija plana:** 4.1
 **Datum:** 5. septembar 2026.
-**Status projekta:** Faza 5 je `IN PROGRESS`: `SEM-001` i `SEM-002` su završeni. Typed `SemanticPlan` je provider-free, schema-bound i spreman za RET-003/GEN-001 integraciju; sledeći aktivni zadatak je Spider 1.0 SQL-skeleton retrieval (`RET-003`).
-**Poslednja provera:** 5. septembar 2026. - `semantic-plan-v1` ima strict parser, schema/FK/JOIN-graph validaciju, najviše jednu plan-only korekciju i determinističke plan/schema hash-eve; svih 144 testa prolazi, bez provider poziva ili otvaranja Spider2 test skupa.
+**Status projekta:** Faza 5 je `IN PROGRESS`: offline GEN-001/B7P composer ugovor je zamrznut uz završene `SEM-001`, `SEM-002` i `RET-003`. Sledeći aktivni zadatak je `MODEL-001`; live 31-example GEN-001 checkpoint još nije pokrenut.
+**Poslednja provera:** 5. septembar 2026. - `gen001-b7p-composer-v1` checksum-vezuje B6R/SEM-002/RET-003, revalidira plan/schema provenance, selektivno ground-uje filter kolone i deterministički gradi one-query prompt/audit bez provider poziva; svih 156 testova prolazi, a Spider2 test skup ostaje zatvoren.
 
 ### Istorija verzija
 
@@ -40,6 +40,8 @@
 | 3.7 | 4. septembar 2026. | Završen DSPY-001/B5 sa negativnim rezultatom 4/31; B6R ostaje najbolji na 6/31. Faza 5 je preusmerena na eksplicitno semantičko planiranje i bolji single-query B7P pre validator/refiner sloja. |
 | 3.8 | 4. septembar 2026. | Završen SEM-001: checksum-pinned B1/B6R/B4/B5 matrica, 27 kategorisanih B5 neuspeha, dominantni uzroci, provider-free CLI, tri nova testa i checksumovani JSONL/Markdown/manifest artefakti. |
 | 3.9 | 5. septembar 2026. | Završen SEM-002 offline: `semantic-plan-v1`, strict JSON parser, schema/FK/JOIN-graph validacija, jedna plan-only korekcija, auditabilni plan/schema hash-evi, CLI, ADR-016 i 144 testa. |
+| 4.0 | 5. septembar 2026. | Završen RET-003 offline: 7.000 train-only SQL skeleton/operator zapisa, frozen config/manifest, question-plus-plan hybrid ranking, per-component/per-target audit, bounded context, ADR-017 i 150 testova. |
+| 4.1 | 5. septembar 2026. | Zamrznut offline GEN-001/B7P composer: exact B6R/SEM-002/RET-003 provenance, selective grounding, deterministic one-query prompt/audit, ADR-018 i 156 testova; GEN-001 ostaje u toku do MODEL-001 i live 31-example evaluacije. |
 
 ## 1. Svrha dokumenta
 
@@ -464,6 +466,12 @@ Nisu učitani Spider2 development/test primeri niti gold SQL.
 - zadržati postojeći Spider2 ID/DB/question leakage firewall i auditovati doprinos svake komponente score-a;
 - ograničiti broj i veličinu demonstracija; ne vraćati puni B4 kontekst ako demonstracija nema strukturno poklapanje.
 
+**Status RET-003:** `DONE` - frozen `sql-skeleton-operators-v1` artefakt ima
+7.000 zapisa i SHA-256 `e4a84071...4952d`; verified loader exact-recompute
+proverava svaki zapis i zadržava Spider2 zero-overlap firewall. Hybrid selektor
+auditira question/structure komponente i vraća najviše tri bounded demonstracije
+ili prazan skup kada nema strukturnog poklapanja.
+
 #### 5D - `GEN-001`: B7P bolji početni upit
 
 - koristiti B6R recall-first schema evidence: kompletan kompaktni inventar identifikatora plus detalji odabranih tabela; sample values uključiti samo kada pitanje zahteva literal/value grounding;
@@ -473,6 +481,12 @@ Nisu učitani Spider2 development/test primeri niti gold SQL.
 
 GEN-001 se prvo implementira kao zamrznut offline B7P prompt/composer ugovor.
 MODEL-001 zatim bira model pod tim istim ugovorom, pre live B7P evaluacije.
+
+**Status GEN-001:** `IN PROGRESS` - offline `gen001-b7p-composer-v1` je
+zamrznut i checksum-vezuje B6R/SEM-002/RET-003. Composer revalidira plan i
+schema hash, koristi selective filter-column grounding, gradi tačno jedan
+deterministički prompt/audit i ne poziva provider. Preostaju MODEL-001 izbor,
+31/31 live prediction checkpoint, EVAL-003 score i promotion odluka.
 
 #### 5E - `MODEL-001`: capability gate
 
@@ -586,7 +600,7 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 22 zadatka su završena; `SEM-001` i `SEM-002` su `DONE`, a Faza 5 je `IN PROGRESS`. B6R 6/31 ostaje najbolji arm; sledeći aktivni zadatak je `RET-003` pre GEN-001 integracije ili novog paid run-a.
+**Sažetak stanja:** 23 zadatka su završena; `SEM-001`, `SEM-002` i `RET-003` su `DONE`, offline deo `GEN-001` je završen, a Faza 5 ostaje `IN PROGRESS`. B6R 6/31 ostaje najbolji izmereni arm; sledeći aktivni zadatak je `MODEL-001` pod zamrznutim B7P ugovorom.
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
@@ -613,9 +627,9 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | DSPY-001 | Definisati i optimizovati DSPy program | 4 | P1 | DONE | RET-002, EVAL-001 | MIPROv2 best validation 2/10; frozen B5 31/31, 4/31 tačna, 28/31 executable; program/manifest/prediction/report checksumovi |
 | SEM-001 | Napraviti upareni semantic-error corpus za B1/B6R/B4/B5 | 5 | P0 | DONE | DSPY-001, LINK-002 | 31-ID matrica, 27 labela; top uzroci 6/5/4; JSONL `b7a90912...cfe2f`, Markdown `5de448b7...3236`, manifest `df488e30...093b`; 135 testova |
 | SEM-002 | Implementirati typed SemanticPlan i validator plana | 5 | P0 | DONE | SEM-001, SCHEMA-001 | `semantic-plan-v1`, strict parser, schema/FK/JOIN validacija, one-repair ceiling, plan/schema hash audit, CLI i 9 novih testova; 144 ukupno |
-| RET-003 | Implementirati Spider1 train-only SQL-skeleton retrieval | 5 | P0 | NOT STARTED | SEM-001, RET-001 | skeleton indeks, leakage testovi i per-target retrieval audit |
+| RET-003 | Implementirati Spider1 train-only SQL-skeleton retrieval | 5 | P0 | DONE | SEM-001, RET-001 | 7.000 skeleton/operator zapisa `e4a84071...4952d`, frozen config/manifest, exact-recompute loader, leakage testovi, hybrid score audit i 6 fixture testa; 150 ukupno |
 | MODEL-001 | Proveriti capability najviše tri zamrznuta modela za B7P | 5 | P1 | NOT STARTED | SEM-002, RET-003, LINK-002 | isti frozen B7P prompt/budžet za sve modele; objavljeni svi development pokušaji, trošak i unapred definisan izbor |
-| GEN-001 | Implementirati i evaluirati single-query B7P | 5 | P0 | NOT STARTED | SEM-002, RET-003, LINK-002, MODEL-001 | frozen 31/31 B7P sa izabranim modelom; promotion gate >=8 correct, >=28 executable i >=2 nova non-empty pogotka prema B6R |
+| GEN-001 | Implementirati i evaluirati single-query B7P | 5 | P0 | IN PROGRESS | SEM-002, RET-003, LINK-002, MODEL-001 | offline composer/config `6b60bdf8...ef89ee`, exact provenance, selective grounding i 6 testova završeni; preostaju frozen 31/31 B7P i promotion gate >=8 correct, >=28 executable i >=2 nova non-empty pogotka prema B6R |
 | SAFE-001 | Implementirati SQL AST validator | 5 | P0 | NOT STARTED | SEM-002, SCHEMA-001 | security i semantic-plan coverage unit testovi |
 | SAFE-002 | Implementirati read-only sandbox executor | 5 | P0 | NOT STARTED | SAFE-001 | integration test |
 | REF-001 | Implementirati izbor kandidata i refiner | 5 | P1 | NOT STARTED | GEN-001 promotion gate, SAFE-002 | B7 first-pass/final rezultat i audit razloga izbora/repair-a |
@@ -1162,3 +1176,46 @@ Sledeće: implementirati SEM-002 i RET-003 offline pre zamrzavanja B7P prompta.
 
 Sledeće: implementirati RET-003 offline i zatim integrisati SEM-002/RET-003 u
 GEN-001/B7P pre bilo kakvog novog paid run-a.
+
+### 2026-09-05 - RET-003 structural retrieval završen
+
+- provider-free SQL scanner iz exact verified RET-001 indeksa izvodi
+  literal/identifier-blind skeleton, JOIN count i subquery/CTE/aggregation/
+  grouping/HAVING/window/set/recursive/ordering/limit/temporal/distinct oznake;
+- frozen config vezuje oba RET-001 hash-a i 7.000 training zapisa; loader ponovo
+  izvodi i poredi kompletan structural artefakt pre upotrebe;
+- structural JSONL SHA-256 je `e4a8407153f6cfefa48e2ffd28102908ebb2c57ca089efa5c03d218fa849952d`,
+  a generated manifest SHA-256 `d6156bf6f274599c8a38bc452de86d7b80cf322f9615a2efc4fd215726d5914a`;
+- `question-plan-hybrid-v1` kombinuje 45% TF-IDF pitanja i 55% operator shape-a,
+  beleži raw/weighted komponente i matched/missing/extra tags za svaki izbor;
+- vraća najviše tri primera, sa 2.000 karaktera po SQL-u i 4.500 ukupno, a bez
+  dovoljnog structural match-a vraća prazan skup umesto punog B4 context-a;
+- per-target audit prihvata samo fixture/development i eksplicitno odbija test;
+  realni 31-target audit nastaje uz GEN-001 plan checkpoint, ne retroaktivno;
+- šest novih testova i svih 150 testova prolaze; nije bilo provider poziva,
+  Spider2 target učitavanja, gold SQL-a ni izmene frozen B0-B6R artefakata.
+
+Sledeće: implementirati i zamrznuti offline GEN-001/B7P composer ugovor koji
+spaja B6R evidence, validan SEM-002 plan i RET-003 demonstracije.
+
+### 2026-09-05 - GEN-001 offline B7P composer zamrznut
+
+- dodat je provider-independent `gen001-b7p-composer-v1` sa frozen config
+  SHA-256 `6b60bdf833ab6c90cc16471b8b218df24087c4ea02faeaf4239de43ee0ef89ee`;
+- exact checksum/version provere vezuju B6R schema policy, SEM-002 plan/record i
+  RET-003 config, index i manifest; drift ili mismatch fail-uje pre kompozicije;
+- plan se ponovo validira prema ciljnoj SQLite šemi, canonical plan i schema
+  hash-evi se proveravaju, a RET-003 izbor ostaje bounded i potpuno auditabilan;
+- prompt spaja complete compact inventory, recall-linked detailed M-Schema,
+  zero-to-three demonstracije, canonical plan, exact pitanje i sample vrednosti
+  samo za filter kolone koje plan zaista zahteva;
+- config zahteva jedan kandidat, temperature 0, seed 42, reasoning effort low i
+  1.024 output tokena, ali model ostavlja kao `pending-model001`;
+- šest novih fixture testova pokriva determinism, selective grounding, JOIN,
+  nested aggregation/subquery, temporal/window, set/recursive shape i
+  fail-closed provenance/dependency provere; svih 156 testova prolazi;
+- nije bilo provider poziva, 31-example prediction checkpointa, EVAL-003 score-a
+  niti otvaranja 104-example Spider2 test skupa. GEN-001 zato ostaje `IN PROGRESS`.
+
+Sledeće: sprovesti `MODEL-001` capability gate nad istim frozen composer
+ugovorom, zatim pokrenuti tačno jedan zamrznuti 31-example B7P checkpoint.

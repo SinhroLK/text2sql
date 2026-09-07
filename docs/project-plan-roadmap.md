@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 3.7
-**Datum:** 4. septembar 2026.
-**Status projekta:** Faza 4 je `DONE`: B5 je kompletiran sa 4/31 (12,90%) i nije nadmašio B4 5/31 ni aktuelni najbolji B6R 6/31. Sledeći aktivni zadatak je `SEM-001`, analiza semantičkih grešaka pre implementacije boljeg first-pass generatora B7P.
-**Poslednja provera:** 4. septembar 2026. - B5 program, manifest, 31/31 prediction checkpoint i EVAL-003 report su prisutni i checksumovani; B5 ima 28/31 executable, ali 24/31 izvršiva upita vraćaju pogrešan rezultat.
+**Verzija plana:** 3.8
+**Datum:** 7. septembar 2026.
+**Status projekta:** Faze 0-4 su `DONE`. B5 je kompletiran sa 4/31 (12,90%) i nije nadmašio B4 5/31 ni aktuelni najbolji B6R 6/31. Semantičko planiranje/B7P je vraćeno iz aktivnog obima i odloženo dok se ne završi originalni roadmap. Sledeći aktivni zadatak je `SAFE-001`, SQL AST validator.
+**Poslednja provera:** 7. septembar 2026. - rollback na pre-semantics stanje je verifikovan; lokalni i GitHub `master` se sinhronizuju ovim roadmap ažuriranjem, a svih 132 offline testova prolazi. Nema aktivnog Groq procesa; Spider2 test split ostaje zatvoren.
 
 ### Istorija verzija
 
@@ -38,6 +38,7 @@
 | 3.5 | 2. septembar 2026. | Instaliran i pinovan Optuna 4.9.0 za MIPROv2; dodat dependency preflight pre paid poziva, requirements/config/manifest evidencija i 120 testova |
 | 3.6 | 3. septembar 2026. | Dodat strogi per-run B5 replay cache: eksplicitni compatible resume, full identity/integrity kontrole, non-cacheable greške/truncation, odvojeno provider računovodstvo, ADR-014 i 132 testa |
 | 3.7 | 4. septembar 2026. | Završen DSPY-001/B5 sa negativnim rezultatom 4/31; B6R ostaje najbolji na 6/31. Faza 5 je preusmerena na eksplicitno semantičko planiranje i bolji single-query B7P pre validator/refiner sloja. |
+| 3.8 | 7. septembar 2026. | Semantic-plan/B7P implementacija uklonjena sa master-a i odložena; vraćen originalni redosled Faze 5: SAFE-001, SAFE-002, zatim B7 kandidat/ranker/refiner |
 
 ## 1. Svrha dokumenta
 
@@ -423,69 +424,54 @@ Zadaci:
 
 **Definition of Done:** Ispunjeno. Svaki target ima auditabilnu retrieval listu, Spider2 nije u retrieval indeksu, B3/B4/B5 pokrivaju istih 31 development ID-jeva, a B5 program, optimization manifest, predictions i report su checksumovani. Negativni B5 rezultat se čuva bez naknadnog menjanja konfiguracije.
 
-### Faza 5 - Semantičko planiranje, bolji first-pass SQL i kontrolisana korekcija
+### Faza 5 - SQL validator, sandbox i refiner
 
-**Trajanje:** 3 nedelje
+**Trajanje:** 2 nedelje
 **Zavisnost:** Faze 3 i 4
 **Status:** `NOT STARTED`
 
-**Dokaz koji menja plan:** B5 je smanjio broj execution grešaka sa B4-ovih 8 na 3, ali je 24/31 puta izvršio semantički pogrešan SQL. Zato sintaksna validacija i veći broj kandidata nisu prvi lek. Prvo se meri i popravlja način na koji sistem konstruiše početni upit.
+**Trenutna odluka:** semantičko planiranje, SQL-skeleton retrieval, MODEL-001 i
+single-query B7P nisu deo aktivne Faze 5. Njihova ranija implementacija je
+uklonjena sa `master` grane i sačuvana van aktivnog roadmap-a za mogući kasniji
+povratak. Faza 5 nastavlja originalni bezbednosni i verifier redosled.
 
-#### 5A - `SEM-001`: uparena analiza semantičkih grešaka
+#### 5A - `SAFE-001`: SQL AST validator
 
-- provider-free spojiti pitanja, generisani SQL i EVAL-003 ishode za B1, B6R, B4 i B5;
-- svih 27 B5 neuspeha označiti primarnom i, po potrebi, sekundarnom kategorijom: output shape, tabela/kolona, JOIN putanja ili kardinalnost, filter/literal, agregacija/grupisanje, ordering/limit/ties, datum/vreme/window, rekurzija/set operacija ili SQLite dijalekt/sintaksa;
-- posebno evidentirati primere koji prelaze correct/incorrect između arm-ova i odvojiti stabilne greške od prompt-osetljivih grešaka;
-- ne koristiti Spider2 test, ne rekonstruisati nedostupni gold SQL i ne unositi pravila vezana za konkretan example ID;
-- izlaz je checksumovan JSONL/Markdown error corpus i rangirana lista najmanje tri dominantna semantička uzroka.
+- uvesti SQL AST parser sa eksplicitnim SQLite dijalektom;
+- dozvoliti tačno jedan read-only `SELECT`, opciono sa `WITH`;
+- odbiti DDL, DML, PRAGMA, ATTACH, više iskaza i pristup sistemskim tabelama;
+- validirati tabele i kolone prema kanonskoj šemi i uvesti identifier allowlist;
+- dodati testove za legitimne JOIN, subquery, aggregate, window i CTE upite,
+  kao i adversarial i malformed ulaze.
 
-#### 5B - `SEM-002`: typed semantic plan pre pisanja SQL-a
+#### 5B - `SAFE-002`: read-only sandbox executor
 
-- uvesti verzionisani `SemanticPlan` sa poljima za traženi output, izvore, JOIN graf, filtere/literale, agregacije, GROUP BY/HAVING, sortiranje/limit/ties, vremenski grain/window, rekurziju/set operacije i eksplicitne neizvesnosti;
-- planner ne generiše SQL; prvo mora da objasni relacionu nameru u strukturiranom formatu koji se deterministički parsira i validira;
-- odbiti plan koji koristi nepostojeće identifikatore ili nepovezivu JOIN putanju; dozvoliti jednu korekciju samog plana pre SQL generisanja;
-- sačuvati plan i hash schema evidence-a uz svaku predikciju da bi greška mogla da se locira pre ili posle SQL composer-a.
+- izvršavati samo upite koji su prošli SAFE-001;
+- koristiti izolovanu read-only kopiju SQLite baze;
+- primeniti timeout, row limit i ograničenje resursa;
+- sanitizovati greške pre auditovanja ili prosleđivanja refiner-u;
+- dokazati testovima da originalna baza i filesystem ostaju neizmenjeni.
 
-#### 5C - `RET-003`: retrieval po SQL strukturi
+#### 5C - `REF-001`: izbor kandidata i kontrolisana korekcija
 
-- iz Spider 1.0 train SQL-a provider-free izvesti normalizovan skeleton i oznake operatora: broj JOIN-ova, subquery/CTE, agregacija, HAVING, window, set/recursive operacije, ordering/limit i vremenska logika;
-- rangirati demonstracije kombinacijom pitanja i operatora iz `SemanticPlan`, umesto samo TF-IDF sličnosti teksta;
-- zadržati postojeći Spider2 ID/DB/question leakage firewall i auditovati doprinos svake komponente score-a;
-- ograničiti broj i veličinu demonstracija; ne vraćati puni B4 kontekst ako demonstracija nema strukturno poklapanje.
+- generisati najviše tri SQL kandidata pod zamrznutom B7 konfiguracijom;
+- implementirati deterministički ranker koristeći AST validnost, identifier
+  pokrivenost, `EXPLAIN`, sandbox ishod i slaganje kandidata, bez gold pristupa;
+- dozvoliti najviše jednu refiner iteraciju nad strukturiranom sanitizovanom
+  greškom;
+- prijaviti first-pass i finalni B7 rezultat odvojeno i sačuvati razloge izbora;
+- zamrznuti model, prompt, seed/temperature, budžet i sve checksumove pre live run-a.
 
-#### 5D - `GEN-001`: B7P bolji početni upit
+**Definition of Done:** testovi potvrđuju da DDL, DML, višestruki iskazi,
+sistemske tabele i filesystem side-effect operacije ne mogu da se izvrše;
+legitimni read-only SQLite upiti prolaze; sandbox ne menja izvornu bazu; svaki
+candidate, izbor i repair pokušaj je auditovan; B7 ima zamrznut 31/31
+development checkpoint i EVAL-003 report.
 
-- koristiti B6R recall-first schema evidence: kompletan kompaktni inventar identifikatora plus detalji odabranih tabela; sample values uključiti samo kada pitanje zahteva literal/value grounding;
-- SQL composer dobija pitanje, validan `SemanticPlan`, schema evidence i RET-003 demonstracije i proizvodi tačno jedan read-only SQLite upit;
-- pre provider run-a proveriti fixture slučajeve za JOIN, nested aggregation, temporal/window, set i recursive obrasce;
-- zamrznuti prompt, model, temperature/seed, token budžet, retriever i hash-eve kao novi B7P arm; B1/B4/B5/B6R artefakti ostaju neizmenjeni.
-
-GEN-001 se prvo implementira kao zamrznut offline B7P prompt/composer ugovor.
-MODEL-001 zatim bira model pod tim istim ugovorom, pre live B7P evaluacije.
-
-#### 5E - `MODEL-001`: capability gate
-
-- uporediti aktuelni model sa najviše dve unapred izabrane i zamrznute alternative pod identičnim B7P promptom i budžetom;
-- model selection je development-only inženjerska odluka; svi pokušaji i troškovi se objavljuju, bez biranja samo najpovoljnijeg ponavljanja;
-- ne menjati provider/model usred checkpointa i ne koristiti Spider2 test za izbor modela.
-
-#### 5F - unapred definisan promotion gate
-
-- B7P se prvo pokreće kao single-query arm nad istih 31 development ID-jeva;
-- minimalni cilj za prelazak na multi-candidate B7 je **najmanje 8/31 EVAL-003**, **najmanje 28/31 executable** i najmanje dva nova non-empty tačna rezultata u odnosu na B6R 6/31;
-- pomoćne metrike kao plan coverage, AST validity i execution success služe za dijagnostiku; nikada ne zamenjuju primarni EVAL-003 rezultat;
-- ako B7P ne prođe gate, ne dodavati refiner. Objaviti negativni rezultat, vratiti se na `SEM-001` i dozvoliti najviše još jednu unapred opisanu B7P verziju.
-
-#### 5G - `SAFE-001`, `SAFE-002` i `REF-001`: tek posle B7P
-
-- uvesti SQL AST parser sa eksplicitnim SQLite dijalektom, identifier allowlist, zabranu DDL/DML/više iskaza i read-only sandbox sa timeout/row limit kontrolama;
-- B7 generiše najviše tri kandidata koji se namerno razlikuju u JOIN, agregacionoj ili filter interpretaciji, a ne samo slučajnim sampling-om;
-- deterministički ranker koristi pokrivenost plana, validnost identifikatora/JOIN grafa, AST pravila, `EXPLAIN`, bezbedno probno izvršavanje i slaganje kandidata; nema pristup gold rezultatu;
-- refiner dobija samo strukturiranu, sanitizovanu grešku i ima najviše jedan pokušaj. First-pass i finalna tačnost se prijavljuju odvojeno.
-
-**Kontrola overfitting-a:** svih 31 development primera je već korišćeno za razvoj i B5 optimizaciju, pa naredni development score nije nepristrasna generalization procena. Zabranjeni su example-ID specifični uslovi i iterativno ručno podešavanje po pojedinačnim odgovorima. Spider2 test od 104 primera ostaje zatvoren dok B7P/B7 kod, konfiguracija, model i promotion pravila nisu zamrznuti; zatim se pokreće jednom za finalnu tvrdnju.
-
-**Definition of Done:** SEM-001 error corpus je kompletan; typed plan i structural retrieval imaju offline testove i audit; B7P ima 31/31 checkpoint i EVAL-003 report; promotion odluka je doneta prema unapred navedenom gate-u. Ako gate prođe, validator/sandbox/refiner testovi potvrđuju bezbednost i B7 odvojeno prijavljuje first-pass i finalni rezultat.
+**Odloženo posle originalnog roadmap-a:** `SEM-001`, `SEM-002`, `RET-003`,
+`MODEL-001` i `GEN-001/B7P`. Njihov povratak zahteva novu eksplicitnu odluku i
+posebno verzionisanu granu/konfiguraciju. Ne pokretati plaćene B7P pozive tokom
+aktivnog SAFE/REF rada.
 
 ### Faza 6 - Bezbednosna evaluacija
 
@@ -568,14 +554,14 @@ Zadaci:
 | R-08 | Previše komponenti ugrozi rok | visoka/visok | faze i MVP granica; Spider2-Snow i kompleksni agent su opcioni |
 | R-09 | API rezultati nisu deterministički | visoka/srednji | temperatura 0, seed gde postoji, više ponavljanja i sačuvani izlazi |
 | R-10 | Ponovljeno podešavanje na svih 31 development primera daje optimističan rezultat | visoka/visok | unapred opisati najviše dve B7P verzije, objaviti sve run-ove, zabraniti ID-specifična pravila i otvoriti test samo jednom posle freeze-a |
-| R-11 | Validan SQL prikrije semantički pogrešan rezultat | visoka/visok | odvojeno meriti plan, executable rate i EVAL-003; promotion zahteva stvarni accuracy dobitak, ne samo manje parser grešaka |
-| R-12 | Binarni execution signal je previše redak za prompt optimizaciju | visoka/srednji | typed plan i strukturne provere koristiti za dijagnostiku/rangiranje, ali zadržati EVAL-003 kao jedini primarni acceptance signal |
+| R-11 | Validan SQL prikrije semantički pogrešan rezultat | visoka/visok | odvojeno meriti AST/executable rate i EVAL-003; ranker koristi više nezavisnih signala, a acceptance zahteva stvarni accuracy rezultat |
+| R-12 | Binarni execution signal je previše redak za izbor kandidata | visoka/srednji | kombinovati AST validnost, EXPLAIN, sandbox ishod i candidate agreement za rangiranje, ali zadržati EVAL-003 kao primarni acceptance signal |
 
 ## 14. Tracker zadataka
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 20 zadataka je završeno; `DSPY-001` i Faza 4 su `DONE`. B5 4/31 je negativni rezultat, B6R 6/31 ostaje najbolji arm, a sledeći aktivni zadatak je provider-free `SEM-001` pre bilo kakvog novog paid run-a.
+**Sažetak stanja:** 20 zadataka je završeno; `DSPY-001` i Faza 4 su `DONE`. B5 4/31 je negativni rezultat, B6R 6/31 ostaje najbolji arm, a sledeći aktivni zadatak je `SAFE-001`. Semantički/B7P zadaci su `DEFERRED` do završetka originalnog roadmap-a.
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
@@ -600,14 +586,14 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | DONE | DATA-001 | pinned Spider 1.0 train 7.000/140, index SHA-256 `82ee39e0...0389e`, full Spider2 ID/DB/question firewall i 8 testova |
 | RET-002 | Implementirati random i similarity few-shot | 4 | P0 | DONE | RET-001 | B3 4/31 i B4 5/31; oba 23/31 executable; frozen config/audit/prediction/report checksumovi |
 | DSPY-001 | Definisati i optimizovati DSPy program | 4 | P1 | DONE | RET-002, EVAL-001 | MIPROv2 best validation 2/10; frozen B5 31/31, 4/31 tačna, 28/31 executable; program/manifest/prediction/report checksumovi |
-| SEM-001 | Napraviti upareni semantic-error corpus za B1/B6R/B4/B5 | 5 | P0 | NOT STARTED | DSPY-001, LINK-002 | 31-ID matrica, 27 kategorisanih B5 neuspeha, dominantni uzroci i checksumovi |
-| SEM-002 | Implementirati typed SemanticPlan i validator plana | 5 | P0 | NOT STARTED | SEM-001, SCHEMA-001 | fixture testovi, schema/JOIN validacija i auditabilni plan hash-evi |
-| RET-003 | Implementirati Spider1 train-only SQL-skeleton retrieval | 5 | P0 | NOT STARTED | SEM-001, RET-001 | skeleton indeks, leakage testovi i per-target retrieval audit |
-| MODEL-001 | Proveriti capability najviše tri zamrznuta modela za B7P | 5 | P1 | NOT STARTED | SEM-002, RET-003, LINK-002 | isti frozen B7P prompt/budžet za sve modele; objavljeni svi development pokušaji, trošak i unapred definisan izbor |
-| GEN-001 | Implementirati i evaluirati single-query B7P | 5 | P0 | NOT STARTED | SEM-002, RET-003, LINK-002, MODEL-001 | frozen 31/31 B7P sa izabranim modelom; promotion gate >=8 correct, >=28 executable i >=2 nova non-empty pogotka prema B6R |
-| SAFE-001 | Implementirati SQL AST validator | 5 | P0 | NOT STARTED | SEM-002, SCHEMA-001 | security i semantic-plan coverage unit testovi |
-| SAFE-002 | Implementirati read-only sandbox executor | 5 | P0 | NOT STARTED | SAFE-001 | integration test |
-| REF-001 | Implementirati izbor kandidata i refiner | 5 | P1 | NOT STARTED | GEN-001 promotion gate, SAFE-002 | B7 first-pass/final rezultat i audit razloga izbora/repair-a |
+| SAFE-001 | Implementirati SQL AST validator | 5 | P0 | NOT STARTED | SCHEMA-001 | SQLite AST parser, one-statement/read-only policy, identifier allowlist i adversarial unit testovi |
+| SAFE-002 | Implementirati read-only sandbox executor | 5 | P0 | NOT STARTED | SAFE-001, EVAL-001 | izolovana read-only kopija, timeout/row/resource limit, sanitizovane greške i side-effect integration testovi |
+| REF-001 | Implementirati izbor kandidata i refiner B7 | 5 | P1 | NOT STARTED | SAFE-002, LLM-002 | najviše 3 kandidata, deterministički ranker, najviše 1 repair, first-pass/final 31/31 rezultat i audit odluka |
+| SEM-001 | Napraviti upareni semantic-error corpus za B1/B6R/B4/B5 | posle originalnog roadmap-a | P2 | DEFERRED | završetak aktivnog roadmap-a | vratiti samo kroz novu eksplicitnu odluku |
+| SEM-002 | Implementirati typed SemanticPlan i validator plana | posle originalnog roadmap-a | P2 | DEFERRED | SEM-001 | arhivirana ranija implementacija nije deo master-a |
+| RET-003 | Implementirati Spider1 train-only SQL-skeleton retrieval | posle originalnog roadmap-a | P2 | DEFERRED | SEM-001, RET-001 | arhivirana ranija implementacija nije deo master-a |
+| MODEL-001 | Proveriti capability modela za B7P | posle originalnog roadmap-a | P2 | DEFERRED | SEM-002, RET-003, LINK-002 | nema novih paid B7P poziva u aktivnom planu |
+| GEN-001 | Implementirati i evaluirati single-query B7P | posle originalnog roadmap-a | P2 | DEFERRED | SEM-002, RET-003, MODEL-001 | nije deo aktivne Faze 5 |
 | SEC-001 | Definisati threat model i adversarial skup | 6 | P0 | NOT STARTED | SAFE-002 | verzionisan test skup |
 | SEC-002 | Implementirati i evaluirati guardrails | 6 | P0 | NOT STARTED | SEC-001 | S0/S1 rezultati |
 | RUN-001 | Zamrznuti finalne konfiguracije | 7 | P0 | NOT STARTED | sve obavezne faze | release tag/commit |
@@ -1109,3 +1095,18 @@ Sledeće:
 1. implementirati provider-free `SEM-001` i kategorisati svih 27 B5 neuspeha bez korišćenja test skupa ili gold SQL-a;
 2. na osnovu dominantnih uzroka zamrznuti typed `SemanticPlan`, SQL-skeleton retriever i single-query B7P pre novog paid run-a;
 3. dozvoliti B7 multi-candidate/refiner rad samo ako B7P postigne najmanje 8/31, najmanje 28/31 executable i najmanje dva nova non-empty pogotka prema B6R.
+
+### 2026-09-07 - Povratak na originalni roadmap
+
+- lokalni i GitHub `master` su sinhronizovani na `8a809dc`;
+- uklonjena semantic-plan/RET-003/B7P implementacija nije deo aktivnog master-a;
+- Faze 0-4 ostaju završene, sa B6R 6/31 kao najboljim development arm-om i
+  završenim negativnim B5 rezultatom 4/31, 28/31 executable;
+- `SEM-001`, `SEM-002`, `RET-003`, `MODEL-001` i `GEN-001` su prebačeni
+  u `DEFERRED` do završetka originalnog roadmap-a;
+- aktivni redosled je `SAFE-001` -> `SAFE-002` -> `REF-001`;
+- svih 132 offline testova prolazi; nema aktivnog Groq procesa i Spider2 test
+  split ostaje zatvoren.
+
+Sledeće: implementirati provider-free `SAFE-001` nad postojećim kanonskim
+modelom šeme, sa strogim SQLite read-only AST pravilima i adversarial testovima.

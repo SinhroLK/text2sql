@@ -143,13 +143,14 @@ Za svaku biblioteku tada treba dodati zaključanu verziju iz `requirements.lock`
 | ID | Status | Dokumentacija | Planirana upotreba |
 |---|---|---|---|
 | `DOC-PYTHON-001` | `ACTIVE` | Python 3.11 dokumentacija: <https://docs.python.org/3.11/> | Standardna biblioteka, `sqlite3`, `dataclasses`, `tomllib`, CLI i testovi. |
-| `DOC-SQLITE-001` | `ACTIVE` | SQLite dokumentacija: <https://www.sqlite.org/docs.html> | EVAL-001 read-only execution/in-memory backup i SCHEMA-002 `mode=ro` + `query_only` bounded sampling, timeout i introspekcija. |
+| `DOC-SQLITE-001` | `ACTIVE` | SQLite dokumentacija: <https://www.sqlite.org/docs.html> | EVAL-001 read-only execution, SCHEMA-002 introspekcija i SAFE-001 `EXPLAIN QUERY PLAN`/authorizer validacija. |
+| `DOC-SQLPARSE-001` | `ACTIVE` | sqlparse dokumentacija: <https://sqlparse.readthedocs.io/en/latest/> | SAFE-001 hijerarhijski token tree i one-statement politika; zaključana verzija 0.5.5. |
 | `DOC-DSPY-001` | `ACTIVE` | Zvanična DSPy dokumentacija/repozitorijum: <https://github.com/stanfordnlp/dspy> | Implementacija i zaključavanje B5 programa u Fazi 4. |
 | `DOC-LITELLM-001` | `ACTIVE` | Zvanični LiteLLM repozitorijum: <https://github.com/BerriAI/litellm> | DSPy transport i eksplicitno brojanje input tokena za B5 rolling TPM limiter; zaključana verzija 1.99.0. |
 | `DOC-OPTUNA-001` | `ACTIVE` | Zvanični Optuna repozitorijum: <https://github.com/optuna/optuna> | MIPROv2 prompt-parameter search backend; direktno zaključana verzija 4.9.0 i preflight pre paid poziva. |
 | `DOC-GROQ-001` | `PLANNED` | Zvanična Groq API dokumentacija: <https://console.groq.com/docs> | Realni LLM adapter; tačan model ID i datum pristupa ulaze u run manifest. |
 | `DOC-GRADIO-001` | `PLANNED` | Zvanična Gradio dokumentacija: <https://www.gradio.app/docs> | Finalni demo koji koristi isti pipeline kao eksperimenti. |
-| `DOC-SQLGLOT-001` | `PLANNED` | Zvanična SQLGlot dokumentacija/repozitorijum: <https://github.com/tobymao/sqlglot> | Kandidat za AST parsiranje i validaciju; konačna odluka se evidentira ADR-om. |
+| `DOC-SQLGLOT-001` | `REJECTED` | Zvanična SQLGlot dokumentacija/repozitorijum: <https://github.com/tobymao/sqlglot> | Nije izabran za SAFE-001; ADR-016 bira već prisutan pinovani sqlparse uz autoritativnu SQLite compile-time proveru. |
 
 ## 7. Veza izvora sa projektnim odlukama
 
@@ -166,7 +167,7 @@ Za svaku biblioteku tada treba dodati zaključanu verziju iz `requirements.lock`
 | DSPy optimizacija (`DSPY-001`) | `PAPER-DSPY-001`, `DOC-DSPY-001`, `DOC-LITELLM-001`, `DOC-OPTUNA-001` |
 | Više kandidata i refiner (`REFINE-001`) | `PAPER-XIYAN-001`, `PAPER-CHASE-001`, `PAPER-MACSQL-001` |
 | Prompt-to-SQL bezbednosna evaluacija (`SEC-002`) | `PAPER-P2SQL-001`, `LIT-SEC-001` |
-| AST validator i SQLite sandbox (`SAFE-001`, `SAFE-002`) | `DOC-SQLITE-001`; izabrani AST parser se dodaje nakon ADR odluke |
+| AST validator i SQLite sandbox (`SAFE-001`, `SAFE-002`) | `DOC-SQLITE-001`, `DOC-SQLPARSE-001`, ADR-016 |
 
 ## 8. Šablon za novi zapis
 

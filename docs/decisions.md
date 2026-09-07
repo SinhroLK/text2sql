@@ -145,9 +145,19 @@
 ## ADR-015 - Improve first-pass semantic construction before adding a refiner
 
 - **Date:** 2026-09-04
-- **Status:** accepted
+- **Status:** deferred by roadmap 3.8
 - **Problem:** B5 reduced generated execution errors from eight to three but scored only 4/31 because 24 executable queries returned the wrong result. Adding more candidates or repairing syntax first could multiply plausible but semantically wrong SQL without addressing question interpretation.
 - **Options:** continue directly to the original B7 multi-candidate refiner; rerun MIPROv2 with a larger budget; change only the model; introduce an explicit semantic plan and structural retrieval, prove a stronger single-query draft, and condition B7 on that result.
 - **Decision:** Preserve B5 as a negative result and B6R 6/31 as the current best development baseline. Implement provider-free paired error analysis (`SEM-001`), a typed and schema-validated `SemanticPlan` (`SEM-002`), Spider 1.0 train-only SQL-skeleton retrieval (`RET-003`), and a single-query first-pass arm B7P (`GEN-001`). Use recall-first B6R schema evidence and selective value grounding. Permit at most two predeclared B7P versions and at most three frozen model configurations. Promote to B7 only if B7P reaches at least 8/31 EVAL-003, 28/31 executable queries, and two new non-empty correct results over B6R.
 - **Reason:** The observed bottleneck is semantic correctness, not parsing or transport. Separating planning from composition exposes whether errors originate in relational interpretation or SQL rendering, while structural retrieval targets operators and query shape rather than superficial question wording. A promotion gate prevents paying for a refiner before the initial query is demonstrably stronger.
 - **Consequences:** B7P adds a planning call, structured artifacts, latency, and token cost. Development results are engineering-selection evidence because all 31 examples have already influenced the project; no example-ID-specific rules are allowed, every attempted arm is reported, and the sealed 104-example Spider2 test is opened once only after code/config/model/gates are frozen. Plan/AST/execution proxy scores may diagnose or rank candidates but cannot replace EVAL-003 and may never compare against gold results at runtime.
+
+## ADR-016 - Layer parsed SQL policy with SQLite prepare-time authorization
+
+- **Date:** 2026-09-07
+- **Status:** accepted
+- **Problem:** SAFE-001 must accept real SQLite `SELECT` syntax while rejecting multiple statements, writes, system access, unknown identifiers, and extension side effects. Token filtering alone cannot resolve aliases or columns, while running a candidate to discover errors crosses the execution boundary too early.
+- **Options:** maintain a partial SQLite grammar in-project; add a second full SQL transpiler; trust SQLite `query_only`; combine a pinned parsed token tree with SQLite's compiler and authorizer over an empty canonical schema.
+- **Decision:** Pin `sqlparse==0.5.5` and convert its hierarchy into a literal-redacted immutable AST artifact. Enforce the one-statement/read-only policy on that tree, then reconstruct empty canonical tables in memory and prepare `EXPLAIN QUERY PLAN` under a deny-by-default SQLite authorizer. Never evaluate the submitted query. Return versioned hashes, resolved identifiers, and sanitized structured issues.
+- **Reason:** The parser exposes statement structure and keeps keywords inside literals inert. SQLite supplies the authoritative dialect grammar and name resolution for joins, subqueries, windows, CTEs, aliases, and ambiguity. Empty reconstructed tables prevent validation from reading source data.
+- **Consequences:** SAFE-001 validates syntax and canonical identifiers but does not prove termination, bound result size, or runtime safety. SAFE-002 must recheck the validated SQL hash, use an isolated read-only database, and enforce progress, row, and resource limits before execution.

@@ -2,7 +2,7 @@
 
 Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
-This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, LINK-002 provides a recall-repaired B6R arm, RET-001 provides a checksum-gated Spider 1.0 train-only retrieval index, RET-002 provides completed B3/B4 few-shot experiments, and DSPY-001 records the completed B5 optimization and development run. The strict reference-SQL `EVAL-002` path remains optional.
+This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, LINK-002 provides a recall-repaired B6R arm, RET-001 provides a checksum-gated Spider 1.0 train-only retrieval index, RET-002 provides completed B3/B4 few-shot experiments, DSPY-001 records the completed B5 optimization and development run, and SAFE-001 provides strict SQLite query validation against the canonical schema. The strict reference-SQL `EVAL-002` path remains optional.
 
 ## Requirements
 
@@ -19,7 +19,7 @@ PYTHONPATH=src python3 -m text2sql.cli \
   --output artifacts/reports/data001-smoke.jsonl
 ```
 
-The command prints one JSON result and appends the same structured record to the requested JSONL file. The generation pipeline does **not** execute generated SQL. EVAL-001 provides a separate evaluation-only SQLite executor; production pipeline execution and AST validation remain planned for Phase 5.
+The command prints one JSON result and appends the same structured record to the requested JSONL file. The generation pipeline does **not** execute generated SQL. SAFE-001 now provides a separate parser, read-only policy, and canonical identifier validator; EVAL-001 remains an evaluation-only executor, while production sandbox execution is the next Phase 5 task.
 
 ## Run tests
 
@@ -79,19 +79,20 @@ Implemented:
 - few-shot M-Schema prompt integration and provider-free per-target retrieval audit.
 - frozen DSPY-001/B5 signature, database-disjoint 21/10 development split,
   execution-result metric, offline audit CLI, completed MIPROv2 compile, and
-  checksum-verified 31-example B5 result (4/31 correct, 28/31 executable).
+  checksum-verified 31-example B5 result (4/31 correct, 28/31 executable);
+- SAFE-001 parsed SQLite validation with a one-SELECT policy, canonical table/column binding, system and side-effect denial, auditable hashes, CLI, and adversarial tests.
 
 Not implemented yet:
 
 - SEM-001 paired semantic-error corpus;
 - typed semantic planning, SQL-skeleton retrieval, and the B7P first-pass arm;
-- SQL AST validation and sandbox execution;
+- SAFE-002 sandbox execution and its runtime limits;
 - security evaluation;
 - Gradio application built on the new pipeline.
 
 ## Security
 
-Do not copy active API keys, database passwords or production databases into this repository. The evaluation-only executor works on isolated in-memory SQLite copies. The future production runtime will additionally use a read-only sandbox user and AST-based SQL validation; the Phase 0 generation CLI still does not execute SQL.
+Do not copy active API keys, database passwords or production databases into this repository. The evaluation-only executor works on isolated in-memory SQLite copies. SAFE-001 provides AST-based SQL validation without evaluating the query. The future production runtime will additionally use the SAFE-002 read-only sandbox; the generation CLI still does not execute SQL.
 
 ## Dataset protocol
 

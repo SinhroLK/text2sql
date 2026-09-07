@@ -17,6 +17,7 @@ question + SQLite database
         -> frozen DSPy signature/MIPROv2-compiled instruction (B5)
         -> provider candidate + usage metadata
         -> append-only prediction checkpoint and linking/retrieval audit
+        -> separately callable SAFE-001 parsed policy + canonical identifier validation
         -> separate EVAL-003 read-only execution/result comparison
 ```
 
@@ -57,12 +58,15 @@ structured or parsed Groq retry delays without logging provider identifiers.
 The paid compile and exact 31-example development run are complete. MIPROv2
 selected the original/default instruction with 2/10 validation accuracy; B5
 scored 4/31 with 28/31 executable queries and therefore remains below B4 at
-5/31 and B6R at 6/31. Phase 5 begins with provider-free paired semantic-error
-analysis before typed planning, structural retrieval, or another paid run.
+5/31 and B6R at 6/31. Phase 5 now has SAFE-001 complete: a pinned parsed token tree enforces the
+one-SELECT policy, and SQLite prepares the query against an empty reconstruction
+of the canonical schema under a deny-by-default authorizer. SAFE-002 is next.
 Fixture annotations are the only current source of linker precision/recall/F1.
 
 ## Design rules
 
+- SAFE-001 validation never evaluates the submitted query or reads source rows.
+- A validated SQL hash must be rechecked before SAFE-002 may execute the query.
 - Domain objects do not depend on provider SDKs.
 - Providers return candidates and usage metadata but never execute SQL.
 - Schema inspection and representative-value sampling open SQLite read-only.

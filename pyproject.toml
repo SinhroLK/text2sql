@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "text2sql-research"
-version = "0.5.0"
+version = "0.6.0"
 description = "Reproducible Text-to-SQL research pipeline for a master thesis"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -13,6 +13,7 @@ dependencies = [
   "groq==1.6.0",
   "litellm==1.99.0",
   "optuna==4.9.0",
+  "sqlparse==0.5.5",
 ]
 
 [project.scripts]
@@ -25,6 +26,7 @@ text2sql-audit-linking = "text2sql.experiments.linking_cli:main"
 text2sql-audit-retrieval = "text2sql.experiments.retrieval_cli:main"
 text2sql-prepare-retrieval = "text2sql.retrieval.cli:main"
 text2sql-optimize-b5 = "text2sql.optimization.cli:main"
+text2sql-validate-sql = "text2sql.security.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

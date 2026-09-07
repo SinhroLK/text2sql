@@ -1,10 +1,10 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 3.8
+**Verzija plana:** 3.9
 **Datum:** 7. septembar 2026.
-**Status projekta:** Faze 0-4 su `DONE`. B5 je kompletiran sa 4/31 (12,90%) i nije nadmašio B4 5/31 ni aktuelni najbolji B6R 6/31. Semantičko planiranje/B7P je vraćeno iz aktivnog obima i odloženo dok se ne završi originalni roadmap. Sledeći aktivni zadatak je `SAFE-001`, SQL AST validator.
-**Poslednja provera:** 7. septembar 2026. - rollback na pre-semantics stanje je verifikovan; lokalni i GitHub `master` se sinhronizuju ovim roadmap ažuriranjem, a svih 132 offline testova prolazi. Nema aktivnog Groq procesa; Spider2 test split ostaje zatvoren.
+**Status projekta:** Faze 0-4 su `DONE`, a Faza 5 je `IN PROGRESS`. `SAFE-001` je završen strogim SQLite parser/authorizer validatorom nad kanonskom šemom. B6R 6/31 ostaje najbolji development arm; semantičko planiranje/B7P ostaje odloženo. Sledeći aktivni zadatak je `SAFE-002`, read-only sandbox executor.
+**Poslednja provera:** 7. septembar 2026. - `SAFE-001` validira one-statement/read-only politiku i kanonske identifikatore bez izvršavanja upita; svih 144 offline testova prolazi. Nema aktivnog Groq procesa; Spider2 test split ostaje zatvoren.
 
 ### Istorija verzija
 
@@ -39,6 +39,7 @@
 | 3.6 | 3. septembar 2026. | Dodat strogi per-run B5 replay cache: eksplicitni compatible resume, full identity/integrity kontrole, non-cacheable greške/truncation, odvojeno provider računovodstvo, ADR-014 i 132 testa |
 | 3.7 | 4. septembar 2026. | Završen DSPY-001/B5 sa negativnim rezultatom 4/31; B6R ostaje najbolji na 6/31. Faza 5 je preusmerena na eksplicitno semantičko planiranje i bolji single-query B7P pre validator/refiner sloja. |
 | 3.8 | 7. septembar 2026. | Semantic-plan/B7P implementacija uklonjena sa master-a i odložena; vraćen originalni redosled Faze 5: SAFE-001, SAFE-002, zatim B7 kandidat/ranker/refiner |
+| 3.9 | 7. septembar 2026. | Završen SAFE-001: parser/AST artefakt, stroga one-SELECT politika, SQLite prepare-time authorizer nad praznom kanonskom šemom, CLI i 144 testa; sledeći je SAFE-002 |
 
 ## 1. Svrha dokumenta
 
@@ -428,7 +429,7 @@ Zadaci:
 
 **Trajanje:** 2 nedelje
 **Zavisnost:** Faze 3 i 4
-**Status:** `NOT STARTED`
+**Status:** `IN PROGRESS`
 
 **Trenutna odluka:** semantičko planiranje, SQL-skeleton retrieval, MODEL-001 i
 single-query B7P nisu deo aktivne Faze 5. Njihova ranija implementacija je
@@ -561,7 +562,7 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 20 zadataka je završeno; `DSPY-001` i Faza 4 su `DONE`. B5 4/31 je negativni rezultat, B6R 6/31 ostaje najbolji arm, a sledeći aktivni zadatak je `SAFE-001`. Semantički/B7P zadaci su `DEFERRED` do završetka originalnog roadmap-a.
+**Sažetak stanja:** 21 zadatak je završen; `SAFE-001` je `DONE`, a Faza 5 je `IN PROGRESS`. B5 4/31 je negativni rezultat, B6R 6/31 ostaje najbolji arm, a sledeći aktivni zadatak je `SAFE-002`. Semantički/B7P zadaci su `DEFERRED` do završetka originalnog roadmap-a.
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
@@ -586,7 +587,7 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | DONE | DATA-001 | pinned Spider 1.0 train 7.000/140, index SHA-256 `82ee39e0...0389e`, full Spider2 ID/DB/question firewall i 8 testova |
 | RET-002 | Implementirati random i similarity few-shot | 4 | P0 | DONE | RET-001 | B3 4/31 i B4 5/31; oba 23/31 executable; frozen config/audit/prediction/report checksumovi |
 | DSPY-001 | Definisati i optimizovati DSPy program | 4 | P1 | DONE | RET-002, EVAL-001 | MIPROv2 best validation 2/10; frozen B5 31/31, 4/31 tačna, 28/31 executable; program/manifest/prediction/report checksumovi |
-| SAFE-001 | Implementirati SQL AST validator | 5 | P0 | NOT STARTED | SCHEMA-001 | SQLite AST parser, one-statement/read-only policy, identifier allowlist i adversarial unit testovi |
+| SAFE-001 | Implementirati SQL AST validator | 5 | P0 | DONE | SCHEMA-001 | `safe001-sqlite-v1`, parsed AST/hash, SQLite authorizer nad praznom kanonskom šemom, CLI, JOIN/subquery/aggregate/window/CTE i adversarial testovi |
 | SAFE-002 | Implementirati read-only sandbox executor | 5 | P0 | NOT STARTED | SAFE-001, EVAL-001 | izolovana read-only kopija, timeout/row/resource limit, sanitizovane greške i side-effect integration testovi |
 | REF-001 | Implementirati izbor kandidata i refiner B7 | 5 | P1 | NOT STARTED | SAFE-002, LLM-002 | najviše 3 kandidata, deterministički ranker, najviše 1 repair, first-pass/final 31/31 rezultat i audit odluka |
 | SEM-001 | Napraviti upareni semantic-error corpus za B1/B6R/B4/B5 | posle originalnog roadmap-a | P2 | DEFERRED | završetak aktivnog roadmap-a | vratiti samo kroz novu eksplicitnu odluku |
@@ -1105,8 +1106,22 @@ Sledeće:
 - `SEM-001`, `SEM-002`, `RET-003`, `MODEL-001` i `GEN-001` su prebačeni
   u `DEFERRED` do završetka originalnog roadmap-a;
 - aktivni redosled je `SAFE-001` -> `SAFE-002` -> `REF-001`;
-- svih 132 offline testova prolazi; nema aktivnog Groq procesa i Spider2 test
-  split ostaje zatvoren.
+- rollback stanje je tada imalo 132 offline testa; nema aktivnog Groq procesa i
+  Spider2 test split ostaje zatvoren.
 
-Sledeće: implementirati provider-free `SAFE-001` nad postojećim kanonskim
-modelom šeme, sa strogim SQLite read-only AST pravilima i adversarial testovima.
+### 2026-09-07 - Završen SAFE-001
+
+- dodat je `safe001-sqlite-v1` sa `sqlparse` hijerarhijskim AST artefaktom,
+  literal-redacted AST hashom i hashom izvornog SQL-a;
+- dozvoljen je tačno jedan SQLite `SELECT`, uključujući `WITH`, JOIN, subquery,
+  aggregate, window, UNION i recursive CTE;
+- SQLite priprema `EXPLAIN QUERY PLAN` nad praznom rekonstrukcijom kanonske
+  šeme pod deny-by-default authorizer-om, bez evaluacije korisničkog upita;
+- sistemske tabele, pragma funkcije, DDL/DML, ATTACH, transakcije, komentari,
+  parametri, side-effect funkcije i nepoznati/ambiguous identifikatori se odbijaju;
+- dodat je `text2sql-validate-sql` CLI, ADR-016, operativna dokumentacija i
+  adversarial testovi; svih 144 offline testova prolazi.
+
+Sledeće: implementirati `SAFE-002` tako da prihvata samo uspešan SAFE-001
+rezultat sa nepromenjenim SQL hashom, zatim primeni izolovanu read-only kopiju,
+timeout, row/resource limite i sanitizovane greške.

@@ -9,7 +9,7 @@ pandas
 gradio
 groq==1.6.0
 python-dotenv
-sqlparse
+sqlparse==0.5.5
 
 # llama3_3_70b.ipynb / llama4_scout_test.ipynb
 numpy

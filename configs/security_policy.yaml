@@ -1,13 +1,17 @@
 version: 1
-mode: design-only
+mode: safe001-validator-enforced
+validator_version: safe001-sqlite-v1
+parser: sqlparse-0.5.5
+sqlite_validation: explain-query-plan-on-empty-canonical-schema
 allowed_statement_types:
   - SELECT
   - WITH_SELECT
 max_statements: 1
-statement_timeout_seconds: 10
-max_result_rows: 1000
+max_sql_characters: 100000
 deny_system_schemas: true
 deny_comments: true
 deny_multiple_statements: true
-note: Enforcement starts in Phase 5. Phase 0 never executes generated SQL.
-
+deny_unbound_parameters: true
+statement_timeout_seconds: 10
+max_result_rows: 1000
+note: SAFE-001 enforces static validation. Timeout and row limits belong to SAFE-002; generation still never executes SQL.

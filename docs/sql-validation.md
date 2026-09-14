@@ -23,3 +23,5 @@ PYTHONPATH=src python3 -m text2sql.security.cli \
 Use `--sql-file path/to/query.sql` for a file and `--include-ast` to include the normalized parsed tree. Exit status is `0` for a valid query and `2` for a rejected query.
 
 SAFE-001 does not execute SQL, impose runtime time/row/resource limits, or replace the evaluation executor. SAFE-002 owns those controls and must accept only a query accompanied by a successful SAFE-001 result whose SQL hash still matches.
+
+SAFE-002 is implemented in `text2sql.execution`; see [SQLite sandbox execution](sqlite-sandbox.md). Its handoff API checks that result and hash, then revalidates against the exact isolated snapshot. Its combined API runs SAFE-001 inside the bounded worker before execution.

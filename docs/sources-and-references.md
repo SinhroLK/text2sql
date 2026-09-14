@@ -143,7 +143,8 @@ Za svaku biblioteku tada treba dodati zaključanu verziju iz `requirements.lock`
 | ID | Status | Dokumentacija | Planirana upotreba |
 |---|---|---|---|
 | `DOC-PYTHON-001` | `ACTIVE` | Python 3.11 dokumentacija: <https://docs.python.org/3.11/> | Standardna biblioteka, `sqlite3`, `dataclasses`, `tomllib`, CLI i testovi. |
-| `DOC-SQLITE-001` | `ACTIVE` | SQLite dokumentacija: <https://www.sqlite.org/docs.html> | EVAL-001 read-only execution, SCHEMA-002 introspekcija i SAFE-001 `EXPLAIN QUERY PLAN`/authorizer validacija. |
+| `DOC-SQLITE-001` | `ACTIVE` | SQLite dokumentacija: <https://www.sqlite.org/docs.html>; <https://www.sqlite.org/c3ref/deserialize.html> | EVAL-001 execution, SCHEMA-002 introspekcija, SAFE-001 authorizer i SAFE-002 izolovana deserializacija. SAFE-002 provereno sa SQLite 3.45.1; pristup 2026-09-13. |
+| `DOC-PYTHON-RESOURCE-001` | `ACTIVE` | Python standard library: <https://docs.python.org/3/library/resource.html>; <https://docs.python.org/3/library/sqlite3.html> | SAFE-002 RLIMIT_AS/CPU/FSIZE/CORE i Connection.deserialize/setlimit. Implementacija proverena na Python 3.12.3; API zahteva 3.11+ i Linux. Pristup 2026-09-13. |
 | `DOC-SQLPARSE-001` | `ACTIVE` | sqlparse dokumentacija: <https://sqlparse.readthedocs.io/en/latest/> | SAFE-001 hijerarhijski token tree i one-statement politika; zaključana verzija 0.5.5. |
 | `DOC-DSPY-001` | `ACTIVE` | Zvanična DSPy dokumentacija/repozitorijum: <https://github.com/stanfordnlp/dspy> | Implementacija i zaključavanje B5 programa u Fazi 4. |
 | `DOC-LITELLM-001` | `ACTIVE` | Zvanični LiteLLM repozitorijum: <https://github.com/BerriAI/litellm> | DSPy transport i eksplicitno brojanje input tokena za B5 rolling TPM limiter; zaključana verzija 1.99.0. |
@@ -167,7 +168,7 @@ Za svaku biblioteku tada treba dodati zaključanu verziju iz `requirements.lock`
 | DSPy optimizacija (`DSPY-001`) | `PAPER-DSPY-001`, `DOC-DSPY-001`, `DOC-LITELLM-001`, `DOC-OPTUNA-001` |
 | Više kandidata i refiner (`REFINE-001`) | `PAPER-XIYAN-001`, `PAPER-CHASE-001`, `PAPER-MACSQL-001` |
 | Prompt-to-SQL bezbednosna evaluacija (`SEC-002`) | `PAPER-P2SQL-001`, `LIT-SEC-001` |
-| AST validator i SQLite sandbox (`SAFE-001`, `SAFE-002`) | `DOC-SQLITE-001`, `DOC-SQLPARSE-001`, ADR-016 |
+| AST validator i SQLite sandbox (`SAFE-001`, `SAFE-002`) | `DOC-SQLITE-001`, `DOC-SQLPARSE-001`, `DOC-PYTHON-RESOURCE-001`, ADR-016, ADR-017 |
 
 ## 8. Šablon za novi zapis
 

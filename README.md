@@ -19,7 +19,20 @@ PYTHONPATH=src python3 -m text2sql.cli \
   --output artifacts/reports/data001-smoke.jsonl
 ```
 
-The command prints one JSON result and appends the same structured record to the requested JSONL file. The generation pipeline does **not** execute generated SQL. SAFE-001 now provides a separate parser, read-only policy, and canonical identifier validator; EVAL-001 remains an evaluation-only executor, while production sandbox execution is the next Phase 5 task.
+The command prints one JSON result and appends the same structured record to the requested JSONL file. The generation pipeline does **not** execute generated SQL. SAFE-001 provides static validation; SAFE-002 provides a separate bounded execution API and CLI. EVAL-001 remains the evaluation-only executor.
+
+Explicitly validate and execute SQL on a static SQLite snapshot (Linux):
+
+```bash
+PYTHONPATH=src python3 -m text2sql.execution.cli \
+  --database data/fixtures/demo.sqlite \
+  --sql "SELECT first_name FROM customers ORDER BY customer_id"
+```
+
+SAFE-002 enforces a 10-second worker deadline, 1,000-row/1-MiB result limits,
+and a 256-MiB worker address-space limit. Input snapshots are limited to 64 MiB;
+WAL/journal-backed inputs require a separate snapshot export. See
+[SQLite sandbox execution](docs/sqlite-sandbox.md) for API, limits, and statuses.
 
 ## Run tests
 
@@ -81,18 +94,19 @@ Implemented:
   execution-result metric, offline audit CLI, completed MIPROv2 compile, and
   checksum-verified 31-example B5 result (4/31 correct, 28/31 executable);
 - SAFE-001 parsed SQLite validation with a one-SELECT policy, canonical table/column binding, system and side-effect denial, auditable hashes, CLI, and adversarial tests.
+- SAFE-002 isolated SQLite execution with validation-hash handoff checks, snapshot revalidation, Linux worker resource limits, bounded results, sanitized errors, and filesystem-preservation tests.
+- REF-001/B7 completed: three generation strategies, deterministic ranking, at most one repair, and verified 31-example EVAL-003 results (5/31; B6R remains best at 6/31). Provider failures limit interpretation; see [B7 results](docs/b7-results.md).
 
 Not implemented yet:
 
 - SEM-001 paired semantic-error corpus;
 - typed semantic planning, SQL-skeleton retrieval, and the B7P first-pass arm;
-- SAFE-002 sandbox execution and its runtime limits;
 - security evaluation;
 - Gradio application built on the new pipeline.
 
 ## Security
 
-Do not copy active API keys, database passwords or production databases into this repository. The evaluation-only executor works on isolated in-memory SQLite copies. SAFE-001 provides AST-based SQL validation without evaluating the query. The future production runtime will additionally use the SAFE-002 read-only sandbox; the generation CLI still does not execute SQL.
+Do not copy active API keys, database passwords or production databases into this repository. The evaluation-only executor works on isolated in-memory SQLite copies. SAFE-001 provides AST-based SQL validation without evaluating the query. SAFE-002 explicitly executes validated SQL in a resource-limited process over an isolated snapshot; the generation CLI still does not execute SQL. This SQL boundary is not an OS container for arbitrary code or hostile database-engine exploits.
 
 ## Dataset protocol
 

@@ -1,5 +1,5 @@
-version: 1
-mode: safe001-validator-enforced
+version: 2
+mode: safe002-sandbox-enforced
 validator_version: safe001-sqlite-v1
 parser: sqlparse-0.5.5
 sqlite_validation: explain-query-plan-on-empty-canonical-schema
@@ -14,4 +14,11 @@ deny_multiple_statements: true
 deny_unbound_parameters: true
 statement_timeout_seconds: 10
 max_result_rows: 1000
-note: SAFE-001 enforces static validation. Timeout and row limits belong to SAFE-002; generation still never executes SQL.
+sandbox_version: safe002-sqlite-v1
+max_result_bytes: 1048576
+max_value_bytes: 262144
+max_database_bytes: 67108864
+memory_limit_bytes: 268435456
+platform: linux
+database_input: standalone-static-sqlite-snapshot
+note: Documents SandboxPolicy defaults; Python policy is authoritative. SAFE-002 revalidates on the isolated snapshot. Generation CLI still never executes SQL; text2sql-execute-sql is explicit.

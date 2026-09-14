@@ -1,5 +1,19 @@
 # Experiment protocol
 
+## REF-001 / B7 status
+
+The separate `exp007-b7-gpt-oss-120b-v1` arm is implemented offline. Its frozen
+configuration inherits B6R, permits three initial candidates and one repair,
+and records first-pass, selection-only, final, and oracle candidate metrics.
+The paid 31-example development run is complete and independently re-scored:
+first-pass 4/31, selection/final 5/31, oracle at three 5/31, repairs 0/3.
+There are 26 generation-stage failures, including 21 rate-limit failures;
+this is a completed but operationally degraded run. See [B7 results](b7-results.md)
+for checksums, comparisons, and limitations, and
+[REF-001 selection and repair](refinement.md) for preflight, budgets, recovery,
+resource-policy differences, and scoring rules. B6R remains the best recorded
+development arm; no B7 improvement is claimed.
+
 ## Current state
 
 `phase0-smoke-v1` remains an infrastructure smoke test, not a research result. `DATA-001` freezes the benchmark protocol, `DATA-003` implements its metadata-only loader, and `EVAL-001` implements the SQLite execution/comparison core. `EVAL-003` is ready for all 31 development examples; strict reference-SQL `EVAL-002` is optional. `LLM-002` uses official Groq SDK 1.6.0 and completed a successful `openai/gpt-oss-120b` smoke: valid SQL, 224 input tokens, 124 output tokens, and 697 ms latency. This smoke validates infrastructure only and is not a benchmark result.

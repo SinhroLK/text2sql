@@ -1,0 +1,21 @@
+schema_version = 1
+experiment_id = "exp007-b7-gpt-oss-120b-v1"
+split = "development"
+base_config = "exp004-b6r.toml"
+base_config_sha256 = "2bd504ab72119273cec01cdaeaef8664a32e3b949581a4061057cd221b552e6b"
+max_candidates = 3
+max_repairs = 1
+max_input_tokens = 6000
+max_calls = 124
+request_spacing_seconds = 62.0
+prompt_version = "ref001-b6r-strategies-v1"
+ranker_version = "ref001-deterministic-v1"
+
+[sandbox]
+timeout_seconds = 10.0
+max_result_rows = 1000
+max_result_bytes = 1048576
+max_value_bytes = 262144
+max_database_bytes = 167772160
+memory_limit_bytes = 536870912
+max_sql_characters = 100000

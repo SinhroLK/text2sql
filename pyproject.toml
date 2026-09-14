@@ -27,6 +27,8 @@ text2sql-audit-retrieval = "text2sql.experiments.retrieval_cli:main"
 text2sql-prepare-retrieval = "text2sql.retrieval.cli:main"
 text2sql-optimize-b5 = "text2sql.optimization.cli:main"
 text2sql-validate-sql = "text2sql.security.cli:main"
+text2sql-execute-sql = "text2sql.execution.cli:main"
+text2sql-refine-b7 = "text2sql.refinement.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

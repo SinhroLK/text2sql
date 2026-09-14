@@ -161,3 +161,19 @@
 - **Decision:** Pin `sqlparse==0.5.5` and convert its hierarchy into a literal-redacted immutable AST artifact. Enforce the one-statement/read-only policy on that tree, then reconstruct empty canonical tables in memory and prepare `EXPLAIN QUERY PLAN` under a deny-by-default SQLite authorizer. Never evaluate the submitted query. Return versioned hashes, resolved identifiers, and sanitized structured issues.
 - **Reason:** The parser exposes statement structure and keeps keywords inside literals inert. SQLite supplies the authoritative dialect grammar and name resolution for joins, subqueries, windows, CTEs, aliases, and ambiguity. Empty reconstructed tables prevent validation from reading source data.
 - **Consequences:** SAFE-001 validates syntax and canonical identifiers but does not prove termination, bound result size, or runtime safety. SAFE-002 must recheck the validated SQL hash, use an isolated read-only database, and enforce progress, row, and resource limits before execution.
+
+## ADR-017 - Bound SQLite execution in a fresh worker over a static snapshot
+
+- **Date:** 2026-09-13
+- **Status:** accepted
+- **Problem:** An in-process progress callback and `fetchall()` cannot bound database-copy overhead, single-expression allocations, or complete result memory. Opening a live WAL database can also involve sidecar files.
+- **Decision:** SAFE-002 uses a fresh Linux interpreter with a parent-enforced deadline and OS memory/CPU/file-size limits. Read a bounded standalone database image without a source SQLite connection, deserialize into memory, revalidate using SAFE-001, and execute under query_only and the runtime authorizer. Check existing validation handoffs against the exact SQL hash. Return incremental bounded results with explicit truncation and sanitized errors. See `DOC-PYTHON-001`, `DOC-SQLITE-001`, and `DOC-PYTHON-RESOURCE-001`.
+- **Consequences:** Static snapshots only, no WAL/journal inputs or virtual-table databases; default database size is 64 MiB. Linux and SQLite deserialization support are required. This is a SQL/resource boundary, not an arbitrary-code OS sandbox. Benchmark scoring remains separate and must not treat preview truncation as a complete result. REF-001 can now use the sandbox API without changing historical generation arms.
+
+## ADR-018 - Freeze a small B6R-based candidate and repair arm
+
+- **Date:** 2026-09-13
+- **Status:** accepted for offline implementation; live results pending
+- **Decision:** B7 keeps the B6R base checksum/model/settings, adds two fixed generation strategies, ranks at most three initial candidates deterministically, and permits one repair only when no complete initial sandbox success exists. No gold input is available to the ranker/refiner. Completion reasons and literal-preserving duplicate identities are explicit. Rejected or incomplete outputs cannot become final answers.
+- **Resources and audit:** Use B7-specific 160-MiB database and 512-MiB memory caps after development preflight showed three databases exceed the default image limit. Retain the other SAFE-002 limits. Freeze 124 maximum requests and a 6,000-token input cap. Hash-chained reservations precede provider calls; recorded responses and completed questions support compatible resume with no invisible retries. EVAL-003 scoring starts only after generation/selection is complete.
+- **Consequences:** Agreement and identifier overlap are correctness proxies, not semantic guarantees. Empty results and duplicate SQL receive no extra votes. Safety/resource rejection counts as failure, which must be disclosed when comparing with B6R's evaluation-only execution. Model/API failures remain audited attempts. REF-001 stays in progress until an exact 31-example development report is produced; B7P remains deferred.

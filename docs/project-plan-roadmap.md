@@ -1,15 +1,16 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 3.9
-**Datum:** 7. septembar 2026.
-**Status projekta:** Faze 0-4 su `DONE`, a Faza 5 je `IN PROGRESS`. `SAFE-001` je završen strogim SQLite parser/authorizer validatorom nad kanonskom šemom. B6R 6/31 ostaje najbolji development arm; semantičko planiranje/B7P ostaje odloženo. Sledeći aktivni zadatak je `SAFE-002`, read-only sandbox executor.
-**Poslednja provera:** 7. septembar 2026. - `SAFE-001` validira one-statement/read-only politiku i kanonske identifikatore bez izvršavanja upita; svih 144 offline testova prolazi. Nema aktivnog Groq procesa; Spider2 test split ostaje zatvoren.
+**Verzija plana:** 3.12
+**Datum:** 14. septembar 2026.
+**Status projekta:** Faze 0-5 su `DONE`. REF-001 ima kompletan 31/31 development checkpoint i verifikovan EVAL-003 report: B7 5/31, uz operativna ograničenja. B6R 6/31 ostaje najbolji arm. Sledeća je Faza 6, bezbednosna evaluacija; semantičko planiranje/B7P ostaje odloženo.
+**Poslednja provera:** REF-001 closeout — 193 offline testa prolaze; nezavisno bodovanje potvrđuje rezultat. Tokom closeout-a nisu pokretani provider pozivi niti test evaluacija. Detalji: [B7 results](b7-results.md).
 
 ### Istorija verzija
 
 | Verzija | Datum | Promena |
 |---|---|---|
+| 3.12 | 14. septembar 2026. | REF-001 DONE: verifikovan B7 5/31, sa 26 generation failures; checksum manifest, 193 testa i closeout. Sledeća je bezbednosna evaluacija, Faza 6. |
 | 1.0 | 13. avgust 2026. | Početna arhitektura, roadmap i backlog |
 | 1.1 | 13. avgust 2026. | Evidentirana implementacija Faze 0, ažurirani statusi i dodat dnevnik napretka |
 | 1.2 | 13. avgust 2026. | Zatvoren `SEC-000`: potvrđeno da `.env` nije verzionisan i da su ključevi i kredencijali zamenjeni |
@@ -40,6 +41,8 @@
 | 3.7 | 4. septembar 2026. | Završen DSPY-001/B5 sa negativnim rezultatom 4/31; B6R ostaje najbolji na 6/31. Faza 5 je preusmerena na eksplicitno semantičko planiranje i bolji single-query B7P pre validator/refiner sloja. |
 | 3.8 | 7. septembar 2026. | Semantic-plan/B7P implementacija uklonjena sa master-a i odložena; vraćen originalni redosled Faze 5: SAFE-001, SAFE-002, zatim B7 kandidat/ranker/refiner |
 | 3.9 | 7. septembar 2026. | Završen SAFE-001: parser/AST artefakt, stroga one-SELECT politika, SQLite prepare-time authorizer nad praznom kanonskom šemom, CLI i 144 testa; sledeći je SAFE-002 |
+| 3.10 | 13. septembar 2026. | Završen SAFE-002: Linux worker, hash handoff i ponovna validacija snapshot-a, timeout/memory/row/byte limiti, sanitizovane greške, CLI i 20 novih testova; sledeći je REF-001 |
+| 3.11 | 13. septembar 2026. | REF-001 offline: B7 config nad B6R, tri kandidata, deterministički ranker, jedna korekcija, call journal/budžet/resume i 23 testa; live development evaluacija ostaje otvorena |
 
 ## 1. Svrha dokumenta
 
@@ -429,7 +432,7 @@ Zadaci:
 
 **Trajanje:** 2 nedelje
 **Zavisnost:** Faze 3 i 4
-**Status:** `IN PROGRESS`
+**Status:** `DONE`
 
 **Trenutna odluka:** semantičko planiranje, SQL-skeleton retrieval, MODEL-001 i
 single-query B7P nisu deo aktivne Faze 5. Njihova ranija implementacija je
@@ -447,6 +450,8 @@ povratak. Faza 5 nastavlja originalni bezbednosni i verifier redosled.
 
 #### 5B - `SAFE-002`: read-only sandbox executor
 
+**Status:** `DONE`. Implementacija i ograničenja: [SQLite sandbox](sqlite-sandbox.md).
+
 - izvršavati samo upite koji su prošli SAFE-001;
 - koristiti izolovanu read-only kopiju SQLite baze;
 - primeniti timeout, row limit i ograničenje resursa;
@@ -454,6 +459,10 @@ povratak. Faza 5 nastavlja originalni bezbednosni i verifier redosled.
 - dokazati testovima da originalna baza i filesystem ostaju neizmenjeni.
 
 #### 5C - `REF-001`: izbor kandidata i kontrolisana korekcija
+
+**Status:** `DONE` — 31/31 checkpoint i nezavisno verifikovan report postoje.
+B7 final 5/31, first-pass 4/31, repair 0/3; 26 generation failures ograničavaju
+interpretaciju. Detalji: [B7 results](b7-results.md).
 
 - generisati najviše tri SQL kandidata pod zamrznutom B7 konfiguracijom;
 - implementirati deterministički ranker koristeći AST validnost, identifier
@@ -562,7 +571,7 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** 21 zadatak je završen; `SAFE-001` je `DONE`, a Faza 5 je `IN PROGRESS`. B5 4/31 je negativni rezultat, B6R 6/31 ostaje najbolji arm, a sledeći aktivni zadatak je `SAFE-002`. Semantički/B7P zadaci su `DEFERRED` do završetka originalnog roadmap-a.
+**Sažetak stanja:** `SAFE-001`, `SAFE-002` i `REF-001` su `DONE`; Faza 5 je završena. B7 5/31 ima dokumentovana operativna ograničenja, a B6R 6/31 ostaje najbolji arm. Sledeća je Faza 6, bezbednosna evaluacija. Semantički/B7P zadaci ostaju `DEFERRED`.
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
@@ -588,8 +597,8 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | RET-002 | Implementirati random i similarity few-shot | 4 | P0 | DONE | RET-001 | B3 4/31 i B4 5/31; oba 23/31 executable; frozen config/audit/prediction/report checksumovi |
 | DSPY-001 | Definisati i optimizovati DSPy program | 4 | P1 | DONE | RET-002, EVAL-001 | MIPROv2 best validation 2/10; frozen B5 31/31, 4/31 tačna, 28/31 executable; program/manifest/prediction/report checksumovi |
 | SAFE-001 | Implementirati SQL AST validator | 5 | P0 | DONE | SCHEMA-001 | `safe001-sqlite-v1`, parsed AST/hash, SQLite authorizer nad praznom kanonskom šemom, CLI, JOIN/subquery/aggregate/window/CTE i adversarial testovi |
-| SAFE-002 | Implementirati read-only sandbox executor | 5 | P0 | NOT STARTED | SAFE-001, EVAL-001 | izolovana read-only kopija, timeout/row/resource limit, sanitizovane greške i side-effect integration testovi |
-| REF-001 | Implementirati izbor kandidata i refiner B7 | 5 | P1 | NOT STARTED | SAFE-002, LLM-002 | najviše 3 kandidata, deterministički ranker, najviše 1 repair, first-pass/final 31/31 rezultat i audit odluka |
+| SAFE-002 | Implementirati read-only sandbox executor | 5 | P0 | DONE | SAFE-001, EVAL-001 | `safe002-sqlite-v1`, Linux worker, SQL hash/revalidation, izolovan snapshot, deadline/memory/row/byte limiti, sanitizovane greške, CLI i 20 testova |
+| REF-001 | Implementirati izbor kandidata i refiner B7 | 5 | P1 | DONE | SAFE-002, LLM-002 | 31/31 checkpoint, verifikovan EVAL-003 5/31, first-pass 4/31, repair 0/3; checksum manifest i operativna ograničenja u B7 results |
 | SEM-001 | Napraviti upareni semantic-error corpus za B1/B6R/B4/B5 | posle originalnog roadmap-a | P2 | DEFERRED | završetak aktivnog roadmap-a | vratiti samo kroz novu eksplicitnu odluku |
 | SEM-002 | Implementirati typed SemanticPlan i validator plana | posle originalnog roadmap-a | P2 | DEFERRED | SEM-001 | arhivirana ranija implementacija nije deo master-a |
 | RET-003 | Implementirati Spider1 train-only SQL-skeleton retrieval | posle originalnog roadmap-a | P2 | DEFERRED | SEM-001, RET-001 | arhivirana ranija implementacija nije deo master-a |
@@ -1125,3 +1134,32 @@ Sledeće:
 Sledeće: implementirati `SAFE-002` tako da prihvata samo uspešan SAFE-001
 rezultat sa nepromenjenim SQL hashom, zatim primeni izolovanu read-only kopiju,
 timeout, row/resource limite i sanitizovane greške.
+
+### 2026-09-13 - Završen SAFE-002
+
+- implementiran poseban executor i `text2sql-execute-sql` CLI;
+- handoff proverava SAFE-001 uspeh/verziju i tačan SQL hash; worker ponovo
+  validira isti SQL prema šemi kopije koju zaista izvršava;
+- statički SQLite snapshot se učitava bez otvaranja originala kroz SQLite;
+  WAL/journal izvori se odbijaju i zahtevaju zaseban konzistentan export;
+- Linux proces ima parent deadline, CPU/address-space limite i zabranu rasta
+  fajlova; runtime authorizer i query_only dodatno blokiraju upise;
+- rezultati imaju row/byte limite i eksplicitan truncated status; greške su
+  sanitizovane; 20 novih testova pokriva legitimne i adversarial scenarije;
+- generation pipeline i zamrznuti evaluatori nisu promenjeni; nema novih
+  provider poziva ili test-split rezultata.
+
+Sledeće: `REF-001`, najviše tri kandidata i jedna kontrolisana korekcija.
+
+### 2026-09-13 - REF-001 offline implementacija
+
+- B7 nasleđuje checksumovani B6R; prvi prompt je nepromenjen, preostala dva
+  koriste fiksne instrukcije za alternativnu konstrukciju SQL-a;
+- deterministički ranker koristi validaciju/EXPLAIN, sandbox ishod,
+  slaganje različitih non-empty rezultata i identifier coverage;
+- najviše jedna korekcija dobija sanitizovane kodove greške, bez gold podataka;
+- završni SQL mora biti complete sandbox success; nema unsafe fallback-a;
+- journal čuva rezervacije pre poziva, hash chain, call/cost budžet i resume;
+- B7 koristi zasebne 160-MiB snapshot/512-MiB memory limite za development baze;
+- svih 187 offline testova prolazi, preflight pokriva 31 pitanje/6 baza;
+- `REF-001` nije DONE: preostali su plaćeni development run i EVAL-003 report.

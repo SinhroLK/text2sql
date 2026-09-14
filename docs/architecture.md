@@ -60,7 +60,12 @@ selected the original/default instruction with 2/10 validation accuracy; B5
 scored 4/31 with 28/31 executable queries and therefore remains below B4 at
 5/31 and B6R at 6/31. Phase 5 now has SAFE-001 complete: a pinned parsed token tree enforces the
 one-SELECT policy, and SQLite prepares the query against an empty reconstruction
-of the canonical schema under a deny-by-default authorizer. SAFE-002 is next.
+of the canonical schema under a deny-by-default authorizer. SAFE-002 is also
+complete: a fresh Linux worker reads a bounded standalone SQLite snapshot,
+revalidates against that copy, and executes with runtime authorization, a parent
+deadline, resource limits, and explicit result truncation. Its dedicated API/CLI
+is separate from generation and benchmark scoring. REF-001 is next; see
+[sandbox execution](sqlite-sandbox.md).
 Fixture annotations are the only current source of linker precision/recall/F1.
 
 ## Design rules

@@ -55,21 +55,74 @@ example-specific rule may change. Any operational failure stays in the primary
 result; a separately labelled replication requires a new protocol version and
 must preserve the original run.
 
-## Reproduction
+## RUN-002 script
 
-Create or verify the deterministic manifest without accessing held-out data:
+The executable `scripts/run_final_evaluation.sh` is the only supported
+entry point for the final run. It performs the following sequence:
+
+1. run all offline tests and `pip check`;
+2. reproduce the RUN-001 manifest and require a clean working tree at the
+   `text2sql-final-v1` tag;
+3. verify 104 held-out IDs, 24 databases, official result variants, evaluation
+   metadata, and the B4 retrieval index;
+4. generate B0, B1, B2, B4, B6, and B6R sequentially into per-example JSONL
+   checkpoints;
+5. verify complete 104-example coverage for every arm before scoring any arm;
+6. write immutable reports, paired statistics, CSV output, and a checksum
+   manifest for every RUN-002 artifact.
+
+A terminal provider failure is recorded as the arm's attempt for that example
+and the script stops immediately. Resolve the operational issue and run the same
+command again. It resumes at the next unrecorded example and does not replace
+the failed attempt. Existing reports and analysis files must reproduce exactly.
+
+## Running it
+
+From the project root, first run the paid-call-free preflight:
 
 ```bash
-PYTHONPATH=src .venv/bin/python -m text2sql.finalization.cli create
-PYTHONPATH=src .venv/bin/python -m text2sql.finalization.cli verify
+scripts/run_final_evaluation.sh preflight
 ```
 
-After RUN-002 produces complete reports, the frozen analysis command will create
-the aggregate JSON and CSV table:
+This command opens and verifies the held-out resources but does not call Groq
+or score predictions. Review the `run002_preflight_ready` event and
+`artifacts/final/run002-v1/preflight.json`.
+
+Put the key in your own trusted `.env` file or export it in the shell:
 
 ```bash
-PYTHONPATH=src .venv/bin/python -m text2sql.finalization.analysis_cli \
-  --reports-dir artifacts/final/reports \
-  --output-json artifacts/final/analysis/final-analysis.json \
-  --output-csv artifacts/final/analysis/final-arm-summary.csv
+export GROQ_API_KEY="..."
+scripts/run_final_evaluation.sh run
+```
+
+The full command makes up to 624 initial generation requests before configured
+transport retries. It can take a long time and incur provider charges. The
+script prints one JSON progress event per retained attempt. If interrupted,
+run the same command again to resume the existing checkpoints. An in-flight
+request with an unknown outcome is retained as an ambiguous failed attempt and
+is never reissued.
+
+Optional environment settings:
+
+```bash
+export FINAL_OUTPUT_ROOT="artifacts/final/run002-v1"
+export FINAL_REQUEST_DELAY_SECONDS="0"
+scripts/run_final_evaluation.sh run
+```
+
+Use a positive request delay if required by the active provider tier. Do not
+change `FINAL_OUTPUT_ROOT` after starting the run. On completion, the primary
+outputs are:
+
+- `artifacts/final/run002-v1/run-manifest.json`;
+- `artifacts/final/run002-v1/reports/`;
+- `artifacts/final/run002-v1/analysis/final-analysis.json`;
+- `artifacts/final/run002-v1/analysis/final-arm-summary.csv`.
+
+## Manifest verification
+
+Verify the deterministic RUN-001 manifest without accessing held-out data:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.finalization.cli verify
 ```

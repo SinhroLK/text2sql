@@ -130,9 +130,12 @@ manifest without opening benchmark content or calling the provider:
 PYTHONPATH=src .venv/bin/python -m text2sql.finalization.cli verify
 ```
 
-The held-out runner remains gated behind RUN-002. Once all six immutable arm
-reports exist, `text2sql-analyze-final` validates exact paired coverage and
-creates the predeclared JSON/CSV analysis. See
+The checksum-bound RUN-002 script verifies the release gate, runs offline
+tests and resource preflight, checkpoints all six generation arms, delays
+scoring until every arm is complete, and creates the frozen JSON/CSV analysis.
+Run `scripts/run_final_evaluation.sh preflight` first, then configure
+`GROQ_API_KEY` and run `scripts/run_final_evaluation.sh run`. Re-running
+the same command resumes without replacing recorded attempts. See
 [final evaluation](docs/final-evaluation.md).
 
 ## Dataset protocol

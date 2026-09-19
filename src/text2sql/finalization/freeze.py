@@ -41,6 +41,7 @@ RESOURCE_FILES = (
     "requirements.lock",
     "docs/final-evaluation.md",
     "docs/security-evaluation.md",
+    "scripts/run_final_evaluation.sh",
 )
 
 

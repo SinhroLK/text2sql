@@ -4,13 +4,13 @@
 **Verzija plana:** 3.14
 **Datum:** 19. septembar 2026.
 **Status projekta:** Faze 0-6 i RUN-001 su `DONE`. Faza 7 je `IN PROGRESS`: šest finalnih arm-ova, statistički protokol i deterministički freeze manifest su zaključani. Sledeći je RUN-002; semantičko planiranje/B7P ostaje odloženo.
-**Poslednja provera:** RUN-001 closeout — svih 205 offline testova prolazi, freeze verifier reprodukuje manifest; provider nije pozvan i nema held-out rezultata. Detalji: [final evaluation](final-evaluation.md).
+**Poslednja provera:** RUN-001 closeout — svih 209 offline testova prolazi, freeze verifier reprodukuje manifest; provider nije pozvan i nema held-out rezultata. Detalji: [final evaluation](final-evaluation.md).
 
 ### Istorija verzija
 
 | Verzija | Datum | Promena |
 |---|---|---|
-| 3.14 | 19. septembar 2026. | RUN-001 DONE: šest finalnih arm-ova, unapred definisana statistika, deterministički manifest i 205 testova. Sledeći je RUN-002. |
+| 3.14 | 19. septembar 2026. | RUN-001 DONE: šest finalnih arm-ova, unapred definisana statistika, deterministički manifest i 209 testova. Sledeći je RUN-002. |
 | 3.13 | 19. septembar 2026. | SEC-001/SEC-002 DONE: checksumovan 16-case corpus, S0/S1 guardrails/report, 198 testova. Sledeća je Faza 7. |
 | 3.12 | 14. septembar 2026. | REF-001 DONE: verifikovan B7 5/31, sa 26 generation failures; checksum manifest, 193 testa i closeout. Sledeća je bezbednosna evaluacija, Faza 6. |
 | 1.0 | 13. avgust 2026. | Početna arhitektura, roadmap i backlog |
@@ -1200,7 +1200,7 @@ statistički plan, pa tek onda jednokratno otvaranje zatvorenog test skupa.
 - finalization verifier checksumom vezuje kod, testove, zavisnosti, dataset
   protokol, konfiguracije i analizu; analyzer odbija nepotpunu ili nepodudarnu
   pokrivenost i čuva nove JSON/CSV izlaze kao immutable;
-- svih 205 offline testova, compileall, dependency check i manifest verify
+- svih 209 offline testova, compileall, dependency check i manifest verify
   prolaze. RUN-001 nije pozvao provider i nije proizveo held-out rezultat.
 
 Sledeće: RUN-002 resource preflight, zatim jednokratna generacija svih šest

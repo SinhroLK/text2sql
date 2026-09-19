@@ -32,6 +32,7 @@ text2sql-refine-b7 = "text2sql.refinement.cli:main"
 text2sql-evaluate-security = "text2sql.security.evaluation_cli:main"
 text2sql-freeze-final = "text2sql.finalization.cli:main"
 text2sql-analyze-final = "text2sql.finalization.analysis_cli:main"
+text2sql-run-final = "text2sql.finalization.run_cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

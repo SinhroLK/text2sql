@@ -145,6 +145,7 @@ def load_arm_report(
     *,
     arm: str,
     expected_ids: Sequence[str],
+    expected_config_sha256: str | None = None,
 ) -> ArmObservations:
     report_path = Path(path)
     report = _read_json(report_path)
@@ -158,6 +159,11 @@ def load_arm_report(
         experiment.get("baseline") != arm
         or experiment.get("split") != "test"
         or experiment.get("experiment_id") != expected_experiment_id
+        or (
+            expected_config_sha256 is not None
+            and experiment.get("config_sha256")
+            != expected_config_sha256
+        )
     ):
         raise AnalysisError(
             f"{arm} report has the wrong frozen experiment identity"
@@ -422,7 +428,15 @@ def analyze_reports(
             f"Unexpected final report files: {unexpected}"
         )
     observations = {
-        arm: load_arm_report(path, arm=arm, expected_ids=expected_ids)
+        arm: load_arm_report(
+            path,
+            arm=arm,
+            expected_ids=expected_ids,
+            expected_config_sha256=_sha256(
+                root
+                / f"configs/final/final001-{arm.casefold()}-test.toml"
+            ),
+        )
         for arm, path in report_files.items()
     }
     intervals = plan.get("confidence_intervals", {})

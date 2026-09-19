@@ -57,7 +57,7 @@
   "primary_arm": "B6R",
   "provider_calls": 0,
   "release_tag": "text2sql-final-v1",
-  "resource_count": 133,
+  "resource_count": 137,
   "resources": [
     {
       "path": "configs/datasets/spider1-train-retrieval-manifest-v1.json",
@@ -181,7 +181,7 @@
     },
     {
       "path": "docs/final-evaluation.md",
-      "sha256": "adc645ca6287e20f9bf94994bdcac2ab33cd882c8cbbff4d7086ca2bb788541d"
+      "sha256": "751231b2fa4661248beefde1a43f012d0cde939b0aa4d9c9210e0a4f29eee2c8"
     },
     {
       "path": "docs/security-evaluation.md",
@@ -189,11 +189,15 @@
     },
     {
       "path": "pyproject.toml",
-      "sha256": "e23168e154a5833c55262062913d3241e9de6f800f1a2dcc7e287504844e11f0"
+      "sha256": "efd941f9f59bb60a03d9db25063dd93857e1a5e6b5436f710c4cae8dedcd0cb1"
     },
     {
       "path": "requirements.lock",
       "sha256": "519700f9a13f0f75b14ae5dcf01fb36bd6af1479027c42b66c494b08a1f9f066"
+    },
+    {
+      "path": "scripts/run_final_evaluation.sh",
+      "sha256": "ac45153d62648343ad688b16c27f9b02007f57e6169570143732ad8ce0a0f419"
     },
     {
       "path": "src/text2sql/__init__.py",
@@ -329,11 +333,19 @@
     },
     {
       "path": "src/text2sql/finalization/freeze.py",
-      "sha256": "a9c0f04b6cb6f305b2f1fd8a41753f2111bdee8a4499efcfe9677823beeed27b"
+      "sha256": "29d18b76a70df15c120574a3d69b31107de86b9ae28369b187ffc43cf6378cd5"
+    },
+    {
+      "path": "src/text2sql/finalization/run_cli.py",
+      "sha256": "d59f7b574ce95b867096e1674333ff82d9cbffca7d83f4f5a02cd3c37943dfe9"
+    },
+    {
+      "path": "src/text2sql/finalization/runner.py",
+      "sha256": "7e5d0b9b3ed4a200f45b4d80f3b9abd74a21b85505cda63376e1ce32da61c38a"
     },
     {
       "path": "src/text2sql/finalization/statistics.py",
-      "sha256": "8c4b2cdd04d6e910d415efdbf6a98748869f49fa764971a80a07860226af3615"
+      "sha256": "9eb2112e6d16dc8bf190f1759428858e7dd752e96898bd753cdec835f10dea39"
     },
     {
       "path": "src/text2sql/observability/__init__.py",
@@ -532,6 +544,10 @@
       "sha256": "f4b9f0d358df9caece8e9601ad3ad6199c5ba2448ec446448d73e8fe63c5c583"
     },
     {
+      "path": "tests/test_final_runner.py",
+      "sha256": "0cfbb309824af1e84f52eff9b156e346b8960dd6451cdf1ac979ee33d10d22f1"
+    },
+    {
       "path": "tests/test_final_statistics.py",
       "sha256": "4dd4b8b45bf03a67df2eb8611401fabc9bb01d9c4c20052cb2b10933b726c61f"
     },
@@ -602,7 +618,7 @@
     "B6",
     "B6R"
   ],
-  "source_tree_sha256": "e15d278f79ee16385c8aa299176ccc50d531f32ef6bea204786ddb1aa16b0579",
+  "source_tree_sha256": "36c441bf7a1cadec6b3db002c4a16b2fc56c702e5d0c506a6f11dd4cfe6ba994",
   "statistical_plan": {
     "bootstrap_replicates": 10000,
     "bootstrap_seed": 20260919,

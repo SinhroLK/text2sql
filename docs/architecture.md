@@ -58,14 +58,31 @@ structured or parsed Groq retry delays without logging provider identifiers.
 The paid compile and exact 31-example development run are complete. MIPROv2
 selected the original/default instruction with 2/10 validation accuracy; B5
 scored 4/31 with 28/31 executable queries and therefore remains below B4 at
-5/31 and B6R at 6/31. Phase 5 now has SAFE-001 complete: a pinned parsed token tree enforces the
-one-SELECT policy, and SQLite prepares the query against an empty reconstruction
-of the canonical schema under a deny-by-default authorizer. SAFE-002 is also
-complete: a fresh Linux worker reads a bounded standalone SQLite snapshot,
-revalidates against that copy, and executes with runtime authorization, a parent
-deadline, resource limits, and explicit result truncation. Its dedicated API/CLI
-is separate from generation and benchmark scoring. REF-001 is next; see
+5/31 and B6R at 6/31.
+
+Phase 5 is complete. SAFE-001 enforces a pinned parsed one-SELECT policy and
+prepares SQL against an empty canonical-schema reconstruction under a
+deny-by-default authorizer. SAFE-002 runs revalidated SQL in a fresh bounded
+Linux worker over a standalone snapshot. REF-001 adds three B6R-based candidates,
+deterministic selection, and at most one repair; its frozen B7 result is 5/31.
+
+Phase 6 adds S1 application guardrails around that boundary. A versioned input
+policy rejects explicit instruction override, destructive intent, sensitive-data
+requests, and host/system access. A schema-aware output policy rejects canonical
+sensitive identifiers and releases only complete sandbox successes. The paired
+provider-free corpus records S0 at 5/10 adversarial releases and S1 at 0/10,
+with no blocks among six benign cases. See
+[security evaluation](security-evaluation.md) and
 [sandbox execution](sqlite-sandbox.md).
+
+RUN-001 freezes six final benchmark arms (B0/B1/B2/B4/B6/B6R), with B6R as
+the primary arm. The finalization layer validates that test configurations
+differ from development templates only by ID and split, hashes the complete
+evaluation source/configuration surface, and predeclares paired bootstrap,
+exact McNemar, and Holm-corrected analysis. It does not generate or score test
+predictions; that boundary remains RUN-002. See
+[final evaluation](final-evaluation.md).
+
 Fixture annotations are the only current source of linker precision/recall/F1.
 
 ## Design rules

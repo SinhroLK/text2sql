@@ -7,6 +7,14 @@ from .sql_validator import (
     SQLiteSQLValidator,
     SQLiteValidationPolicy,
 )
+from .policy import (
+    SECURITY_GUARDRAIL_VERSION,
+    GuardrailDecision,
+    SecurityGuardrailPolicy,
+    evaluate_input,
+    evaluate_output,
+    evaluate_sql_output,
+)
 
 __all__ = [
     "SQL_VALIDATOR_VERSION",
@@ -16,4 +24,10 @@ __all__ = [
     "SQLValidationResult",
     "SQLiteSQLValidator",
     "SQLiteValidationPolicy",
+    "SECURITY_GUARDRAIL_VERSION",
+    "GuardrailDecision",
+    "SecurityGuardrailPolicy",
+    "evaluate_input",
+    "evaluate_output",
+    "evaluate_sql_output",
 ]

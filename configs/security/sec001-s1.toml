@@ -1,0 +1,16 @@
+schema_version = 1
+evaluation_id = "sec001-s1-provider-free-v1"
+corpus_version = "sec001-corpus-v1"
+corpus_path = "data/fixtures/security_cases_v1.jsonl"
+corpus_sha256 = "0e469844cb13385104c59eb68a860e4e3670b68e1475026b57707252bbf052bf"
+fixture_schema_path = "data/fixtures/security_schema.sql"
+fixture_schema_sha256 = "3bb2cfdb310d7f2bdb83a9478b4adbbcfab2809f00ee7ba2ef307742c88416cd"
+guardrail_version = "sec002-guardrails-v1"
+restricted_columns = [
+  "employees.api_token",
+  "employees.email",
+  "employees.salary",
+  "employees.ssn",
+]
+restricted_tables = []
+max_question_characters = 4000

@@ -1,15 +1,17 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 3.12
-**Datum:** 14. septembar 2026.
-**Status projekta:** Faze 0-5 su `DONE`. REF-001 ima kompletan 31/31 development checkpoint i verifikovan EVAL-003 report: B7 5/31, uz operativna ograničenja. B6R 6/31 ostaje najbolji arm. Sledeća je Faza 6, bezbednosna evaluacija; semantičko planiranje/B7P ostaje odloženo.
-**Poslednja provera:** REF-001 closeout — 193 offline testa prolaze; nezavisno bodovanje potvrđuje rezultat. Tokom closeout-a nisu pokretani provider pozivi niti test evaluacija. Detalji: [B7 results](b7-results.md).
+**Verzija plana:** 3.14
+**Datum:** 19. septembar 2026.
+**Status projekta:** Faze 0-6 i RUN-001 su `DONE`. Faza 7 je `IN PROGRESS`: šest finalnih arm-ova, statistički protokol i deterministički freeze manifest su zaključani. Sledeći je RUN-002; semantičko planiranje/B7P ostaje odloženo.
+**Poslednja provera:** RUN-001 closeout — svih 205 offline testova prolazi, freeze verifier reprodukuje manifest; provider nije pozvan i nema held-out rezultata. Detalji: [final evaluation](final-evaluation.md).
 
 ### Istorija verzija
 
 | Verzija | Datum | Promena |
 |---|---|---|
+| 3.14 | 19. septembar 2026. | RUN-001 DONE: šest finalnih arm-ova, unapred definisana statistika, deterministički manifest i 205 testova. Sledeći je RUN-002. |
+| 3.13 | 19. septembar 2026. | SEC-001/SEC-002 DONE: checksumovan 16-case corpus, S0/S1 guardrails/report, 198 testova. Sledeća je Faza 7. |
 | 3.12 | 14. septembar 2026. | REF-001 DONE: verifikovan B7 5/31, sa 26 generation failures; checksum manifest, 193 testa i closeout. Sledeća je bezbednosna evaluacija, Faza 6. |
 | 1.0 | 13. avgust 2026. | Početna arhitektura, roadmap i backlog |
 | 1.1 | 13. avgust 2026. | Evidentirana implementacija Faze 0, ažurirani statusi i dodat dnevnik napretka |
@@ -487,7 +489,10 @@ aktivnog SAFE/REF rada.
 
 **Trajanje:** 1-2 nedelje
 **Zavisnost:** Faza 5
-**Status:** `NOT STARTED`
+**Status:** `DONE`
+
+**Rezultat:** S0 oslobađa 5/10 adversarial upita; S1 oslobađa 0/10 i blokira
+0/6 benignih slučajeva. Evaluacija je provider-free i koristi sintetički fixture.
 
 Zadaci:
 
@@ -505,7 +510,11 @@ Zadaci:
 
 **Trajanje:** 2 nedelje
 **Zavisnost:** Faze 1-6
-**Status:** `NOT STARTED`
+**Status:** `IN PROGRESS`
+
+**Rezultat RUN-001:** B0/B1/B2/B4/B6/B6R, B6R kao primary, statistički
+plan i source/config freeze manifest su zaključani bez provider poziva ili
+held-out rezultata. Sledeći je RUN-002.
 
 Zadaci:
 
@@ -571,7 +580,7 @@ Zadaci:
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** `SAFE-001`, `SAFE-002` i `REF-001` su `DONE`; Faza 5 je završena. B7 5/31 ima dokumentovana operativna ograničenja, a B6R 6/31 ostaje najbolji arm. Sledeća je Faza 6, bezbednosna evaluacija. Semantički/B7P zadaci ostaju `DEFERRED`.
+**Sažetak stanja:** Faze 0-6 i RUN-001 su završeni. B6R je primary arm među šest zamrznutih finalnih konfiguracija; analiza je unapred definisana, a held-out rezultati još ne postoje. Sledeći je RUN-002. Semantički/B7P zadaci ostaju `DEFERRED`.
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
@@ -604,9 +613,9 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | RET-003 | Implementirati Spider1 train-only SQL-skeleton retrieval | posle originalnog roadmap-a | P2 | DEFERRED | SEM-001, RET-001 | arhivirana ranija implementacija nije deo master-a |
 | MODEL-001 | Proveriti capability modela za B7P | posle originalnog roadmap-a | P2 | DEFERRED | SEM-002, RET-003, LINK-002 | nema novih paid B7P poziva u aktivnom planu |
 | GEN-001 | Implementirati i evaluirati single-query B7P | posle originalnog roadmap-a | P2 | DEFERRED | SEM-002, RET-003, MODEL-001 | nije deo aktivne Faze 5 |
-| SEC-001 | Definisati threat model i adversarial skup | 6 | P0 | NOT STARTED | SAFE-002 | verzionisan test skup |
-| SEC-002 | Implementirati i evaluirati guardrails | 6 | P0 | NOT STARTED | SEC-001 | S0/S1 rezultati |
-| RUN-001 | Zamrznuti finalne konfiguracije | 7 | P0 | NOT STARTED | sve obavezne faze | release tag/commit |
+| SEC-001 | Definisati threat model i adversarial skup | 6 | P0 | DONE | SAFE-002 | checksumovan sintetički fixture i 16-case benign/adversarial corpus |
+| SEC-002 | Implementirati i evaluirati guardrails | 6 | P0 | DONE | SEC-001 | S0 5/10 napada; S1 0/10, benign FP 0/6; checksumovan report |
+| RUN-001 | Zamrznuti finalne konfiguracije | 7 | P0 | DONE | sve obavezne faze | šest test config-a, statistički plan, verifier/analyzer, deterministički manifest, release tag |
 | RUN-002 | Pokrenuti finalne eksperimente | 7 | P0 | NOT STARTED | RUN-001 | sirovi rezultati |
 | ANALYSIS-001 | Statistika, grafikoni i analiza grešaka | 7 | P0 | NOT STARTED | RUN-002 | generisani izveštaji |
 | APP-001 | Povezati finalni pipeline sa Gradio UI | 8 | P1 | NOT STARTED | SAFE-002 | demo scenario prolazi |
@@ -1163,3 +1172,36 @@ Sledeće: `REF-001`, najviše tri kandidata i jedna kontrolisana korekcija.
 - B7 koristi zasebne 160-MiB snapshot/512-MiB memory limite za development baze;
 - svih 187 offline testova prolazi, preflight pokriva 31 pitanje/6 baza;
 - `REF-001` nije DONE: preostali su plaćeni development run i EVAL-003 report.
+### 2026-09-19 - Završena Faza 6
+
+- SEC-001 zamrzava threat model, sintetičku SQLite šemu i 16 checksumovanih
+  slučajeva: šest benignih i deset adversarial;
+- SEC-002 uvodi verzionisani input filter i schema-aware output policy nad
+  SAFE-001 kanonskim identifikatorima, uz provider-free S0/S1 runner i CLI;
+- S0 oslobađa 5/10 adversarial read-only upita; S1 oslobađa 0/10 i ne blokira
+  nijedan od 6 benignih slučajeva;
+- report ne sadrži pitanja, SQL tekst ni vraćene podatke; njegov SHA-256 je
+  `da4472523b2214cffe2ebe4fe58efa7d154876af7ed961fc304f92fe4d92d85a`;
+- svih 198 offline testova prolazi; nije korišćen provider niti Spider2 test
+  split. Rezultati važe za zamrznuti fixture corpus, ne za učestalost napada u
+  produkciji.
+
+Sledeće: Faza 7, prvo RUN-001 freeze finalnih konfiguracija i unapred definisan
+statistički plan, pa tek onda jednokratno otvaranje zatvorenog test skupa.
+
+### 2026-09-19 - RUN-001 final evaluation freeze
+
+- zaključani su test-only B0, B1, B2, B4, B6 i B6R config-i; svaki se od
+  odgovarajućeg development template-a razlikuje samo po experiment ID-u i split-u;
+- B6R je primary arm; B3/B5 ostaju negativni development dokazi, a B7 se ne
+  prenosi zbog 26 provider failures u zamrznutom development run-u;
+- unapred su definisani Execution Accuracy, executable rate i tokeni, 10.000
+  paired bootstrap resample-ova, šest exact McNemar poređenja i Holm korekcija;
+- finalization verifier checksumom vezuje kod, testove, zavisnosti, dataset
+  protokol, konfiguracije i analizu; analyzer odbija nepotpunu ili nepodudarnu
+  pokrivenost i čuva nove JSON/CSV izlaze kao immutable;
+- svih 205 offline testova, compileall, dependency check i manifest verify
+  prolaze. RUN-001 nije pozvao provider i nije proizveo held-out rezultat.
+
+Sledeće: RUN-002 resource preflight, zatim jednokratna generacija svih šest
+arm-ova pre bilo kakvog bodovanja test skupa.

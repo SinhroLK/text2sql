@@ -1,0 +1,616 @@
+{
+  "arms": [
+    {
+      "arm": "B0",
+      "config_path": "configs/final/final001-b0-test.toml",
+      "config_sha256": "6f6dae1311ec8ac9062d8e1a9958f9efabbd8b3984c4f9fd3487c8ec7a9f1130",
+      "template_path": "configs/experiments/exp001-b0.toml",
+      "template_sha256": "957549025a03a734a710e6c5d3b461e4836d3d78f00c893aea882d44d53b0c37"
+    },
+    {
+      "arm": "B1",
+      "config_path": "configs/final/final001-b1-test.toml",
+      "config_sha256": "e961395442522c43cc2649b193770ffb14211b0c587e040b2b0557326eed53bd",
+      "template_path": "configs/experiments/exp001-b1.toml",
+      "template_sha256": "be78e226fb4efc229e051c6a91e4d86e9f5d0426937c28b5467ab7e79ae1b8b2"
+    },
+    {
+      "arm": "B2",
+      "config_path": "configs/final/final001-b2-test.toml",
+      "config_sha256": "aa99586dc7c63b6b854f1205de3313640b0e3f8e81b302b782fcb280765963df",
+      "template_path": "configs/experiments/exp002-b2.toml",
+      "template_sha256": "c01b10c2876bc97605547655360e75b68ee964ac6784e6403419dbcb9d7a41b4"
+    },
+    {
+      "arm": "B4",
+      "config_path": "configs/final/final001-b4-test.toml",
+      "config_sha256": "e09139954d6c36e06cdc4fcd2bb548dddfbd34691c2708a7e2ce48736c873395",
+      "template_path": "configs/experiments/exp006-b4.toml",
+      "template_sha256": "664e77b54845ada97af79670da39d7afcf309809429fecceff82a0be7d812a71"
+    },
+    {
+      "arm": "B6",
+      "config_path": "configs/final/final001-b6-test.toml",
+      "config_sha256": "82593b4cf3fafb8a3e17b6cf470c456fac4b030266eb9eaf34324696d4848198",
+      "template_path": "configs/experiments/exp003-b6.toml",
+      "template_sha256": "e984a8407cf654eecc78b586fa48a6bd4c92710d4aad2ef943e5a9f9cc776865"
+    },
+    {
+      "arm": "B6R",
+      "config_path": "configs/final/final001-b6r-test.toml",
+      "config_sha256": "4f562090c94d377a847013dca9ccd02c46843bc5cba3d258d946e6f5fd844f9a",
+      "template_path": "configs/experiments/exp004-b6r.toml",
+      "template_sha256": "2bd504ab72119273cec01cdaeaef8664a32e3b949581a4061057cd221b552e6b"
+    }
+  ],
+  "dataset": {
+    "protocol_id": "spider2-lite-sqlite-data001-v1",
+    "split_manifest_path": "configs/datasets/spider2-lite-sqlite-split-v1.json",
+    "split_manifest_sha256": "36cbd3a18c359ad3e23662c73b0e9976af9f7a77e6174183c70c855a7b766518"
+  },
+  "development_examples": 31,
+  "freeze_id": "run001-final-evaluation-v1",
+  "held_out_accessed": false,
+  "held_out_examples": 104,
+  "held_out_split": "test",
+  "manifest_version": "run001-freeze-v1",
+  "primary_arm": "B6R",
+  "provider_calls": 0,
+  "release_tag": "text2sql-final-v1",
+  "resource_count": 133,
+  "resources": [
+    {
+      "path": "configs/datasets/spider1-train-retrieval-manifest-v1.json",
+      "sha256": "0d24040c28a8a63c024eb80d571554aa57209e864c29c7b41737cc6f5fabbd59"
+    },
+    {
+      "path": "configs/datasets/spider1-train-retrieval-v1.toml",
+      "sha256": "e6d048bae72f8cae94a03129be6a3be1cb9deeb7d053bffe2b6dce838ec5e10c"
+    },
+    {
+      "path": "configs/datasets/spider2-lite-sqlite-metadata-manifest-v1.json",
+      "sha256": "d1e44e86073b014a17a33e8c879302112428c77d5b7bef77c7017c4cefb37856"
+    },
+    {
+      "path": "configs/datasets/spider2-lite-sqlite-split-v1.json",
+      "sha256": "36cbd3a18c359ad3e23662c73b0e9976af9f7a77e6174183c70c855a7b766518"
+    },
+    {
+      "path": "configs/datasets/spider2-lite-sqlite-v1.toml",
+      "sha256": "837e4479674ff9bf21ec3527a810ab4a9629bda51caabefc54eea74313f2be64"
+    },
+    {
+      "path": "configs/experiments/exp001-b0.toml",
+      "sha256": "957549025a03a734a710e6c5d3b461e4836d3d78f00c893aea882d44d53b0c37"
+    },
+    {
+      "path": "configs/experiments/exp001-b1.toml",
+      "sha256": "be78e226fb4efc229e051c6a91e4d86e9f5d0426937c28b5467ab7e79ae1b8b2"
+    },
+    {
+      "path": "configs/experiments/exp002-b2.toml",
+      "sha256": "c01b10c2876bc97605547655360e75b68ee964ac6784e6403419dbcb9d7a41b4"
+    },
+    {
+      "path": "configs/experiments/exp003-b6.toml",
+      "sha256": "e984a8407cf654eecc78b586fa48a6bd4c92710d4aad2ef943e5a9f9cc776865"
+    },
+    {
+      "path": "configs/experiments/exp004-b6r.toml",
+      "sha256": "2bd504ab72119273cec01cdaeaef8664a32e3b949581a4061057cd221b552e6b"
+    },
+    {
+      "path": "configs/experiments/exp005-b3.toml",
+      "sha256": "3d8c8215669920827c0baa1b6ffcabcecedd58216cb23ffa9e0829dea1e0d22d"
+    },
+    {
+      "path": "configs/experiments/exp006-b4.toml",
+      "sha256": "664e77b54845ada97af79670da39d7afcf309809429fecceff82a0be7d812a71"
+    },
+    {
+      "path": "configs/experiments/exp007-b7-artifacts.sha256",
+      "sha256": "daeebd587693b28e988660ad3c679325e6621aaf85e9e58407e81855e778862a"
+    },
+    {
+      "path": "configs/experiments/exp007-b7.toml",
+      "sha256": "1718f8eb4dbc2f0efbc351e56a23bbb9c9acdb93d089b94ea41177905c10f0a9"
+    },
+    {
+      "path": "configs/experiments/phase0-smoke.yaml",
+      "sha256": "a8a602c77808483b6ceefbd92450d1a234a089111f07ed1369d79bd2145357e9"
+    },
+    {
+      "path": "configs/final/final001-b0-test.toml",
+      "sha256": "6f6dae1311ec8ac9062d8e1a9958f9efabbd8b3984c4f9fd3487c8ec7a9f1130"
+    },
+    {
+      "path": "configs/final/final001-b1-test.toml",
+      "sha256": "e961395442522c43cc2649b193770ffb14211b0c587e040b2b0557326eed53bd"
+    },
+    {
+      "path": "configs/final/final001-b2-test.toml",
+      "sha256": "aa99586dc7c63b6b854f1205de3313640b0e3f8e81b302b782fcb280765963df"
+    },
+    {
+      "path": "configs/final/final001-b4-test.toml",
+      "sha256": "e09139954d6c36e06cdc4fcd2bb548dddfbd34691c2708a7e2ce48736c873395"
+    },
+    {
+      "path": "configs/final/final001-b6-test.toml",
+      "sha256": "82593b4cf3fafb8a3e17b6cf470c456fac4b030266eb9eaf34324696d4848198"
+    },
+    {
+      "path": "configs/final/final001-b6r-test.toml",
+      "sha256": "4f562090c94d377a847013dca9ccd02c46843bc5cba3d258d946e6f5fd844f9a"
+    },
+    {
+      "path": "configs/final/statistical-plan.toml",
+      "sha256": "1467709458ab2ad5b44bbf26b4c25aac8f243d470dbac2076264d216c44d8497"
+    },
+    {
+      "path": "configs/models.yaml",
+      "sha256": "e996815e9157c1a525d5d35d134a274020f0eff17dacf9b028966958924ccd33"
+    },
+    {
+      "path": "configs/optimization/dspy001-b5.toml",
+      "sha256": "a1c90046058821d2b4df62e0363e09c3b89d9b381900e9ebb79e15b5983ccf7b"
+    },
+    {
+      "path": "configs/security/sec001-s1-report.sha256",
+      "sha256": "ecb78a9258c5edf36250d895f68f86b65b1ccfccf757322c34a093e5f3f15c6e"
+    },
+    {
+      "path": "configs/security/sec001-s1.toml",
+      "sha256": "b704769d74f26ff4ce7b9f83d15528e44c053c4c460fbc29b5b6e9033776a591"
+    },
+    {
+      "path": "configs/security_policy.yaml",
+      "sha256": "88dbfe5bfa6e55c358be84e4e58fd97cc389ca8755e5b9d9bae0d7eeba1eabfc"
+    },
+    {
+      "path": "data/fixtures/security.sqlite",
+      "sha256": "cb12abda1a97ed1a7bc2c5d3f6cb75e1d7dc847f2c27bda22e80c43816764040"
+    },
+    {
+      "path": "data/fixtures/security_cases_v1.jsonl",
+      "sha256": "0e469844cb13385104c59eb68a860e4e3670b68e1475026b57707252bbf052bf"
+    },
+    {
+      "path": "data/fixtures/security_schema.sql",
+      "sha256": "3bb2cfdb310d7f2bdb83a9478b4adbbcfab2809f00ee7ba2ef307742c88416cd"
+    },
+    {
+      "path": "docs/final-evaluation.md",
+      "sha256": "adc645ca6287e20f9bf94994bdcac2ab33cd882c8cbbff4d7086ca2bb788541d"
+    },
+    {
+      "path": "docs/security-evaluation.md",
+      "sha256": "1655bebc3266ae27c0f98a2d3affdc74fad65ef5ce17b853e3aeac04da49face"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "e23168e154a5833c55262062913d3241e9de6f800f1a2dcc7e287504844e11f0"
+    },
+    {
+      "path": "requirements.lock",
+      "sha256": "519700f9a13f0f75b14ae5dcf01fb36bd6af1479027c42b66c494b08a1f9f066"
+    },
+    {
+      "path": "src/text2sql/__init__.py",
+      "sha256": "31ae370a743b1bafa08c7fa39675997162417dcbf06c3cb18b876b656be6d671"
+    },
+    {
+      "path": "src/text2sql/cli.py",
+      "sha256": "53e6d1dbf866251c2a7a2a4d351c851645d8c231bde9f1cf04d6e82c7e4ad3af"
+    },
+    {
+      "path": "src/text2sql/datasets/__init__.py",
+      "sha256": "efa9ba2e6ef588df2b45a07e910d0dd8ca2480ff31e1448e240e8f697f0e0926"
+    },
+    {
+      "path": "src/text2sql/datasets/cli.py",
+      "sha256": "a3de41145c5234ac96090c06c2978e689ad2a0f69e15c0a0ede652a64008121a"
+    },
+    {
+      "path": "src/text2sql/datasets/protocol.py",
+      "sha256": "acf07457b5a092f7c76eeb9fdb3e4fd34b9d0f1ce092a6ad67e47cab87e6d68e"
+    },
+    {
+      "path": "src/text2sql/datasets/spider2_lite.py",
+      "sha256": "624537b69e6ae41e65ecef6c13ddd95cc85f27dd284e8a5f13831950868df970"
+    },
+    {
+      "path": "src/text2sql/domain/__init__.py",
+      "sha256": "0712b890083f1b3d7d8739bbb8e0709a90b3a7df4367788373302022bfbfc5c4"
+    },
+    {
+      "path": "src/text2sql/domain/models.py",
+      "sha256": "4807c282637b3ece1ffa14e6659f79d29817afc367f86bb38e7423bde5723771"
+    },
+    {
+      "path": "src/text2sql/evaluation/__init__.py",
+      "sha256": "6035c31b3b89b803e2b19beba4508dd175acc33eccb021ff1ba71f19752bc94e"
+    },
+    {
+      "path": "src/text2sql/evaluation/cli.py",
+      "sha256": "ddd9102ebb44fdd03311fffcd24d696193e536494b3bc84c9e37eb9868eea8d1"
+    },
+    {
+      "path": "src/text2sql/evaluation/comparator.py",
+      "sha256": "a9f0790c000491f848dfa4a09eae132f7ebb78a0285cbbd6708fea602f48ada5"
+    },
+    {
+      "path": "src/text2sql/evaluation/evaluator.py",
+      "sha256": "3911cbb035bc1ad4df13b1cba7bc909687d6436e22b4f4d1e4e3b2ca759b8123"
+    },
+    {
+      "path": "src/text2sql/evaluation/gold_results.py",
+      "sha256": "b5d49068cf49c2b2f39ec30719b071214ac542dd1b708bf7870a38f536a7ec54"
+    },
+    {
+      "path": "src/text2sql/evaluation/models.py",
+      "sha256": "5c01ad33886f449090dc87b8ecaa39460fd81bd71635486b79fc289b4d3d0ec3"
+    },
+    {
+      "path": "src/text2sql/evaluation/resources.py",
+      "sha256": "fd988fb1728b395ef03654631714740b4157518884fe53edd0bff405cf3750c7"
+    },
+    {
+      "path": "src/text2sql/evaluation/spider2_cli.py",
+      "sha256": "47f15a49faac0528081259e9f2e7d2e6604b6e78b4f9885dbc27ed1e1a3446f5"
+    },
+    {
+      "path": "src/text2sql/evaluation/spider2_runner.py",
+      "sha256": "6a1a6af35d34425b8c4d440766793d1f715a57fa8d7e0153b4977c2d513f596f"
+    },
+    {
+      "path": "src/text2sql/evaluation/sqlite_executor.py",
+      "sha256": "9bf7cf8ea84e1dd1330070c53a850bce3f5bc34c9ff52a66a41ee403612d6b53"
+    },
+    {
+      "path": "src/text2sql/execution/__init__.py",
+      "sha256": "c7c349cda53ca95927d337721bf889ad26bfcd5c8be13cc3fb37fa5eec714378"
+    },
+    {
+      "path": "src/text2sql/execution/cli.py",
+      "sha256": "d0e6a9698c03735fa272a8fd67216ca475fa9a6176c90ba32c0ee152d1ae5df4"
+    },
+    {
+      "path": "src/text2sql/execution/sandbox.py",
+      "sha256": "aa79dd8ef1017394c3e9d6e7991d03af9c66f3f3f0a13d91ed33e16c38bdcbf0"
+    },
+    {
+      "path": "src/text2sql/execution/worker.py",
+      "sha256": "e7b11acbb541e433b341f8b0f9de35583629238590e5e22b52fd26a89c5c1cc5"
+    },
+    {
+      "path": "src/text2sql/experiments/__init__.py",
+      "sha256": "90b710ba231df1f7e94a0faf68b815f0e5cb65e0970026424a896a2c65c0b923"
+    },
+    {
+      "path": "src/text2sql/experiments/cli.py",
+      "sha256": "637bf9baec2b704fdebd7a42350c8794617be5f3a737c2a009d000fe5b61fd1c"
+    },
+    {
+      "path": "src/text2sql/experiments/config.py",
+      "sha256": "eaca9a98c0eee3fab774156283da2d004c8d7f57d5127d29139533213ef21984"
+    },
+    {
+      "path": "src/text2sql/experiments/linking_audit.py",
+      "sha256": "31bcd3c82a1907c0ec89a4ea75c6486a558643262330d1ec195318cd080cc0eb"
+    },
+    {
+      "path": "src/text2sql/experiments/linking_cli.py",
+      "sha256": "ac3624d7a940a63262e60ba0b6e553c808a0d06e98cd53ea1d3a3e425c74634e"
+    },
+    {
+      "path": "src/text2sql/experiments/retrieval_audit.py",
+      "sha256": "d6afe73e54133caaacfe2553223305a5ef45a397ffa0ff73aef1903a73a0d9e1"
+    },
+    {
+      "path": "src/text2sql/experiments/retrieval_cli.py",
+      "sha256": "c2d831f1b4b9f2e4973185f92479072b5f7e30c06cd064d0c4ffc8c5d2ebbc4d"
+    },
+    {
+      "path": "src/text2sql/experiments/runner.py",
+      "sha256": "8f79962a8f82b786e42a6662645c2f0ad29064a31859b7ab852f751af2ebe6e4"
+    },
+    {
+      "path": "src/text2sql/finalization/__init__.py",
+      "sha256": "505e5884a1275515f205f136b47afd29523bc1c94ee798e09d9f6950fc857b9c"
+    },
+    {
+      "path": "src/text2sql/finalization/analysis_cli.py",
+      "sha256": "5fb68af08e3c7576e2d7330c4efbb4b9fb5a8e9abf9feb5f3d26a687d42dc9da"
+    },
+    {
+      "path": "src/text2sql/finalization/cli.py",
+      "sha256": "c232eb8c42bef7a0d745c7810cf53d9d5108bb7ada6e5536bedae9ddc26cdaf1"
+    },
+    {
+      "path": "src/text2sql/finalization/freeze.py",
+      "sha256": "a9c0f04b6cb6f305b2f1fd8a41753f2111bdee8a4499efcfe9677823beeed27b"
+    },
+    {
+      "path": "src/text2sql/finalization/statistics.py",
+      "sha256": "8c4b2cdd04d6e910d415efdbf6a98748869f49fa764971a80a07860226af3615"
+    },
+    {
+      "path": "src/text2sql/observability/__init__.py",
+      "sha256": "155a350c1502839030f9298b0ffb77e87fc92c9380b4e29fb8ccdbb6844d4a25"
+    },
+    {
+      "path": "src/text2sql/observability/jsonl.py",
+      "sha256": "84d7d3c53c83a6d764136e1d8f43cf1c61944a05a6113e66761e7637391a9bb8"
+    },
+    {
+      "path": "src/text2sql/optimization/__init__.py",
+      "sha256": "d9c947ec2503042220b98e37bbbb02d750d4543ae8f2e3877bdfea855bb7a89f"
+    },
+    {
+      "path": "src/text2sql/optimization/b5.py",
+      "sha256": "1d6279cd21fb9a466fb211f3c5c5f7c87a89a51fe47330e873e00d34912ee35f"
+    },
+    {
+      "path": "src/text2sql/optimization/cli.py",
+      "sha256": "e015afbecf16c1c0c94558d2efdbc26eff3cf22d46a751da0fa937eed372c93b"
+    },
+    {
+      "path": "src/text2sql/optimization/config.py",
+      "sha256": "4e81bae13e5ddd2094c0d3953fa4bb192f395ca92f4f61e9fcf6472ccb1ffed5"
+    },
+    {
+      "path": "src/text2sql/optimization/rate_limit.py",
+      "sha256": "6d8dc84561f7bdf91e506cb851c60bb4e64fa04ed6161163f7925160690c657e"
+    },
+    {
+      "path": "src/text2sql/optimization/recovery.py",
+      "sha256": "0ffa415c40f1984e57c57a4fecab8cf9f012c51dcc56190c95310c6ce7be0e8f"
+    },
+    {
+      "path": "src/text2sql/pipeline.py",
+      "sha256": "7df4d01dfae8b86506c6aeaa61524a28f06b5023b084e2c82b534e77fa5f45e2"
+    },
+    {
+      "path": "src/text2sql/prompting/__init__.py",
+      "sha256": "dc29cfb27156fd21e7312046d476d7b9455da3970c89a95efe5ecb17636ac4b8"
+    },
+    {
+      "path": "src/text2sql/prompting/builder.py",
+      "sha256": "0d0bbd6c8eafcb97da5ce4dcce1e8229f8b3169622f732f37a6c99b48b3d9692"
+    },
+    {
+      "path": "src/text2sql/providers/__init__.py",
+      "sha256": "1527fa34e3bcbc9b0a6d171526a80a4b0e255eb9e10b1accbf76de4195bc1ea8"
+    },
+    {
+      "path": "src/text2sql/providers/base.py",
+      "sha256": "e3a4c28cd76ad044dfbdfeda9668c85d962f0768808ed969888f4e2906d225cf"
+    },
+    {
+      "path": "src/text2sql/providers/groq.py",
+      "sha256": "6903f0246601faf429243badf0da1e4a2b6f97a467a4699a86b27690b8c9c586"
+    },
+    {
+      "path": "src/text2sql/providers/mock.py",
+      "sha256": "be31e5b6f669aa65f033e7b17ca786855386ef38db7fcdb7ff88e743a4f49aaa"
+    },
+    {
+      "path": "src/text2sql/refinement/__init__.py",
+      "sha256": "96ab7d7c9aa0181ef7d263275e101fe6c5d32cc54b44f24cd48b1bbcecc024bd"
+    },
+    {
+      "path": "src/text2sql/refinement/cli.py",
+      "sha256": "273c9dd4df4ca2112e5d58efd8beaf165b7d964cb9239a34023dd19cdab3cb6b"
+    },
+    {
+      "path": "src/text2sql/refinement/config.py",
+      "sha256": "27a1b84da025f4496ba68c7fb3f165d5c68ee774478c831e0aebc80f60327335"
+    },
+    {
+      "path": "src/text2sql/refinement/core.py",
+      "sha256": "5fe684c1a9e19b90254b50886801171ad6be6553892308973ea9f00393f87497"
+    },
+    {
+      "path": "src/text2sql/refinement/journal.py",
+      "sha256": "06ee83966a6bca78a3a5a8cbc8675d8379905cdf69ce8d7b6297d5bd02a6cdb7"
+    },
+    {
+      "path": "src/text2sql/refinement/provider.py",
+      "sha256": "902121aeab7ab86dcff8be7418bcc3326a43eb1d74062d09f5c7bd5e3b25b1f4"
+    },
+    {
+      "path": "src/text2sql/refinement/quota.py",
+      "sha256": "32fa6f427e320da1525d71e60fa91cb8af04e1932ac95e748321ab1652165244"
+    },
+    {
+      "path": "src/text2sql/refinement/runner.py",
+      "sha256": "4f425088f084bfc449ea803493857c2dff02911d36ce0bc122c1e4ecd57e5a52"
+    },
+    {
+      "path": "src/text2sql/retrieval/__init__.py",
+      "sha256": "aeb8a3aaba0e6edc059c369bd294738d0a02ab6666d0b7f8a5bf7434583aff26"
+    },
+    {
+      "path": "src/text2sql/retrieval/cli.py",
+      "sha256": "c7350aada8b45f7db513f08ac99f7fc442bcf9f55343c855c8ceb780e9e3e5b9"
+    },
+    {
+      "path": "src/text2sql/retrieval/index.py",
+      "sha256": "0dd2b83ed91cc2b596a3fc852ada35cfc3166c3e87b894b568650754fb15867f"
+    },
+    {
+      "path": "src/text2sql/retrieval/selector.py",
+      "sha256": "0e0185e46f0f2e8edc5daba420891710283b3677928d4a4770060c3ea1fd6e4f"
+    },
+    {
+      "path": "src/text2sql/schema/__init__.py",
+      "sha256": "3c7e406b028a5b7213be8daa3762788dbe637684de21e5323a9159c5461159dc"
+    },
+    {
+      "path": "src/text2sql/schema/canonical.py",
+      "sha256": "b12339ca5e76c0622e0872a1616c2d1dfda764cbb6681a9918729c9329f2db23"
+    },
+    {
+      "path": "src/text2sql/schema/inspector.py",
+      "sha256": "91a3dc9a5ec850d25f75883db2ddd79cc64609eb2ae1c27787dd37922fd4eb4c"
+    },
+    {
+      "path": "src/text2sql/schema/linker.py",
+      "sha256": "988fa5094611efaecf6138d5e6c40de3e7a24825a274671fbdd62f8be5d81c1a"
+    },
+    {
+      "path": "src/text2sql/schema/mschema.py",
+      "sha256": "558a06d659dfc97b905a05f219b31719c22e8a3fa58289eaaa834f51bb876af3"
+    },
+    {
+      "path": "src/text2sql/schema/serializer.py",
+      "sha256": "a64491a55d5b7445f75aaf48064045af63e8ee457d16b87296d7f7aba34d21f0"
+    },
+    {
+      "path": "src/text2sql/security/__init__.py",
+      "sha256": "288806549b68b3bd8821fccde846a4cce2639dc84d9daf6859485c1743f2b41f"
+    },
+    {
+      "path": "src/text2sql/security/cli.py",
+      "sha256": "51ceb3dbdb7bc2583c662f965c24661c87aa6c323d1fd75a2524cee3ef50cf7b"
+    },
+    {
+      "path": "src/text2sql/security/evaluation.py",
+      "sha256": "e47bf0b053fd10904b03b234039fbe7fe49701ac74244330cca42fa7580738c9"
+    },
+    {
+      "path": "src/text2sql/security/evaluation_cli.py",
+      "sha256": "ec9fe0fbe5fb93680492ab6d95f60f7d9d0ef0a989f5a2c2b358aed04e54110a"
+    },
+    {
+      "path": "src/text2sql/security/policy.py",
+      "sha256": "fa03fc413675e4ba99e35111235b8e90beeb7da8e7f02e11c7886b577d12f5a6"
+    },
+    {
+      "path": "src/text2sql/security/sql_validator.py",
+      "sha256": "b09a9296090af8766747abb7604c3f16c29ff11638b6c93a40353a3866916502"
+    },
+    {
+      "path": "tests/test_baseline_experiment.py",
+      "sha256": "214e0dcbadc36692014f51fc43875ab62193c729d50a483ad85ad6338f6ce98f"
+    },
+    {
+      "path": "tests/test_canonical_schema.py",
+      "sha256": "e7abfd5e7ac1029eac3f4d5e31f8843e91ce57c25e593909aa1c6e4f6589e549"
+    },
+    {
+      "path": "tests/test_cli.py",
+      "sha256": "44e37c14a53eeee99a1aa543a4ee44eca1f9d7ce8d01a171f5fa17673a941a00"
+    },
+    {
+      "path": "tests/test_dataset_protocol.py",
+      "sha256": "d7ad54f676adc6d6be596dd525446424db3d8c0c5585f83fd9771f80fabd2fe8"
+    },
+    {
+      "path": "tests/test_domain.py",
+      "sha256": "dc5ad0312695ef03b3a31dc1da0aa4fbc9ff7eedb71fde7f5ba6cb468e780637"
+    },
+    {
+      "path": "tests/test_dspy_b5.py",
+      "sha256": "5fcdecaea55c354100821e19eb983bf4d2febe60e64e8239227d829765a0a919"
+    },
+    {
+      "path": "tests/test_dspy_rate_limit.py",
+      "sha256": "4a3b878c97b2b49f800ed276ebe2a5c32229865a0c0449fb429c77b88451c9eb"
+    },
+    {
+      "path": "tests/test_dspy_recovery.py",
+      "sha256": "f6b4473f6729abfd614d0750bbe16978b1baeeecc06df724ce9ecfa6b0a79c17"
+    },
+    {
+      "path": "tests/test_execution_evaluator.py",
+      "sha256": "9642deb3576ff740c7770b22a0e2bb05e26f8fdd554cb7f936a7c392986f9e0e"
+    },
+    {
+      "path": "tests/test_final_freeze.py",
+      "sha256": "f4b9f0d358df9caece8e9601ad3ad6199c5ba2448ec446448d73e8fe63c5c583"
+    },
+    {
+      "path": "tests/test_final_statistics.py",
+      "sha256": "4dd4b8b45bf03a67df2eb8611401fabc9bb01d9c4c20052cb2b10933b726c61f"
+    },
+    {
+      "path": "tests/test_groq_provider.py",
+      "sha256": "c69e43dd614b5376187e979eb977d4fa71188a83dcc1be19770d9d178b4fb568"
+    },
+    {
+      "path": "tests/test_linking_audit.py",
+      "sha256": "ef677e69f606222cfe2776904d9c16292c4faf3c9137f13c5a39b50ad16e7739"
+    },
+    {
+      "path": "tests/test_mschema.py",
+      "sha256": "754ea5b1eaaff6c1bb875494433408ea7734e589eaceb8e2b59e87293bf77a60"
+    },
+    {
+      "path": "tests/test_pipeline.py",
+      "sha256": "4dea2e6032826282a68ec3b64d6dd5c04c1cd25038a4e76c2a8b8ce99c414528"
+    },
+    {
+      "path": "tests/test_refinement.py",
+      "sha256": "b77834aa309dee23f0a837625f03e6de6199fbe0d0b10074f75271e1ab148a5e"
+    },
+    {
+      "path": "tests/test_refinement_quota.py",
+      "sha256": "b327b69959c8ed54b3298cb271fce82797e3e2dc00abaf7901fde6689a45e752"
+    },
+    {
+      "path": "tests/test_retrieval_index.py",
+      "sha256": "b6cd01c5d33c4dd45c317c87f801d2938341cc1fc537de550efb46ce7ba8bbd4"
+    },
+    {
+      "path": "tests/test_schema_linker.py",
+      "sha256": "359880e0a4f01ba6c6967a541b3bab15b28d71d6defddd66de64fac8c22c8d48"
+    },
+    {
+      "path": "tests/test_security_evaluation.py",
+      "sha256": "f0344a3e451ee10c9833c58a11b85c533a36aa7f706a4da570b5ef7475826f8d"
+    },
+    {
+      "path": "tests/test_spider2_evaluation_runner.py",
+      "sha256": "88ffc7d6a5c40183650a63c9dc89f0a7f7e84edb46052c19865de583db7ad95a"
+    },
+    {
+      "path": "tests/test_spider2_gold_result_runner.py",
+      "sha256": "2fe4421833fd490d8b28df61a5f14689656269ac1e9a3f2d28b213bd428f9c77"
+    },
+    {
+      "path": "tests/test_spider2_loader.py",
+      "sha256": "0a697e3727c687feb5023dc828ccca3e3d3f4b1cdd97192612c402602c51c410"
+    },
+    {
+      "path": "tests/test_sql_validator.py",
+      "sha256": "9a2f64d2e1b4a40591579ec35bdafd1dd89ffee3ccac5d99b4077f5db5fbaf7f"
+    },
+    {
+      "path": "tests/test_sqlite_sandbox.py",
+      "sha256": "95f0226b5feb93e51f5526c63f7702e4bccbc7f951d143e46a907abdc5a2e53d"
+    }
+  ],
+  "schema_version": 1,
+  "security_arm": "S1",
+  "selected_arms": [
+    "B0",
+    "B1",
+    "B2",
+    "B4",
+    "B6",
+    "B6R"
+  ],
+  "source_tree_sha256": "e15d278f79ee16385c8aa299176ccc50d531f32ef6bea204786ddb1aa16b0579",
+  "statistical_plan": {
+    "bootstrap_replicates": 10000,
+    "bootstrap_seed": 20260919,
+    "confidence_level": 0.95,
+    "multiple_comparison_correction": "holm",
+    "paired_test": "exact_mcnemar_two_sided",
+    "path": "configs/final/statistical-plan.toml",
+    "sha256": "1467709458ab2ad5b44bbf26b4c25aac8f243d470dbac2076264d216c44d8497"
+  },
+  "status": "frozen"
+}

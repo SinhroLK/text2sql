@@ -96,17 +96,44 @@ Implemented:
 - SAFE-001 parsed SQLite validation with a one-SELECT policy, canonical table/column binding, system and side-effect denial, auditable hashes, CLI, and adversarial tests.
 - SAFE-002 isolated SQLite execution with validation-hash handoff checks, snapshot revalidation, Linux worker resource limits, bounded results, sanitized errors, and filesystem-preservation tests.
 - REF-001/B7 completed: three generation strategies, deterministic ranking, at most one repair, and verified 31-example EVAL-003 results (5/31; B6R remains best at 6/31). Provider failures limit interpretation; see [B7 results](docs/b7-results.md).
+- SEC-001/SEC-002 provider-free security evaluation with a checksum-pinned
+  16-case benign/adversarial corpus, S0/S1 runner, schema-aware sensitive-column
+  policy, and a frozen report (S0 5/10 attacks released; S1 0/10; 0/6 benign blocked);
+- RUN-001 final-evaluation freeze with six test-only arm configurations, a
+  predeclared statistical plan, deterministic source manifest, strict report
+  coverage checks, paired bootstrap intervals, exact McNemar tests, and Holm correction.
 
 Not implemented yet:
 
 - SEM-001 paired semantic-error corpus;
 - typed semantic planning, SQL-skeleton retrieval, and the B7P first-pass arm;
-- security evaluation;
 - Gradio application built on the new pipeline.
 
 ## Security
 
 Do not copy active API keys, database passwords or production databases into this repository. The evaluation-only executor works on isolated in-memory SQLite copies. SAFE-001 provides AST-based SQL validation without evaluating the query. SAFE-002 explicitly executes validated SQL in a resource-limited process over an isolated snapshot; the generation CLI still does not execute SQL. This SQL boundary is not an OS container for arbitrary code or hostile database-engine exploits.
+
+The completed Phase 6 evaluation compares SQL-only S0 with S1 input and output
+guardrails over a disposable synthetic database. Reproduce it with
+`text2sql-evaluate-security` after creating the documented fixture. Reports
+exclude question text, SQL text, and returned data. See
+[security evaluation](docs/security-evaluation.md) for the threat model,
+metrics, commands, and limitations.
+
+## Final evaluation freeze
+
+RUN-001 freezes B0, B1, B2, B4, B6, and primary B6R for the one-time
+104-example held-out evaluation. Verify the committed source/configuration
+manifest without opening benchmark content or calling the provider:
+
+```bash
+PYTHONPATH=src .venv/bin/python -m text2sql.finalization.cli verify
+```
+
+The held-out runner remains gated behind RUN-002. Once all six immutable arm
+reports exist, `text2sql-analyze-final` validates exact paired coverage and
+creates the predeclared JSON/CSV analysis. See
+[final evaluation](docs/final-evaluation.md).
 
 ## Dataset protocol
 

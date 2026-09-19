@@ -1,0 +1,13 @@
+schema_version = 1
+experiment_id = "final001-b0-test-gpt-oss-120b-v1"
+baseline = "B0"
+split = "test"
+prompt_variant = "question_only"
+provider = "groq"
+model_id = "openai/gpt-oss-120b"
+temperature = 0.0
+max_tokens = 1024
+seed = 42
+reasoning_effort = "low"
+max_retries = 2
+timeout_seconds = 60.0

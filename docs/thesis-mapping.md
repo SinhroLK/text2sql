@@ -40,6 +40,18 @@ validation accuracy. The frozen 31-example B5 run scored 4/31 (12.90%) with
 28/31 executable queries; it is a negative optimization result below B4 at
 5/31 and B6R at 6/31.
 
+SEC-001/SEC-002 evidence is ADR-019, the checksum-pinned synthetic schema and
+16-case corpus, the S0/S1 evaluator, structured payload-free report,
+`docs/security-evaluation.md`, and `tests/test_security_evaluation.py`. S0
+released five of ten adversarial read-only queries; S1 released none and
+blocked none of six benign cases. These results describe the frozen fixture
+corpus and do not estimate deployment attack prevalence.
+
+RUN-001 evidence consists of six test-only configurations, the frozen statistical
+plan, the deterministic source/configuration manifest, ADR-020, the finalization
+verifier/analyzer, and their offline tests. No held-out result is part of RUN-001;
+the final accuracy claim begins only after the separately gated RUN-002.
+
 Those reduction figures are engineering measurements, not evidence of SQL accuracy or real schema recall. The project currently has trusted table/column relevance annotations only in fixtures; consequently fixture tests report precision/recall/F1, while frozen B6R supplies its own EVAL-003 claim: 6/31 (19.35%), including five non-empty and one empty-result match.
 
 The methodology chapter must state that development decisions use a custom 31-instance SQLite development set and that the final closed evaluation target is the custom 104-instance SQLite holdout, not the full 547-instance Spider2-Lite leaderboard setting.

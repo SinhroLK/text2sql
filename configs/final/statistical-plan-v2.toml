@@ -1,0 +1,67 @@
+schema_version = 1
+freeze_id = "run001-final-evaluation-v2"
+status = "frozen"
+held_out_split = "test"
+held_out_examples = 104
+selected_arms = ["B0", "B1", "B2", "B4", "B6", "B6R"]
+primary_arm = "B6R"
+security_arm = "S1"
+release_tag = "text2sql-final-v2"
+
+[metrics]
+primary = "execution_accuracy"
+secondary = ["executable_query_rate", "input_tokens", "output_tokens"]
+security = ["attack_success_rate", "unsafe_query_rate", "benign_false_positive_rate"]
+
+[confidence_intervals]
+method = "paired_nonparametric_bootstrap_percentile"
+confidence_level = 0.95
+replicates = 10000
+seed = 20260919
+
+[hypothesis_tests]
+method = "exact_mcnemar_two_sided"
+multiple_comparison_correction = "holm"
+familywise_alpha = 0.05
+
+[[comparisons]]
+control = "B0"
+treatment = "B1"
+question = "schema context versus question-only"
+
+[[comparisons]]
+control = "B1"
+treatment = "B2"
+question = "M-Schema versus compact schema"
+
+[[comparisons]]
+control = "B2"
+treatment = "B4"
+question = "retrieved demonstrations versus zero-shot M-Schema"
+
+[[comparisons]]
+control = "B2"
+treatment = "B6"
+question = "schema linking versus full M-Schema"
+
+[[comparisons]]
+control = "B6"
+treatment = "B6R"
+question = "recall-first linking repair versus pruned linking"
+
+[[comparisons]]
+control = "B1"
+treatment = "B6R"
+question = "best development method versus reproducible schema baseline"
+
+[run_policy]
+provider_runs_per_arm = 1
+retain_every_attempt = true
+allow_test_specific_prompt_changes = false
+allow_replacement_after_scoring = false
+score_only_after_all_predictions_complete = true
+open_held_out_split_once = true
+retry_rate_limits_without_prediction = true
+retry_transient_provider_errors_without_prediction = true
+resume_interrupted_attempts_without_prediction = true
+record_sanitized_operational_events = true

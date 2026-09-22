@@ -16,10 +16,65 @@ DEFAULT_GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
 
 
 class GroqProviderError(RuntimeError):
-    """Provider error that never includes credentials."""
+    """Sanitized provider error with machine-readable retry metadata."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        status_code: int | None = None,
+        retry_after_seconds: float | None = None,
+        token_reset: str | None = None,
+        retryable: bool = False,
+        category: str = "provider_error",
+    ) -> None:
+        super().__init__(message)
+        self.status_code = status_code
+        self.retry_after_seconds = retry_after_seconds
+        self.token_reset = token_reset
+        self.retryable = retryable
+        self.category = category
 
 
 Transport = Callable[[str, dict[str, str], bytes, float], bytes]
+
+
+def _duration_seconds(value: str | None) -> float | None:
+    if value is None:
+        return None
+    stripped = value.strip()
+    try:
+        numeric = float(stripped)
+    except ValueError:
+        numeric = None
+    if numeric is not None:
+        return max(0.0, numeric)
+    match = re.fullmatch(
+        r"(?:(?P<hours>[0-9]+(?:\.[0-9]+)?)h)?"
+        r"(?:(?P<minutes>[0-9]+(?:\.[0-9]+)?)m)?"
+        r"(?:(?P<seconds>[0-9]+(?:\.[0-9]+)?)s)?",
+        stripped,
+    )
+    if match is None or not any(match.groupdict().values()):
+        return None
+    return (
+        float(match.group("hours") or 0) * 3600
+        + float(match.group("minutes") or 0) * 60
+        + float(match.group("seconds") or 0)
+    )
+
+
+def _sanitize_provider_detail(detail: str) -> str:
+    sanitized = re.sub(
+        r"\b(?:org|project)_[A-Za-z0-9_-]+\b",
+        "[redacted-id]",
+        detail.strip(),
+    )
+    return re.sub(
+        r"\bgsk_[A-Za-z0-9_-]+\b",
+        "[redacted-api-key]",
+        sanitized,
+    )[:1000]
 
 
 def _status_error_message(
@@ -32,17 +87,7 @@ def _status_error_message(
         error = body.get("error")
         detail = error.get("message") if isinstance(error, dict) else None
         if isinstance(detail, str) and detail.strip():
-            sanitized = re.sub(
-                r"\b(?:org|project)_[A-Za-z0-9_-]+\b",
-                "[redacted-id]",
-                detail.strip(),
-            )
-            sanitized = re.sub(
-                r"\bgsk_[A-Za-z0-9_-]+\b",
-                "[redacted-api-key]",
-                sanitized,
-            )
-            parts.append(sanitized[:1000])
+            parts.append(_sanitize_provider_detail(detail))
     retry_after = headers.get("retry-after")
     reset_tokens = headers.get("x-ratelimit-reset-tokens")
     if retry_after:
@@ -74,15 +119,45 @@ def _transport(endpoint: str, headers: dict[str, str], body: bytes, timeout: flo
     try:
         response = client.chat.completions.create(**payload)
     except groq.APIStatusError as error:
+        retry_after = _duration_seconds(
+            error.response.headers.get("retry-after")
+        )
+        token_reset = error.response.headers.get("x-ratelimit-reset-tokens")
+        token_reset_seconds = _duration_seconds(token_reset)
+        waits = [
+            item
+            for item in (retry_after, token_reset_seconds)
+            if item is not None
+        ]
+        status_code = error.status_code
         raise GroqProviderError(
             _status_error_message(
-                error.status_code,
+                status_code,
                 error.body,
                 error.response.headers,
-            )
+            ),
+            status_code=status_code,
+            retry_after_seconds=max(waits) if waits else None,
+            token_reset=token_reset,
+            retryable=(
+                status_code == 429
+                or status_code in {408, 409, 425}
+                or status_code >= 500
+            ),
+            category=(
+                "rate_limit"
+                if status_code == 429
+                else "provider_unavailable"
+                if status_code >= 500
+                else "request_rejected"
+            ),
         ) from error
     except groq.APIConnectionError as error:
-        raise GroqProviderError("Groq API request failed") from error
+        raise GroqProviderError(
+            "Groq API request failed",
+            retryable=True,
+            category="connection_error",
+        ) from error
     except groq.APIError as error:
         raise GroqProviderError(
             f"Groq API request failed: {type(error).__name__}"
@@ -143,10 +218,14 @@ class GroqProvider:
                     self.timeout_seconds,
                 )
                 break
-            except GroqProviderError:
-                if attempt == self.max_retries:
+            except GroqProviderError as error:
+                if attempt == self.max_retries or not error.retryable:
                     raise
-                self.sleep(2 ** attempt)
+                self.sleep(
+                    error.retry_after_seconds
+                    if error.retry_after_seconds is not None
+                    else 2 ** attempt
+                )
         response = _decode(raw)
         choices = response.get("choices")
         if not isinstance(choices, list) or not choices:
@@ -188,7 +267,13 @@ def _decode(raw: bytes) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise GroqProviderError("Groq API returned an unexpected JSON value")
     if isinstance(value.get("error"), dict):
-        raise GroqProviderError(f"Groq API error: {value['error'].get('message', 'unknown error')}")
+        detail = value["error"].get("message")
+        message = (
+            _sanitize_provider_detail(detail)
+            if isinstance(detail, str) and detail.strip()
+            else "unknown error"
+        )
+        raise GroqProviderError(f"Groq API error: {message}")
     return value
 
 

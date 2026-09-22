@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from text2sql.domain import GenerationInput, SchemaSnapshot
 from text2sql.providers import GroqProvider, GroqProviderError
-from text2sql.providers.groq import _status_error_message
+from text2sql.providers.groq import _duration_seconds, _status_error_message
 
 
 INPUT = GenerationInput(
@@ -114,6 +114,12 @@ class GroqProviderTest(unittest.TestCase):
         self.assertNotIn("org_private", message)
         self.assertNotIn("gsk_do-not-print", message)
 
+    def test_parses_provider_reset_durations(self) -> None:
+        self.assertEqual(_duration_seconds("3600"), 3600)
+        self.assertEqual(_duration_seconds("1h2m3.5s"), 3723.5)
+        self.assertEqual(_duration_seconds("59m59s"), 3599)
+        self.assertIsNone(_duration_seconds("tomorrow"))
+
     def test_retries_transport_errors_with_bounded_backoff(self) -> None:
         attempts = []
         delays = []
@@ -121,7 +127,7 @@ class GroqProviderTest(unittest.TestCase):
         def transport(*_):
             attempts.append(1)
             if len(attempts) < 3:
-                raise GroqProviderError("temporary transport failure")
+                raise GroqProviderError("temporary transport failure", retryable=True)
             return b'{"choices":[{"message":{"content":"SELECT 1"}}]}'
 
         response = GroqProvider(

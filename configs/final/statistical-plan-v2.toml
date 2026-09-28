@@ -1,12 +1,12 @@
 schema_version = 1
-freeze_id = "run001-final-evaluation-v2"
+freeze_id = "run001-final-evaluation-v2.1"
 status = "frozen"
 held_out_split = "test"
 held_out_examples = 104
 selected_arms = ["B0", "B1", "B2", "B4", "B6", "B6R"]
 primary_arm = "B6R"
 security_arm = "S1"
-release_tag = "text2sql-final-v2"
+release_tag = "text2sql-final-v2.1"
 
 [metrics]
 primary = "execution_accuracy"

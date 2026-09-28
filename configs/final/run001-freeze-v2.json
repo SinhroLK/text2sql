@@ -49,14 +49,14 @@
     "split_manifest_sha256": "36cbd3a18c359ad3e23662c73b0e9976af9f7a77e6174183c70c855a7b766518"
   },
   "development_examples": 31,
-  "freeze_id": "run001-final-evaluation-v2",
+  "freeze_id": "run001-final-evaluation-v2.1",
   "held_out_accessed": false,
   "held_out_examples": 104,
   "held_out_split": "test",
   "manifest_version": "run001-freeze-v2",
   "primary_arm": "B6R",
   "provider_calls": 0,
-  "release_tag": "text2sql-final-v2",
+  "release_tag": "text2sql-final-v2.1",
   "resource_count": 150,
   "resources": [
     {
@@ -169,7 +169,7 @@
     },
     {
       "path": "configs/final/statistical-plan-v2.toml",
-      "sha256": "faa857d3f453cb64001992366ae5629e3585ddc5bc35e09f4b07ae9da7c58351"
+      "sha256": "d954f95a071a4671f8e06475f4a766f59e8529d3a56867eabb704d5878d418fd"
     },
     {
       "path": "configs/final/statistical-plan.toml",
@@ -209,7 +209,7 @@
     },
     {
       "path": "docs/final-evaluation-v2.md",
-      "sha256": "3ea2d5ffaafd6df44a75af19d28f6fc9687a86903b2a8581da7a0fcd7203817b"
+      "sha256": "8829334b2bdfb2d1b33784e6091fabf79767238b3b06e6c1db7931eb8ecac17d"
     },
     {
       "path": "docs/security-evaluation.md",
@@ -365,7 +365,7 @@
     },
     {
       "path": "src/text2sql/finalization/freeze_v2.py",
-      "sha256": "bfc15e29ca7f0ce18e5bfb1f93d1720dd93ef5286df17e93ebec083896a586e1"
+      "sha256": "4127e595682bd183dbbc8d9a3b693b63642f241406a2599a1831ec90763ca509"
     },
     {
       "path": "src/text2sql/finalization/freeze_v2_cli.py",
@@ -377,7 +377,7 @@
     },
     {
       "path": "src/text2sql/finalization/run_v2_cli.py",
-      "sha256": "03332da8d44e3c4e131c2ca6581eef8ba13421a47f7157501501928d8d188743"
+      "sha256": "1f4251517ef283ccfcaae1d7c915a9454371c978c562717e76d7475b51b1c7d9"
     },
     {
       "path": "src/text2sql/finalization/runner.py",
@@ -389,7 +389,7 @@
     },
     {
       "path": "src/text2sql/finalization/statistics.py",
-      "sha256": "9eb2112e6d16dc8bf190f1759428858e7dd752e96898bd753cdec835f10dea39"
+      "sha256": "25c6b90b75fc7ebbac290bf3edd8e1382d85b98dccdc9194b25a9e8be9ff1a5f"
     },
     {
       "path": "src/text2sql/observability/__init__.py",
@@ -589,7 +589,7 @@
     },
     {
       "path": "tests/test_final_freeze_v2.py",
-      "sha256": "6befe6caa5d8a74ff1088320b68bb731c26765e06cb1673b2c32f5ce47d16142"
+      "sha256": "bceaabc142d3ce683eff93f62ee4966127c191299b218c9c71533727f4194716"
     },
     {
       "path": "tests/test_final_runner.py",
@@ -601,7 +601,7 @@
     },
     {
       "path": "tests/test_final_statistics.py",
-      "sha256": "4dd4b8b45bf03a67df2eb8611401fabc9bb01d9c4c20052cb2b10933b726c61f"
+      "sha256": "f33367b5891676cd29dbe91b8b111704d5a59995ec9ecd261578fb3eebd8f99e"
     },
     {
       "path": "tests/test_groq_provider.py",
@@ -670,7 +670,7 @@
     "B6",
     "B6R"
   ],
-  "source_tree_sha256": "b61a2b1780f84f1251ead1f3281156d39b941acb9b4d5271b4bc4d5012725cc3",
+  "source_tree_sha256": "1c98489e9b57f6f4e7b4ed918bd19b7fadee7793e5fc6d80b456ec146ee3e28f",
   "statistical_plan": {
     "bootstrap_replicates": 10000,
     "bootstrap_seed": 20260919,
@@ -678,7 +678,7 @@
     "multiple_comparison_correction": "holm",
     "paired_test": "exact_mcnemar_two_sided",
     "path": "configs/final/statistical-plan-v2.toml",
-    "sha256": "faa857d3f453cb64001992366ae5629e3585ddc5bc35e09f4b07ae9da7c58351"
+    "sha256": "d954f95a071a4671f8e06475f4a766f59e8529d3a56867eabb704d5878d418fd"
   },
   "status": "frozen"
 }

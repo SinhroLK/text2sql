@@ -111,6 +111,49 @@ class FinalStatisticsTest(unittest.TestCase):
                     expected_ids=("local001", "local002"),
                 )
 
+    def test_report_loader_accepts_explicit_v2_identity(self) -> None:
+        report = {
+            "experiment": {
+                "baseline": "B0",
+                "split": "test",
+                "experiment_id": "final002-b0-test-gpt-oss-120b-v2",
+                "config_sha256": "a" * 64,
+            },
+            "generation_summary": {"input_tokens": 1, "output_tokens": 1},
+            "evaluation": {
+                "split": "test",
+                "expected_ids": ["local001"],
+                "total": 1,
+                "evaluated": 1,
+                "correct": 1,
+                "incorrect": 0,
+                "execution_errors": 0,
+                "comparison_errors": 0,
+                "execution_accuracy": 1.0,
+                "records": [{"result": {
+                    "example_id": "local001",
+                    "correct": True,
+                    "status": "correct",
+                }}],
+            },
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "report.json"
+            path.write_text(json.dumps(report), encoding="utf-8")
+            result = load_arm_report(
+                path,
+                arm="B0",
+                expected_ids=("local001",),
+                expected_config_sha256="a" * 64,
+                expected_experiment_id=(
+                    "final002-b0-test-gpt-oss-120b-v2"
+                ),
+            )
+        self.assertEqual(
+            result.experiment_id,
+            "final002-b0-test-gpt-oss-120b-v2",
+        )
+
     def test_report_loader_keeps_execution_failures_in_denominator(self) -> None:
         records = [
             {"result": {

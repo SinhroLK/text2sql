@@ -146,13 +146,14 @@ def load_arm_report(
     arm: str,
     expected_ids: Sequence[str],
     expected_config_sha256: str | None = None,
+    expected_experiment_id: str | None = None,
 ) -> ArmObservations:
     report_path = Path(path)
     report = _read_json(report_path)
     experiment = report.get("experiment")
     evaluation = report.get("evaluation")
     generation = report.get("generation_summary")
-    expected_experiment_id = (
+    expected_experiment_id = expected_experiment_id or (
         f"final001-{arm.casefold()}-test-gpt-oss-120b-v1"
     )
     if not isinstance(experiment, dict) or (
@@ -412,15 +413,23 @@ def analyze_reports(
     if not isinstance(expected_ids, list) or len(expected_ids) != 104:
         raise AnalysisError("Frozen held-out ID coverage changed")
 
+    freeze_id = plan.get("freeze_id")
+    if freeze_id == "run001-final-evaluation-v1":
+        final_prefix, experiment_suffix = "final001", "v1"
+    elif freeze_id == "run001-final-evaluation-v2.1":
+        final_prefix, experiment_suffix = "final002", "v2"
+    else:
+        raise AnalysisError("Unsupported frozen statistical-plan identity")
+
     report_files = {
         arm: report_root
-        / f"final001-{arm.casefold()}-test-report.json"
+        / f"{final_prefix}-{arm.casefold()}-test-report.json"
         for arm in arms
     }
     expected_paths = set(report_files.values())
     unexpected = sorted(
         path.name
-        for path in report_root.glob("final001-*-test-report.json")
+        for path in report_root.glob(f"{final_prefix}-*-test-report.json")
         if path not in expected_paths
     )
     if unexpected:
@@ -434,7 +443,11 @@ def analyze_reports(
             expected_ids=expected_ids,
             expected_config_sha256=_sha256(
                 root
-                / f"configs/final/final001-{arm.casefold()}-test.toml"
+                / f"configs/final/{final_prefix}-{arm.casefold()}-test.toml"
+            ),
+            expected_experiment_id=(
+                f"{final_prefix}-{arm.casefold()}-test-"
+                f"gpt-oss-120b-{experiment_suffix}"
             ),
         )
         for arm, path in report_files.items()

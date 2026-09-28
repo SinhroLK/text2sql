@@ -23,9 +23,9 @@ class FinalFreezeV2Test(unittest.TestCase):
 
         self.assertEqual(tuple(manifest["selected_arms"]), FINAL_ARMS)
         self.assertEqual(
-            manifest["freeze_id"], "run001-final-evaluation-v2"
+            manifest["freeze_id"], "run001-final-evaluation-v2.1"
         )
-        self.assertEqual(manifest["release_tag"], "text2sql-final-v2")
+        self.assertEqual(manifest["release_tag"], "text2sql-final-v2.1")
         self.assertEqual(manifest["held_out_examples"], 104)
         self.assertEqual(manifest["development_examples"], 31)
         self.assertFalse(manifest["held_out_accessed"])

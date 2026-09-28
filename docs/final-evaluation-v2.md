@@ -38,14 +38,21 @@ metadata. They never contain the API key or raw request/response payload.
 
 ## Identity
 
-- Freeze: `run001-final-evaluation-v2`
-- Release tag: `text2sql-final-v2`
+- Freeze: `run001-final-evaluation-v2.1`
+- Release tag: `text2sql-final-v2.1`
 - Run: `run002-final-evaluation-v2`
 - Output: `artifacts/final/run002-v2/`
 - Configs: `configs/final/final002-*-test.toml`
 - Statistical plan: `configs/final/statistical-plan-v2.toml`
 
 The v1 output directory must not be copied into or used to seed v2.
+
+## Analysis release correction
+
+Release v2.1 corrects the statistical loader so it recognizes the v2 report and
+configuration identities. Prediction generation was already complete before
+this correction; the six append-only checkpoints are unchanged, and the fix
+performs no provider calls.
 
 ## Commands
 

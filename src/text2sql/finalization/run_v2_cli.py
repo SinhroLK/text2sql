@@ -341,6 +341,7 @@ def execute(args: argparse.Namespace) -> dict[str, Any]:
                 arm=arm,
                 expected_ids=expected_ids,
                 expected_config_sha256=configs[arm].config_sha256,
+                expected_experiment_id=configs[arm].experiment_id,
             )
             _emit("run002_v2_score_reused", arm=arm)
             continue

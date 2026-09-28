@@ -63,14 +63,14 @@ def _read_toml(path: Path) -> dict[str, Any]:
 def _validate_plan(plan: dict[str, Any]) -> None:
     if (
         plan.get("schema_version") != 1
-        or plan.get("freeze_id") != "run001-final-evaluation-v2"
+        or plan.get("freeze_id") != "run001-final-evaluation-v2.1"
         or plan.get("status") != "frozen"
         or plan.get("held_out_split") != "test"
         or plan.get("held_out_examples") != 104
         or tuple(plan.get("selected_arms", ())) != FINAL_ARMS
         or plan.get("primary_arm") != "B6R"
         or plan.get("security_arm") != "S1"
-        or plan.get("release_tag") != "text2sql-final-v2"
+        or plan.get("release_tag") != "text2sql-final-v2.1"
     ):
         raise FreezeError("Final statistical plan identity or selected arms changed")
     intervals = plan.get("confidence_intervals")

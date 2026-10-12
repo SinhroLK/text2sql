@@ -1,0 +1,54 @@
+{
+  "arms": [
+    {
+      "arm": "C0",
+      "max_completion_tokens": 1024,
+      "reasoning_effort": "low"
+    },
+    {
+      "arm": "C1",
+      "max_completion_tokens": 3072,
+      "reasoning_effort": "low"
+    },
+    {
+      "arm": "C2",
+      "max_completion_tokens": 3072,
+      "reasoning_effort": "medium"
+    }
+  ],
+  "completion_budget_decision": "4096 plus estimated input exceeded the 7200-token safe quota scenario for two prompts. Use 3072 for C1/C2, preserving every document and schema; freeze before observing outcomes.",
+  "execution_policy": "No predictions are executed by preparation or rehearsal. Paid generation and official scoring require a separate authorized runner.",
+  "max_attempts_per_example": 2,
+  "max_calls": 186,
+  "max_cost_usd": "3.00",
+  "max_total_tokens": 1500000,
+  "model_id": "openai/gpt-oss-120b",
+  "paid_runs_enabled": false,
+  "plan_id": "recovery-baseline-ablation-v1",
+  "planning_rate_ceilings": {
+    "basis": "Engineering reservation ceilings only, not provider prices. Confirm current model prices do not exceed these ceilings before enabling calls.",
+    "input_usd_per_million": "1.00",
+    "output_usd_per_million": "2.00"
+  },
+  "prompt_variant": "simple_schema",
+  "provider_max_retries": 0,
+  "quota_scenario": {
+    "basis": "90% of previously recorded 8000 TPM / 200000 TPD; not verified current account quota",
+    "tokens_per_day": 180000,
+    "tokens_per_minute": 7200
+  },
+  "retrieval_enabled": false,
+  "retry_policy": "At most one retry after explicit HTTP 429 rejection, reserving again; never retry ambiguous failures or incomplete completions. Resume complete responses without calls.",
+  "seed": 42,
+  "selection_protocol": "configs/development/recovery-development-v2.json",
+  "status": "offline_draft_requires_account_confirmation",
+  "temperature": 0.0,
+  "token_bound": "Pinned local o200k ordinary-text count, plus 256 chat-template allowance and 15% margin. Provider template requires confirmation; this is an estimate, not an exact API count.",
+  "tokenizer": {
+    "encoding_source": "https://github.com/openai/tiktoken/blob/main/tiktoken_ext/openai_public.py",
+    "model_encoding_source": "https://github.com/openai/gpt-oss/blob/main/gpt_oss/tokenizer.py",
+    "path": "data/raw/tokenizers/o200k_base.tiktoken",
+    "sha256": "446a9538cb6c348e3516120d7c08b09f57c36495e2acfffe59a5bf8b0cfb1a2d",
+    "url": "https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken"
+  }
+}

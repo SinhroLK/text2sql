@@ -1,0 +1,15 @@
+{
+  "documents": {
+    "RFM.md": "ca6cb781023248ec3d065bd17142c864175741e9dc598c38af613ca2e9ad3556",
+    "baseball_game_special_words_definition.md": "9c82e2acfee3bb4b9683957cdd46ef61ce11ee07a7f3cf1f6409a9960f908643",
+    "calculation_method.md": "dfe12121ce38a8a38c62c3480dc0fadeafcbe134d5bf6f3f6eda216e1b1677de",
+    "f1_overtake.md": "b83e7b52e1672e0b6d34bcfad8122034abac926b75d34c880c210ab1bfc8a046",
+    "haversine_formula.md": "5205954f1ca74ed724d121772e2bf4bc86c2cfc163f6e3fdd6afeec79c33ffec",
+    "music_length_type.md": "d630b183c311d6ac0e80de29263009c546f74e6027286348409c6d0a64ac357b",
+    "projection_calculation.md": "5d4291081fdf5cafeb30c6d8bbad32c85ebdc807c717e95cb30b6b240622b5aa",
+    "spherical_law.md": "214e4074f9f55fd1794903cfa256b9b7d7bdba1dba2e4eb6eb6acca4f08a630e"
+  },
+  "metadata_source_commit": "cafb867313aab4e674652054198f383cf4018943",
+  "policy_version": "task-documents-v1",
+  "source": "Spider2-Lite supplied task documents; local snapshot pinned by content hash"
+}

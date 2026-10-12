@@ -3,9 +3,14 @@ from __future__ import annotations
 import hashlib
 import time
 import uuid
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
-from text2sql.domain import GenerationInput, GenerationResult
+from text2sql.domain import GenerationInput, GenerationResult, Text2SQLExample
+from text2sql.datasets.documents import (
+    DOCUMENT_POLICY_VERSION, TaskDocument, TaskDocumentStore, add_task_documents,
+)
 from text2sql.prompting import (
     FEWSHOT_MSCHEMA_PROMPT_VERSION,
     FewShotExample,
@@ -40,6 +45,14 @@ def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+@dataclass(frozen=True)
+class PreparedGeneration:
+    generation_input: GenerationInput
+    prompt_version: str
+    schema_hash: str
+    metadata: dict[str, Any]
+
+
 class Text2SQLPipeline:
     def __init__(self, provider: SQLProvider) -> None:
         self.provider = provider
@@ -47,7 +60,7 @@ class Text2SQLPipeline:
             tuple[Path, str, MSchemaSamplePolicy], MSchemaExamples
         ] = {}
 
-    def generate(
+    def prepare(
         self,
         question: str,
         database_path: str | Path,
@@ -58,7 +71,8 @@ class Text2SQLPipeline:
         schema_linking_policy: SchemaLinkingPolicy | None = None,
         few_shot_examples: tuple[FewShotExample, ...] = (),
         retrieval_audit: dict[str, object] | None = None,
-    ) -> GenerationResult:
+        documents: tuple[TaskDocument, ...] = (),
+    ) -> PreparedGeneration:
         schema = inspect_sqlite_schema(database_path, db_id=db_id)
         schema_hash = canonical_schema_sha256(schema)
         linking_variants = {
@@ -176,6 +190,9 @@ class Text2SQLPipeline:
         else:
             raise ValueError(f"Unknown prompt variant: {prompt_variant!r}")
 
+        prompt = add_task_documents(prompt, documents)
+        if documents:
+            prompt_version += "+" + DOCUMENT_POLICY_VERSION
         generation_input = GenerationInput(
             question=question,
             prompt=prompt,
@@ -183,28 +200,10 @@ class Text2SQLPipeline:
             model_id=self.provider.model_id,
         )
 
-        started = time.perf_counter()
-        response = self.provider.generate(generation_input)
-        latency_ms = round((time.perf_counter() - started) * 1000)
-        selected_sql = response.candidates[0] if response.candidates else None
-
-        return GenerationResult(
-            run_id=str(uuid.uuid4()),
-            db_id=schema.db_id,
-            question=question,
-            dialect=schema.dialect,
-            provider=self.provider.provider_name,
-            model_id=self.provider.model_id,
+        return PreparedGeneration(
+            generation_input=generation_input,
             prompt_version=prompt_version,
-            prompt_hash=_sha256(prompt),
             schema_hash=schema_hash,
-            generated_sql=response.candidates,
-            selected_sql=selected_sql,
-            validation_status="not_implemented",
-            execution_status="not_executed",
-            latency_ms=latency_ms,
-            input_tokens=response.input_tokens,
-            output_tokens=response.output_tokens,
             metadata={
                 "phase": (
                     4
@@ -230,7 +229,59 @@ class Text2SQLPipeline:
                     if sample_policy is not None
                     else None
                 ),
-                "provider": response.metadata,
                 "retrieval": retrieval_audit,
+                "documents": [document.audit() for document in documents],
+                "document_policy": DOCUMENT_POLICY_VERSION,
             },
+        )
+
+    def generate(
+        self,
+        question: str,
+        database_path: str | Path,
+        db_id: str | None = None,
+        **context: Any,
+    ) -> GenerationResult:
+        prepared = self.prepare(question, database_path, db_id, **context)
+        started = time.perf_counter()
+        response = self.provider.generate(prepared.generation_input)
+        latency_ms = round((time.perf_counter() - started) * 1000)
+        complete = response.metadata.get("completion_complete", True)
+        candidates = response.candidates if complete else ()
+        error = response.metadata.get("error_code")
+        if not candidates and error is None:
+            error = "generation_empty" if complete else "generation_incomplete"
+        return GenerationResult(
+            run_id=str(uuid.uuid4()),
+            db_id=prepared.generation_input.schema.db_id,
+            question=question,
+            dialect=prepared.generation_input.schema.dialect,
+            provider=self.provider.provider_name,
+            model_id=self.provider.model_id,
+            prompt_version=prepared.prompt_version,
+            prompt_hash=_sha256(prepared.generation_input.prompt),
+            schema_hash=prepared.schema_hash,
+            generated_sql=candidates,
+            selected_sql=candidates[0] if candidates else None,
+            validation_status="not_implemented",
+            execution_status="not_executed",
+            latency_ms=latency_ms,
+            input_tokens=response.input_tokens,
+            output_tokens=response.output_tokens,
+            error_category=error,
+            metadata={**prepared.metadata, "provider": response.metadata},
+        )
+
+    def generate_example(
+        self, example: Text2SQLExample, database_path: str | Path, *,
+        document_store: TaskDocumentStore | None = None, **context: Any,
+    ) -> GenerationResult:
+        """Generate with required benchmark context; never silently omit a document."""
+        reference = example.metadata.get("external_knowledge")
+        if reference is not None and document_store is None:
+            raise ValueError("Example requires a pinned task document store")
+        documents = document_store.load(reference) if document_store is not None else ()
+        return self.generate(
+            example.question, database_path, db_id=example.db_id,
+            documents=documents, **context,
         )

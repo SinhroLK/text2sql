@@ -1,0 +1,281 @@
+{
+  "audit_sha256": "844a044cbcff91412e8b5ebb20bbc8b97cdee4a00e42dd51d5d3e2addfc3b469",
+  "cross_split_policy": "E_commerce/electronic_sales are a shared family for reporting; reviewed test is reused, never a fresh holdout.",
+  "decision": "exclude_all_overlap_candidates",
+  "decisions": [
+    {
+      "containment": 1.0,
+      "decision": "exclude",
+      "jaccard": 1.0,
+      "kind": "exact_normalized_schema",
+      "left_pairs": 352,
+      "reason": "exact normalized schema",
+      "right_pairs": 352,
+      "shared_pairs": 352,
+      "target_db_id": "Baseball",
+      "target_split": "test",
+      "training_db_id": "baseball_1"
+    },
+    {
+      "containment": 0.9767441860465116,
+      "decision": "exclude",
+      "jaccard": 0.417910447761194,
+      "kind": "potential_family_overlap",
+      "left_pairs": 199,
+      "reason": "conservative family exclusion despite incomplete identity evidence",
+      "right_pairs": 86,
+      "shared_pairs": 84,
+      "target_db_id": "EU_soccer",
+      "target_split": "test",
+      "training_db_id": "soccer_1"
+    },
+    {
+      "containment": 1.0,
+      "decision": "exclude",
+      "jaccard": 1.0,
+      "kind": "exact_normalized_schema",
+      "left_pairs": 89,
+      "reason": "exact normalized schema",
+      "right_pairs": 89,
+      "shared_pairs": 89,
+      "target_db_id": "Pagila",
+      "target_split": "test",
+      "training_db_id": "sakila_1"
+    },
+    {
+      "containment": 0.75,
+      "decision": "exclude",
+      "jaccard": 0.5853658536585366,
+      "kind": "potential_family_overlap",
+      "left_pairs": 64,
+      "reason": "conservative family exclusion despite incomplete identity evidence",
+      "right_pairs": 66,
+      "shared_pairs": 48,
+      "target_db_id": "chinook",
+      "target_split": "test",
+      "training_db_id": "store_1"
+    },
+    {
+      "containment": 1.0,
+      "decision": "exclude",
+      "jaccard": 0.41228070175438597,
+      "kind": "potential_family_overlap",
+      "left_pairs": 228,
+      "reason": "conservative family exclusion despite incomplete identity evidence",
+      "right_pairs": 94,
+      "shared_pairs": 94,
+      "target_db_id": "f1",
+      "target_split": "development",
+      "training_db_id": "formula_1"
+    },
+    {
+      "containment": 1.0,
+      "decision": "exclude",
+      "jaccard": 1.0,
+      "kind": "exact_normalized_schema",
+      "left_pairs": 64,
+      "reason": "exact normalized schema",
+      "right_pairs": 64,
+      "shared_pairs": 64,
+      "target_db_id": "music",
+      "target_split": "development",
+      "training_db_id": "chinook_1"
+    },
+    {
+      "containment": 1.0,
+      "decision": "exclude",
+      "jaccard": 1.0,
+      "kind": "exact_normalized_schema",
+      "left_pairs": 89,
+      "reason": "exact normalized schema",
+      "right_pairs": 89,
+      "shared_pairs": 89,
+      "target_db_id": "sqlite-sakila",
+      "target_split": "test",
+      "training_db_id": "sakila_1"
+    }
+  ],
+  "excluded_training_databases": [
+    "baseball_1",
+    "chinook_1",
+    "formula_1",
+    "sakila_1",
+    "soccer_1",
+    "store_1"
+  ],
+  "policy_id": "recovery-family-exclusions-v1",
+  "reason": "Conservatively exclude exact and partial name-overlap candidates globally; identity of records or answers is not asserted.",
+  "source_entries_sha256": "82ee39e03792647fa7efeddf1fcd293ca068f0fc879d9a88cc27c8546550389e",
+  "target_families": [
+    {
+      "databases": [
+        "AdventureWorks"
+      ],
+      "family_id": "family-001"
+    },
+    {
+      "databases": [
+        "Airlines"
+      ],
+      "family_id": "family-002"
+    },
+    {
+      "databases": [
+        "Baseball"
+      ],
+      "family_id": "family-003"
+    },
+    {
+      "databases": [
+        "BowlingLeague"
+      ],
+      "family_id": "family-004"
+    },
+    {
+      "databases": [
+        "Brazilian_E_Commerce"
+      ],
+      "family_id": "family-005"
+    },
+    {
+      "databases": [
+        "California_Traffic_Collision"
+      ],
+      "family_id": "family-006"
+    },
+    {
+      "databases": [
+        "Db-IMDB"
+      ],
+      "family_id": "family-007"
+    },
+    {
+      "databases": [
+        "EU_soccer"
+      ],
+      "family_id": "family-008"
+    },
+    {
+      "databases": [
+        "E_commerce",
+        "electronic_sales"
+      ],
+      "family_id": "family-009"
+    },
+    {
+      "databases": [
+        "EntertainmentAgency"
+      ],
+      "family_id": "family-010"
+    },
+    {
+      "databases": [
+        "IPL"
+      ],
+      "family_id": "family-011"
+    },
+    {
+      "databases": [
+        "Pagila",
+        "sqlite-sakila"
+      ],
+      "family_id": "family-012"
+    },
+    {
+      "databases": [
+        "WWE"
+      ],
+      "family_id": "family-013"
+    },
+    {
+      "databases": [
+        "bank_sales_trading"
+      ],
+      "family_id": "family-014"
+    },
+    {
+      "databases": [
+        "chinook"
+      ],
+      "family_id": "family-015"
+    },
+    {
+      "databases": [
+        "city_legislation"
+      ],
+      "family_id": "family-016"
+    },
+    {
+      "databases": [
+        "complex_oracle"
+      ],
+      "family_id": "family-017"
+    },
+    {
+      "databases": [
+        "delivery_center"
+      ],
+      "family_id": "family-018"
+    },
+    {
+      "databases": [
+        "education_business"
+      ],
+      "family_id": "family-019"
+    },
+    {
+      "databases": [
+        "f1"
+      ],
+      "family_id": "family-020"
+    },
+    {
+      "databases": [
+        "imdb_movies"
+      ],
+      "family_id": "family-021"
+    },
+    {
+      "databases": [
+        "log"
+      ],
+      "family_id": "family-022"
+    },
+    {
+      "databases": [
+        "modern_data"
+      ],
+      "family_id": "family-023"
+    },
+    {
+      "databases": [
+        "music"
+      ],
+      "family_id": "family-024"
+    },
+    {
+      "databases": [
+        "northwind"
+      ],
+      "family_id": "family-025"
+    },
+    {
+      "databases": [
+        "oracle_sql"
+      ],
+      "family_id": "family-026"
+    },
+    {
+      "databases": [
+        "school_scheduling"
+      ],
+      "family_id": "family-027"
+    },
+    {
+      "databases": [
+        "stacking"
+      ],
+      "family_id": "family-028"
+    }
+  ]
+}

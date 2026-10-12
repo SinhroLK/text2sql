@@ -201,7 +201,7 @@ class GroqProvider:
             "model": self.model_id,
             "messages": [{"role": "user", "content": generation_input.prompt}],
             "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
+            "max_completion_tokens": self.max_tokens,
             "n": 1,
             "stream": False,
         }
@@ -230,6 +230,8 @@ class GroqProvider:
         choices = response.get("choices")
         if not isinstance(choices, list) or not choices:
             raise GroqProviderError("Groq API response contains no choices")
+        if len(choices) != 1 or not isinstance(choices[0], dict):
+            raise GroqProviderError("Groq API response must contain exactly one choice")
         candidates = tuple(
             message["content"].strip()
             for choice in choices
@@ -238,12 +240,21 @@ class GroqProvider:
             and isinstance(message.get("content"), str)
             and message["content"].strip()
         )
-        if not candidates:
-            raise GroqProviderError("Groq API response contains no SQL candidate text")
         usage = response.get("usage")
         usage = usage if isinstance(usage, dict) else {}
+        finish_reason = choices[0].get("finish_reason")
+        error_code = (
+            "generation_truncated" if finish_reason == "length"
+            else "generation_incomplete" if finish_reason != "stop"
+            else "generation_empty" if not candidates
+            else None
+        )
+        details = usage.get("completion_tokens_details")
+        details = details if isinstance(details, dict) else {}
         return ProviderResponse(
-            candidates=candidates,
+            # Keep unusable output only in the audit metadata. Callers must not
+            # mistake a nonempty partial response for a submittable candidate.
+            candidates=candidates if error_code is None else (),
             input_tokens=_count(usage.get("prompt_tokens")),
             output_tokens=_count(usage.get("completion_tokens")),
             metadata={
@@ -255,6 +266,21 @@ class GroqProvider:
                 "reasoning_effort": self.reasoning_effort,
                 "timeout_seconds": self.timeout_seconds,
                 "endpoint": self.endpoint,
+                "completion_policy": "complete-sql-v1",
+                "finish_reason": finish_reason,
+                "completion_complete": error_code is None,
+                "error_code": error_code,
+                "rejected_candidates": list(candidates) if error_code else [],
+                "system_fingerprint": response.get("system_fingerprint"),
+                "completion_tokens_details": {
+                    key: _count(details[key])
+                    for key in (
+                        "reasoning_tokens", "accepted_prediction_tokens",
+                        "rejected_prediction_tokens",
+                    )
+                    if key in details
+                },
+                "transport_attempts": attempt + 1,
             },
         )
 

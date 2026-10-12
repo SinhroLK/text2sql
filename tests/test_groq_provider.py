@@ -24,7 +24,7 @@ class GroqProviderTest(unittest.TestCase):
         def transport(endpoint, headers, body, timeout):
             captured.update(headers=headers, payload=json.loads(body))
             return json.dumps({
-                "choices": [{"message": {"content": " SELECT 1 "}}],
+                "choices": [{"finish_reason": "stop", "message": {"content": " SELECT 1 "}}],
                 "usage": {"prompt_tokens": 12, "completion_tokens": 3},
             }).encode()
 
@@ -37,6 +37,8 @@ class GroqProviderTest(unittest.TestCase):
         self.assertEqual(captured["payload"]["model"], "test-model")
         self.assertEqual(captured["payload"]["seed"], 42)
         self.assertEqual(captured["payload"]["reasoning_effort"], "low")
+        self.assertEqual(captured["payload"]["max_completion_tokens"], 1024)
+        self.assertNotIn("max_tokens", captured["payload"])
         self.assertEqual(captured["headers"]["Authorization"], "Bearer test-secret")
 
     def test_default_transport_uses_official_sdk(self) -> None:
@@ -44,7 +46,7 @@ class GroqProviderTest(unittest.TestCase):
             {
                 "id": "request-1",
                 "model": "test-model",
-                "choices": [{"message": {"content": "SELECT 1"}}],
+                "choices": [{"finish_reason": "stop", "message": {"content": "SELECT 1"}}],
                 "usage": {"prompt_tokens": 4, "completion_tokens": 2},
             }
         )
@@ -128,7 +130,7 @@ class GroqProviderTest(unittest.TestCase):
             attempts.append(1)
             if len(attempts) < 3:
                 raise GroqProviderError("temporary transport failure", retryable=True)
-            return b'{"choices":[{"message":{"content":"SELECT 1"}}]}'
+            return b'{"choices":[{"finish_reason":"stop","message":{"content":"SELECT 1"}}]}'
 
         response = GroqProvider(
             model_id="test-model",
@@ -139,6 +141,44 @@ class GroqProviderTest(unittest.TestCase):
         ).generate(INPUT)
         self.assertEqual(response.candidates, ("SELECT 1",))
         self.assertEqual((len(attempts), delays), (3, [1, 2]))
+        self.assertEqual(response.metadata["transport_attempts"], 3)
+
+    def test_incomplete_outputs_are_audited_without_candidate_or_regeneration(self) -> None:
+        for reason in ("length", "content_filter", "tool_calls", None):
+            with self.subTest(reason=reason):
+                calls = []
+
+                def transport(*_):
+                    calls.append(1)
+                    return json.dumps({
+                        "choices": [{"finish_reason": reason,
+                                     "message": {"content": "SELECT name FROM"}}],
+                        "usage": {"prompt_tokens": 23, "completion_tokens": 1024,
+                                  "completion_tokens_details": {"reasoning_tokens": 900}},
+                        "system_fingerprint": "test-backend",
+                    }).encode()
+
+                response = GroqProvider(model_id="fixture", api_key="test",
+                                        transport=transport, max_retries=3).generate(INPUT)
+                self.assertEqual(response.candidates, ())
+                self.assertEqual(calls, [1])
+                self.assertFalse(response.metadata["completion_complete"])
+                self.assertEqual(response.metadata["finish_reason"], reason)
+                self.assertEqual(response.metadata["rejected_candidates"], ["SELECT name FROM"])
+                self.assertEqual((response.input_tokens, response.output_tokens), (23, 1024))
+                self.assertEqual(response.metadata["completion_tokens_details"], {"reasoning_tokens": 900})
+                self.assertEqual(response.metadata["system_fingerprint"], "test-backend")
+
+    def test_empty_stopped_completion_retains_usage_as_generation_failure(self) -> None:
+        response = GroqProvider(
+            model_id="fixture", api_key="test", transport=lambda *_: json.dumps({
+                "choices": [{"finish_reason": "stop", "message": {"content": " "}}],
+                "usage": {"completion_tokens": 123},
+            }).encode(),
+        ).generate(INPUT)
+        self.assertEqual(response.candidates, ())
+        self.assertEqual(response.output_tokens, 123)
+        self.assertEqual(response.metadata["error_code"], "generation_empty")
 
 
 if __name__ == "__main__":

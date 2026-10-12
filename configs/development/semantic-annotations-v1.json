@@ -1,0 +1,132 @@
+{
+  "analysis_only": true,
+  "development_b6r": {
+    "local009": {
+      "findings": [
+        {
+          "confidence": "high",
+          "evidence": "Question requests route distance, but SQL takes aircraft range rather than a distance between airport coordinates.",
+          "label": "wrong_measure"
+        }
+      ],
+      "sql_sha256": "40231f0089c26ce910253e3eac7be14d5cf66716de08a25c7b18d9c965fe9949"
+    },
+    "local010": {
+      "findings": [
+        {
+          "confidence": "high",
+          "evidence": "SQL is a constant zero count without city pairs, distance computation, or buckets.",
+          "label": "question_not_implemented"
+        }
+      ],
+      "sql_sha256": "223a40ac5fc107522f69dcb42770397d10dd0a4de1065de5607de926e0eced6f"
+    },
+    "local068": {
+      "findings": [
+        {
+          "confidence": "high",
+          "evidence": "SQL nests SUM window evaluation inside LAG; saved SQLite outcome reports misuse of window function SUM().",
+          "label": "window_function_misuse"
+        }
+      ],
+      "sql_sha256": "f2bd7a08550f22e70abb60f8cd494117c4f9c119d0893fb9e90ae114084fba91"
+    },
+    "local070": {
+      "findings": [
+        {
+          "confidence": "suspected",
+          "evidence": "ROW_NUMBER operates on city records without first choosing exactly one record per date; duplicate dates can change consecutive-day groups.",
+          "label": "grain"
+        }
+      ],
+      "sql_sha256": "a550d7fbe046b15ec3be788845cac1a0634c74f31767f21755b072d95d473887"
+    },
+    "local071": {
+      "findings": [
+        {
+          "confidence": "suspected",
+          "evidence": "Consecutive-day detection uses city rows without DISTINCT country/date before LAG, so repeated dates can break groups.",
+          "label": "grain"
+        }
+      ],
+      "sql_sha256": "776665736c7f75c16b2a125cd6c8c0e8734f6496e64706502e6cb7bb1bca6fd8"
+    },
+    "local167": {
+      "findings": [
+        {
+          "confidence": "high",
+          "evidence": "Month-day tests on term endpoints do not establish whether a multi-year interval contains December 31.",
+          "label": "date_logic"
+        }
+      ],
+      "sql_sha256": "5a232daf4d2cdd68410d74a30ac20fe0e3e735d161e0a38f6f3efe600a8507c6"
+    },
+    "local169": {
+      "findings": [
+        {
+          "confidence": "high",
+          "evidence": "Retention probes an anniversary minus one day rather than December 31; saved execution also hit its resource limit.",
+          "label": "date_logic"
+        }
+      ],
+      "sql_sha256": "7373171953a02b978bdb196989b6de002c130bc202d6a68733fd074f9a12141c"
+    },
+    "local309": {
+      "findings": [
+        {
+          "confidence": "suspected",
+          "evidence": "SUM over per-race standings may accumulate already cumulative season totals; requires source-value verification, not asserted as proven.",
+          "label": "aggregation"
+        }
+      ],
+      "sql_sha256": "70d077b096ace208d68e41077c82d875f0b282d3d3650f9390328751b9ac2dab"
+    },
+    "local335": {
+      "findings": [
+        {
+          "confidence": "high",
+          "evidence": "SQL minimizes constructor-season totals; question asks about drivers with the fewest positive season points and then their constructors.",
+          "label": "grain"
+        }
+      ],
+      "sql_sha256": "53798a21420935471738d42abf0572045cc640823f181026663ab6923bfddb79"
+    },
+    "local344": {
+      "findings": [
+        {
+          "confidence": "high",
+          "evidence": "Pit-stop join uses race and driver without lap, multiplying lap rows for drivers with multiple stops; subsequent CASE does not remove those rows.",
+          "label": "join_fanout"
+        }
+      ],
+      "sql_sha256": "c74b48ea2bb90fa246f72b4d6dff9a3d6d4920cdf2a3f1168c020a39500824d4"
+    },
+    "local354": {
+      "findings": [
+        {
+          "confidence": "high",
+          "evidence": "Output returns drive segments and does not explicitly compare constructors at a driver-season first and last participating races.",
+          "label": "entity_identity"
+        }
+      ],
+      "sql_sha256": "18a36642744464f4deb140f8e8aa8a6b7985c5e3e8e44f069411b572ff7d8181"
+    },
+    "local356": {
+      "findings": [
+        {
+          "confidence": "high",
+          "evidence": "LAG is partitioned by driver only, omitting race_id, so consecutive observations can cross races.",
+          "label": "entity_identity"
+        },
+        {
+          "confidence": "high",
+          "evidence": "The SQL excludes pit stops and lap one but never excludes retirements requested by the question.",
+          "label": "population_filter"
+        }
+      ],
+      "sql_sha256": "3267caf4b682ec3df61dd0b8679c39f918e49161e0c19cadf616b7bb2ce5fb8a"
+    }
+  },
+  "method": "Manual inspection of saved development B6R questions, SQL, and execution outcomes. No new model calls or query executions.",
+  "version": "semantic-annotations-v1"
+}

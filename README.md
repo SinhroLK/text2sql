@@ -2,6 +2,25 @@
 
 Reproducible project foundation for the master thesis **Natural Language to SQL Translation Using Large Language Models**.
 
+**Current status (3 October 2026):** Final evaluation v2 is complete: B6R scores
+34/104 (32.69%). [Roadmap 4.4](docs/project-plan-roadmap.md) now prioritizes
+completion/document fixes, semantic planning, grounded values and joins, bounded
+repair, and a separately versioned evaluation. See the [project review](docs/project-review-2026-10-02.md)
+for evidence and the [v2 evaluation record](docs/final-evaluation-v2.md) for the
+completed run. Earlier development-stage accounts below describe the test boundary
+at that time; the 104-example test set has since been evaluated and reviewed.
+
+The [first recovery implementation](docs/development-recovery.md) rejects incomplete
+completions, propagates pinned task documents, and prepares a schema-family audit
+without model calls. The [offline handoff](docs/free-work-handoff.md) now adds
+enforced family exclusions, saved-error diagnostics, bounded request/resume controls,
+and three baseline configurations. All 281 offline tests pass; all 31
+development prompts are prepared, including seven with documents. No new accuracy
+measurement exists yet. The tested batch CLI now supports preparation, free-tier
+generation/resume, and separate local scoring. Follow the
+[experiment commands](docs/run-recovery-experiment.md). Real API calls require
+explicit CLI flags; no model requests have been made during implementation.
+
 This project foundation uses a deterministic mock provider and a small SQLite fixture for executable smoke tests. `DATA-001` freezes the Spider2-Lite SQLite benchmark protocol, `DATA-003` provides its checksum-gated metadata loader, `EVAL-001` provides structured execution comparison, `EVAL-003` provides the official gold-result runner, SCHEMA-002 provides deterministic M-Schema prompts, LINK-001 records the completed linked-M-Schema B6 experiment, LINK-002 provides a recall-repaired B6R arm, RET-001 provides a checksum-gated Spider 1.0 train-only retrieval index, RET-002 provides completed B3/B4 few-shot experiments, DSPY-001 records the completed B5 optimization and development run, and SAFE-001 provides strict SQLite query validation against the canonical schema. The strict reference-SQL `EVAL-002` path remains optional.
 
 ## Requirements
@@ -366,3 +385,7 @@ Re-score completed B6R (no provider calls with the complete checkpoint):
 Prediction/report SHA-256 values are `46664f819c...6577` and
 `aaa130ec8e...2fc`. See **docs/schema-linking.md** for both frozen policies,
 comparative analysis, failures, limitations, and full hashes.
+
+## Revised SQLite prompts
+
+The next experiment uses versioned prompts with database value evidence and SQL correctness guidance. See [grounded prompt changes, testing, and run commands](docs/grounded-prompts.md). The user runs all model API requests; local preparation, mocks, and scoring remain offline.

@@ -1,15 +1,30 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 3.14
-**Datum:** 19. septembar 2026.
-**Status projekta:** Faze 0-6 i RUN-001 su `DONE`. Faza 7 je `IN PROGRESS`: šest finalnih arm-ova, statistički protokol i deterministički freeze manifest su zaključani. Sledeći je RUN-002; semantičko planiranje/B7P ostaje odloženo.
-**Poslednja provera:** RUN-001 closeout — svih 209 offline testova prolazi, freeze verifier reprodukuje manifest; provider nije pozvan i nema held-out rezultata. Detalji: [final evaluation](final-evaluation.md).
+**Verzija plana:** 4.6
+**Datum:** 11. oktobar 2026.
+**Status projekta:** Faze 0-6, RUN-001 i RUN-002 su `DONE`. Originalni finalni run v2 ima svih 624 predikcija i statističku analizu; B6R je najbolji sa 34/104 (32,69%). Faza 7 ostaje `IN PROGRESS` zbog preostalog analitičkog closeout-a. Aktivni nastavak su nove Faze 7A-7E: protokol i dijagnostika, kompletan ulaz/izlaz modela, semantička tačnost, ograničena korekcija i nova finalna evaluacija. Semantičko planiranje je vraćeno u aktivni backlog.
+**Poslednja provera:** 11. oktobar — 302/302 offline testova prolazi. Originalni `recovery-live001` je završen i bodovan: C0 7/31, C1 5/31, C2 9/31; predefinisano pravilo zadržava C0 jer C2 ima samo dva neto dobitka. Nova verzija prompta `grounded-sqlite-v2` dodaje stvarne vrednosti, SQLite mogućnosti i SQL semantičke provere uz kompletnu šemu i dokumente. Svih 31 promptova prolazi lokalni audit; najveća rezervacija zahteva je 7.176 tokena u okviru limita 7.200. Mock rehearsal svih 93 zahteva prolazi uz blokiranu mrežu, a ponavljanje ne menja journal. `recovery-grounded002` je pripremljen bez API poziva; nova tačnost još nije izmerena. Detalji: [novi promptovi i komande](grounded-prompts.md).
+
+**Sledeći konkretan rad:** korisnik pokreće `generate --run-dir artifacts/development/recovery-grounded002 --allow-api --confirm-free-plan --wait`, zatim lokalni `score`. Direktorijum je već pripremljen; ne ponavljati `prepare`. Uporediti nove i stare rezultate za iste C0/C1/C2 postavke. Odvojeno ostaje audit validatora zbog ranije uočenih odbijanja SQL-a koji SQLite može da kompajlira. Nova finalna evaluacija i semantic planner/repair zavise od ovih nalaza.
+
+**API izvršavanje:** sve model API pozive pokreće isključivo korisnik; asistent priprema kod/komande i radi lokalne testove. Raniji v1 probe `recovery-grounded001` je zaustavljen: dva neuspeha konekcije i jedan završen odgovor, bez zaključka o tačnosti. Journal i izvorni promptovi su sačuvani; taj direktorijum se ne nastavlja sa novim kodom. Plaćeni koraci zahtevaju prethodno obaveštenje korisniku, bez automatskog upgrade-a ili paid fallback-a.
+
+**API pozivi ne znače obavezno plaćanje:** `openai/gpt-oss-120b` je dostupan na Groq Free planu. Objavljeni limiti su 30 zahteva/min, 1.000 zahteva/dan, 8.000 tokena/min i 200.000 tokena/dan; proveriti stvarne limite organizacije pre run-a. Planiranih 93 početna zahteva može se rasporediti preko više dana, uz pauzu i resume umesto upgrade-a. [Zvanični Groq limiti](https://console.groq.com/docs/rate-limits). Podrazumevani nastavak je bez plaćanja; $3 iz ranijeg draft-a nije potrebna uplata niti odobrenje troška. Plaćeni plan/trošak zahteva zasebno obaveštenje i odobrenje korisnika. Postojeći `paid_runs_enabled` flag istorijski meša live pristup i trošak; runner mora jasno razdvojiti dozvolu API poziva od dozvole plaćanja. Ovaj dokumentacioni update ne omogućava niti pokreće API pozive.
+
+Prethodni run-ovi, freeze-ovi i istorijski dnevnik ostaju dokaz ranijih odluka. Novi plan ima prednost nad njihovim tadašnjim instrukcijama „sledeće” i „test je zatvoren”; postojeći test je sada otvoren i pregledan. Metodološka odluka je zabeležena u [ADR-021](decisions.md#adr-021---prioritize-semantic-correctness-after-the-completed-final-evaluation).
 
 ### Istorija verzija
 
 | Verzija | Datum | Promena |
 |---|---|---|
+| 4.6 | 11. oktobar 2026. | Završen baseline 7/31, 5/31, 9/31; grounded-sqlite-v2, 302 testa, audit 31 prompta i 93-request offline rehearsal; sve model API pozive pokreće korisnik. |
+| 4.5 | 3. oktobar 2026. | Korisnikov live run 47/93; ispravljen dnevni quota accounting uz očuvanje odgovora i operational amendment; 285 testova; nastavak istog run-a, zatim scoring. |
+| 4.4 | 3. oktobar 2026. | Runnable Free CLI: prepare/generate-resume/status/score; zamrznuti resursi i execution limiti, 281 test, 93-request mock rehearsal; bez Groq poziva ili novih model skorova. |
+| 4.3 | 3. oktobar 2026. | Ispravljeno API = paid: EXP-002 može koristiti Groq Free uz pacing/resume; runner integracija i testiranje ostaju besplatan sledeći zadatak; $3 nije obavezna uplata. |
+| 4.2 | 3. oktobar 2026. | Offline nastavak: DATA-004/005 i početni SEM-001 corpus DONE; OPS/EXP/REPRO IN PROGRESS; 454 exclusions, 155+104 diagnostic records, tri disabled konfiguracije, 266 testova, bez model poziva. |
+| 4.1 | 3. oktobar 2026. | LLM-003/CTX-001 DONE; DATA-004/005 IN PROGRESS; offline protokol, 31 prompt i family audit; 240 testova, bez novih model poziva/skorova. |
+| 4.0 | 2. oktobar 2026. | Evidentiran završen RUN-002 v2; review 34/104 i 49 semantic/result mismatch grešaka; aktivirane Faze 7A-7E, SEM-001/002 i GEN-001; novi taskovi za truncation, dokumente, schema-family audit, grounding, repair i novu evaluaciju. |
 | 3.14 | 19. septembar 2026. | RUN-001 DONE: šest finalnih arm-ova, unapred definisana statistika, deterministički manifest i 209 testova. Sledeći je RUN-002. |
 | 3.13 | 19. septembar 2026. | SEC-001/SEC-002 DONE: checksumovan 16-case corpus, S0/S1 guardrails/report, 198 testova. Sledeća je Faza 7. |
 | 3.12 | 14. septembar 2026. | REF-001 DONE: verifikovan B7 5/31, sa 26 generation failures; checksum manifest, 193 testa i closeout. Sledeća je bezbednosna evaluacija, Faza 6. |
@@ -70,7 +85,7 @@ Statusi zadataka:
 
 Razviti reproduktivan i bezbedan Text-to-SQL sistem koji prima pitanje na prirodnom jeziku i metapodatke o bazi, bira relevantne delove šeme i few-shot primere, generiše SQL, proverava ga i kontrolisano ga izvršava u sandbox okruženju.
 
-Sistem treba eksperimentalno da pokaže doprinos sledećih komponenti:
+Sistem treba eksperimentalno da proceni doprinos sledećih komponenti, uključujući negativne rezultate; završetak komponente ne podrazumeva poboljšanje tačnosti:
 
 1. uključivanje šeme baze u prompt;
 2. M-Schema reprezentacija;
@@ -79,6 +94,10 @@ Sistem treba eksperimentalno da pokaže doprinos sledećih komponenti:
 5. extractive schema linking;
 6. validacija, izbor kandidata i korekcija SQL-a;
 7. bezbednosne kontrole pre izvršavanja.
+8. dostupna dokumentacija, relevantne vrednosti i proverene JOIN veze;
+9. eksplicitni semantički plan i provere izvršivog, ali pogrešnog SQL-a.
+
+Novi cilj je merljivo poboljšanje u odnosu na korigovani baseline, uz prihvatljivu cenu i verodostojnu evaluaciju. Plan ne garantuje određeni procenat tačnosti. U postojećem B6R rezultatu 49/70 neuspeha su izvršivi upiti sa pogrešnim rezultatom; samo popravka sintakse nije dovoljan kriterijum uspeha.
 
 ### 2.2 Van osnovnog obima
 
@@ -100,6 +119,7 @@ Sledeće stavke nisu deo minimalno uspešnog master projekta i implementiraju se
 | RQ3 | Koliko similarity-based few-shot i DSPy optimizacija poboljšavaju statički prompt? | Execution Accuracy, cena, latencija |
 | RQ4 | Koliko verifier/refiner povećava tačnost i popravlja nevalidne upite? | Repair Success Rate, Pass@k, Execution Accuracy |
 | RQ5 | Koliko guardrails smanjuju uspešnost napada bez odbijanja legitimnih pitanja? | Attack Success Rate, Unsafe Query Rate, False Positive Rate |
+| RQ6 | Koliko dokumentacija, value/join grounding i semantički plan popravljaju značenje početnog SQL upita? | Execution Accuracy, non-empty correctness, semantičke kategorije, dobijeni/izgubljeni primeri |
 
 ## 4. Ciljna arhitektura
 
@@ -108,14 +128,14 @@ Arhitektura je podeljena na offline istraživački deo i online runtime. Offline
 ```mermaid
 flowchart TD
     subgraph OFF["Offline istraživanje"]
-        A["Dataset i DB metapodaci"] --> B["M-Schema i retrieval indeks"]
-        B --> C["DSPy optimizacija"]
-        C --> D["Verzionisani prompt i konfiguracija"]
+        A["Podaci, schema-family audit i odvojen holdout"] --> B["Dokumenti, šema, vrednosti i JOIN evidence"]
+        B --> C["Kontrolisane development ablation studije"]
+        C --> D["Verzionisani prompt, model, budžet i konfiguracija"]
     end
     subgraph ON["Online runtime"]
         E["Pitanje korisnika"] --> F["Input guardrails"]
         F --> G["Recall-first schema evidence"]
-        G --> H["Semantički plan i SQL skeleton retrieval"]
+        G --> H["Semantički plan; retrieval opciono"]
         H --> I["First-pass SQL generator"]
         I --> J["AST/semantic validator i candidate ranker"]
         J --> K["Ograničeni refiner"]
@@ -131,13 +151,16 @@ flowchart TD
 2. Input guard proverava prazan ili predugačak unos, PII i obrasce prompt injection napada.
 3. Recall-first schema evidence builder zadržava kompletan kompaktni inventar identifikatora i dodaje detalje samo za najrelevantnije tabele; reprezentativne vrednosti se uključuju selektivno, ne podrazumevano.
 4. Semantički planner eksplicitno određuje izlazne kolone, izvore, JOIN putanje, filtere, agregacije, vremensku logiku, sortiranje/limit i posebne konstrukcije kao što su rekurzija ili skupovne operacije.
-5. Retriever koristi tip operatora i SQL skeleton plana da pronađe strukturno slične Spider 1.0 train primere bez curenja Spider2 podataka.
+5. Ako je retrieval uključen u konfiguraciju, koristi tip operatora i SQL skeleton plana da pronađe strukturno slične trening primere koji prolaze schema-family/provenance firewall.
 6. First-pass composer dobija pitanje, provereni semantički plan, schema evidence i mali broj strukturnih demonstracija i generiše jedan SQL kandidat.
-7. Determinističke provere potvrđuju read-only AST, SQLite dijalekt, postojeće identifikatore, povezivost JOIN grafa i pokrivenost obaveznih stavki plana.
-8. Kandidat se probno izvršava u read-only sandboxu sa timeoutom i ograničenjem redova.
-9. Tek ako single-query B7P nadmaši zamrznute baseline-e, B7 generiše do tri različita kandidata i rangira ih bez pristupa gold rezultatu.
-10. Ako nijedan kandidat ne prođe, refiner dobija samo sanitizovanu grešku i najviše jednom pokušava korekciju.
-11. Rezultat, plan, kandidat, razlog izbora, latencija, tokeni, cena i hash konfiguracije upisuju se u audit log.
+7. Provider odgovor mora imati zabeležen completion status; nepotpun SQL nije kompletna predikcija. Unapred definisana politika ograničava eventualno povećanje budžeta/ponavljanje, zadržava pokušaje i razlikuje truncation od odbijenog HTTP zahteva.
+8. Determinističke provere potvrđuju read-only AST, SQLite dijalekt, postojeće identifikatore, povezivost JOIN grafa i pokrivenost obaveznih stavki plana.
+9. Kandidat se probno izvršava u read-only sandboxu sa timeoutom i ograničenjem redova.
+10. Nova repair varijanta ima najviše jednu korekciju na osnovu konkretne sanitizovane greške ili proverljive povrede plana, čak i kada SQL može da se izvrši. Gold rezultat nije ulaz refiner-a.
+11. Tek posle merljivog poboljšanja početnog upita opciona nova multi-candidate varijanta generiše do tri različita plana/kandidata. Završeni B7/REF-001 ostaje istorijski B6R-based eksperiment.
+12. Rezultat, plan, izvori dokumentacije/evidence-a, completion status, svi pokušaji, razlog izbora, ukupna latencija sa čekanjem, tokeni, cena i hash konfiguracije upisuju se u audit log.
+
+Ovo je ciljna arhitektura, ne tvrdnja o trenutnoj implementaciji: finalni B6R sada generiše jedan upit bez integrisanog planera, SAFE validacije ili repair-a. Dokumenti se dodaju uz korak 3; proverene veze i relevantne vrednosti imaju odvojeno poreklo i budžet. Retriever iz koraka 5 je opciona ablation komponenta i nije preduslov za prvi planer.
 
 ## 5. Moduli sistema
 
@@ -269,12 +292,26 @@ GenerationResult(
 | B5 | B4 + DSPy optimizovan program | meri automatizovanu optimizaciju prompta |
 | B6 | B2 + extractive schema linking (frozen prototype) | meri fokusiranje šeme i broj tokena |
 | B6R | B6 recall repair + full compact schema | meri da li zaštita identifier recall-a popravlja B6 |
-| B7P | B6R evidence + typed semantic plan + SQL-skeleton retrieval + jedan kandidat | meri kvalitet boljeg početnog upita pre repair-a |
-| B7 | Najbolji zamrznuti B7P + tri kandidata + validator/ranker + najviše jedan repair | meri dodatnu vrednost test-time izbora i korekcije |
-| S0 | B7 bez bezbednosnih kontrola, samo u izolovanom sandboxu | security baseline |
-| S1 | B7 + input i output guardrails | meri zaštitu i false positive stopu |
+| B7P | Planirana nova single-query varijanta sa semantičkim planom; retrieval nije obavezan | development rad GEN-001, bez prepisivanja ranijih arm-ova |
+| B7 | Završeni B6R + tri strategije + validator/ranker + najviše jedan repair | istorijski REF-001: 5/31, operativno degradiran run |
+| S0 | SAFE-001 + SAFE-002 nad zadatim sintetičkim kandidatima | završeni provider-free security baseline |
+| S1 | S0 + input i output guardrails | završena fixture evaluacija, nije end-to-end LLM test |
 
-Modeli se porede nad istim zamrznutim primerima, promptovima i parametrima. Pre B7P live run-a, `MODEL-001` poredi aktuelni model sa najviše dve unapred zamrznute alternative; dostupnost se proverava tek pri zamrzavanju konfiguracije, bez menjanja modela usred run-a.
+Stari B0-B7 rezultati i konfiguracije ostaju istorijski. Novi arm-ovi dobijaju nove ID-jeve, direktorijume, source/config/resource hash-eve i zajedničku SQLite/task instrukciju. Korigovani compact-schema baseline koristi iste dozvoljene dokumente i isti provider/error ugovor kao njegovi tretmani. Arhitekturna poređenja fiksiraju model i generation parametre; model-setting poređenja menjaju po jedan parametar.
+
+Minimalni redosled novih development poređenja:
+
+| Korak | Kontrola / promena | Uslov |
+|---|---|---|
+| C0 | Kompletna compact šema, dozvoljeni dokumenti, proverena completion evidencija | LLM-003, CTX-001, OPS-001; dokumentacija i politika odgovora su zajedničke svim narednim arm-ovima |
+| C1 | Veći completion budget pri istom reasoning effort-u | početni kandidat 4.096; iznos se zamrzava tek posle quota preflight-a |
+| C2 | Reasoning effort pri istom completion budget-u | low/medium kao početno poređenje; high ili 8.192 tokena samo kao posebno planiran nastavak |
+| C3 | Relevantne vrednosti i proverene JOIN veze; linker promene odvojeno | odvojene ablation konfiguracije VALUE-001, JOIN-001 i LINK-003 |
+| C4 / B7P | Typed semantic plan nad izabranim, fiksiranim kontekstom | SEM-002 i GEN-001; bez obaveznog novog retriever-a |
+| C5 | Najviše jedan execution/semantic repair | REF-002; odvojeni first-pass i finalni rezultati |
+| C6 / C7 | Strukturni retrieval / različiti kandidati | opcioni, međusobno odvojeni RET-003 i REF-003 eksperimenti |
+
+C0-C7 su planske oznake, ne postojeće konfiguracije. Tačni ID-jevi, broj verzija/seed-ova, maksimalni pozivi/tokeni/trošak i pravilo selekcije zamrzavaju se pre svakog plaćenog poređenja. Veći model search (`MODEL-001`) i nova DSPy optimizacija ostaju opcioni posle poboljšanja početnog upita; dostupnost modela proverava se pri zamrzavanju, bez zamene usred run-a.
 
 ## 9. Metrike i analiza grešaka
 
@@ -296,6 +333,11 @@ Modeli se porede nad istim zamrznutim primerima, promptovima i parametrima. Pre 
 - broj ulaznih i izlaznih tokena;
 - procenjena cena po tačnom odgovoru;
 - veličina šeme pre i posle filtriranja.
+- completion/truncation stopa i provider retry događaji odvojeno od modelskih grešaka;
+- broj dobijenih i izgubljenih primera, non-empty correctness i repair regresije;
+- per-database/family rezultati, question-micro i database-macro accuracy;
+- ukupna wall-clock latencija sa quota čekanjima i svi naplaćeni pokušaji;
+- cluster bootstrap po bazi/familiji kao dodatna, unapred definisana analiza uz primarni benchmark score.
 
 ### 9.3 Kategorije grešaka
 
@@ -313,6 +355,12 @@ Svaki neuspeh dobija jednu primarnu kategoriju:
 10. neispravno bezbednosno odbijanje;
 11. opasan upit koji je prošao zaštitu;
 12. nejasno ili višeznačno pitanje.
+13. nepotpun provider izlaz/truncation;
+14. nedostajući dokument ili nepotkrepljena definicija;
+15. pogrešan entitet, izlazni grain ili imenilac;
+16. provider/transport greška ili resource-limit odbijanje, odvojeno od semantičkih grešaka.
+
+SEM-001 čuva primarnu kategoriju, sekundarne oznake, dokaz i sigurnost anotacije; nejasan uzrok ostaje `unclassified`, umesto automatskog zaključivanja iz samog mismatch-a. Gold je dozvoljen evaluatoru/dijagnostici prema split politici, nikada generatoru, retrieval-u ili runtime selektoru. Oracle-union/pass@k je retrospektivna metrika, ne ostvareni selector score.
 
 ## 10. Bezbednosna arhitektura
 
@@ -423,7 +471,7 @@ Zadaci:
 - `DONE` - napraviti indeks isključivo od Spider 1.0 trening primera;
 - `DONE` - implementirati i pokrenuti random few-shot baseline B3; 31/31, 4 tačna i 23 executable;
 - `DONE` - implementirati i pokrenuti similarity retrieval B4; 31/31, 5 tačnih i 23 executable;
-- `DONE` - dodati proveru protiv Spider2 ID, database i normalized-question curenja na nivou kompletnog development/test metadata firewalla;
+- `DONE` - dodati proveru protiv Spider2 ID, tačnih case-folded database imena i normalized-question curenja; schema-family provera nije bila deo tog ugovora i dodaje se kroz DATA-005;
 - `DONE` - definisati DSPy program i execution-based metriku;
 - `DONE` - izvršiti MIPROv2 instruction-only optimizaciju nad DB-disjoint 21/10 development podelom; najbolji validation score je 2/10 (20,00%), a izabran je originalni/default program;
 - `DONE` - zamrznuti, verifikovati i pokrenuti B5 nad 31/31 development primera: 4/31 (12,90%), 28/31 executable; B5 ne nadmašuje B4 5/31 ni B6R 6/31.
@@ -436,10 +484,10 @@ Zadaci:
 **Zavisnost:** Faze 3 i 4
 **Status:** `DONE`
 
-**Trenutna odluka:** semantičko planiranje, SQL-skeleton retrieval, MODEL-001 i
-single-query B7P nisu deo aktivne Faze 5. Njihova ranija implementacija je
-uklonjena sa `master` grane i sačuvana van aktivnog roadmap-a za mogući kasniji
-povratak. Faza 5 nastavlja originalni bezbednosni i verifier redosled.
+**Istorijska odluka:** Faza 5 završena je originalnim SAFE/REF redosledom;
+ranija semantic-plan/B7P implementacija uklonjena je sa `master` grane.
+Plan 4.0 aktivira SEM-001/002 i GEN-001 u Fazi 7C kao novi rad. Arhivirani
+kod može biti pregledan, ali se ne smatra implementiranim ili verifikovanim.
 
 #### 5A - `SAFE-001`: SQL AST validator
 
@@ -480,10 +528,9 @@ legitimni read-only SQLite upiti prolaze; sandbox ne menja izvornu bazu; svaki
 candidate, izbor i repair pokušaj je auditovan; B7 ima zamrznut 31/31
 development checkpoint i EVAL-003 report.
 
-**Odloženo posle originalnog roadmap-a:** `SEM-001`, `SEM-002`, `RET-003`,
-`MODEL-001` i `GEN-001/B7P`. Njihov povratak zahteva novu eksplicitnu odluku i
-posebno verzionisanu granu/konfiguraciju. Ne pokretati plaćene B7P pozive tokom
-aktivnog SAFE/REF rada.
+**Nastavak po planu 4.0:** SEM-001/002 i GEN-001 su obavezni razvojni prioriteti;
+RET-003 i MODEL-001 su opcioni. ADR-021 beleži povratak semantičkog rada.
+Nove konfiguracije ne prepisuju zaključani B7/REF-001 ili finalni B6R.
 
 ### Faza 6 - Bezbednosna evaluacija
 
@@ -512,35 +559,116 @@ Zadaci:
 **Zavisnost:** Faze 1-6
 **Status:** `IN PROGRESS`
 
-**Rezultat RUN-001:** B0/B1/B2/B4/B6/B6R, B6R kao primary, statistički
-plan i source/config freeze manifest su zaključani bez provider poziva ili
-held-out rezultata. Sledeći je RUN-002.
+**Završeni originalni eksperimenti:** RUN-001 i RUN-002 v2 su `DONE`.
+Freeze je `run001-final-evaluation-v2.1`, rezultat je u
+`artifacts/final/run002-v2/`. Svih šest arm-ova ima tačno 104 predikcije;
+JSON/CSV statistika postoji. ANALYSIS-001 je `IN PROGRESS`: preostali su
+publikacijski grafikoni i sistematična analiza grešaka. Stari v1 i parcijalni
+pre-v2.1 artefakti ne zamenjuju završeni v2 rezultat.
+
+| Arm | Tačno / 104 | Accuracy | Executable / 104 |
+|---|---:|---:|---:|
+| B0 | 4 | 3,85% | 5 |
+| B1 | 25 | 24,04% | 80 |
+| B2 | 28 | 26,92% | 83 |
+| B4 | 30 | 28,85% | 81 |
+| B6 | 10 | 9,62% | 83 |
+| B6R | 34 | 32,69% | 83 |
+
+B6R ima 49 result mismatch i 21 execution error; sedam izlaza dostiže
+1.024 tokena i svih sedam pada pri izvršavanju. B6R prema B1 ima +9 tačnih,
+ali Holm-adjusted p = 0,1471, pa nije dokazana superiornost po zamrznutom
+familywise pragu. Oracle-union B1/B2/B4/B6R je 44/104 i nije rezultat
+runtime selektora. Detalji i granice provere su u review-u.
 
 Zadaci:
 
-- zaključati kod, dataset verziju i konfiguracije;
-- pokrenuti sve obavezne konfiguracije;
-- ponoviti stohastičke eksperimente gde je potrebno;
-- izračunati bootstrap intervale pouzdanosti;
-- sprovesti uparena poređenja konfiguracija;
-- kategorizovati greške;
-- napraviti tabele i grafikone;
-- sačuvati sirove i agregirane rezultate.
+- `DONE` - zaključati kod, dataset verziju i šest konfiguracija;
+- `DONE` - završiti generaciju i bodovanje prema v2 provider-error politici;
+- `DONE` - sačuvati sirove rezultate, bootstrap intervale, uparene testove i Holm korekciju;
+- `IN PROGRESS` - završiti kategorisanje grešaka i publikacijske tabele/grafikone;
+- ponavljanja i poboljšanja pokretati samo kao zasebne nove eksperimente iz Faza 7A-7E.
 
 **Definition of Done:** svaka tabela u radu može se ponovo generisati skriptom iz sačuvanih sirovih rezultata; zaključci odgovaraju unapred definisanim istraživačkim pitanjima.
+
+### Faza 7A - Protokol nastavka i analiza uzroka
+
+**Status:** `IN PROGRESS` — DATA-004/005 i početni SEM-001 corpus završeni. Konzervativna adjudikacija isključuje sve overlap kandidate; reused-set protokol i budžet postoje. ANALYSIS-001 closeout originalnog run-a i produbljivanje neklasifikovanih uzroka ostaju.
+**Prioritet:** P0. Provider-free rad može početi odmah.
+
+- `DATA-004`: evidentirati postojeći 31-example development kao već korišćen za selection i 104-example test kao pregledan. Izabrati i verzionisati razvojni scope i nov holdout pre novih paid run-ova; starim manifestima ne menjati istorijski smisao.
+- `DATA-005`: audit schema-family/provenance preklapanja kroz retrieval i split-ove; imena baza nisu dovoljan firewall. Review nalazi iste table/column potpise Baseball/baseball_1, Pagila i sqlite-sakila/sakila_1, music/chinook_1, kao i delimična preklapanja. Potpis nije dokaz identičnih podataka ili gold odgovora.
+- `SEM-001`: napraviti upareni development error corpus B1/B2/B4/B5/B6R; posebno obeležiti post-test dijagnostiku finalnih grešaka. Anotirati identitet entiteta, grain, JOIN fanout, imenilac, vrednosti, dokumente, output shape, truncation i nejasne slučajeve.
+- `ANALYSIS-001`: završiti prikaz originalnih rezultata bez menjanja skorova ili izbacivanja neuspeha; dodati ograničenja i per-database prikaz.
+
+**Gate A:** postoji verzionisana podela sa tačnim ID-jevima, familijama/poreklom, dozvoljenim ulazima i protokolom budget/attempt/selection pravila. Pre novih eksperimenata definisati numeričke limite poziva, tokena i troška. Ako nov holdout nije ostvariv, eksplicitno izabrati reused-set evaluation i ograničiti tvrdnju o generalizaciji. Ovo ne blokira offline popravke iz Faze 7B. Nijedna putanja ne dozvoljava korišćenje test gold-a u promptovima, retriever-u ili izboru kandidata.
+
+### Faza 7B - Kompletan model input/output i korigovani baseline
+
+**Status:** `IN PROGRESS` — LLM-003/CTX-001 završeni; runnable batch CLI, journal, quota pause/resume, odvojeni scoring i integracioni testovi završeni. EXP-002 može koristiti Free plan; model poređenje nije izvršeno, stvarni account limiti/overhead nisu potvrđeni live pozivom.
+**Zavisnost:** Gate A za paid rad; offline LLM-003/CTX-001 mogu paralelno sa 7A.
+
+- `LLM-003`: beležiti finish reason, dostupnu reasoning/completion usage evidenciju i backend fingerprint; ne prihvatati nonempty `length` izlaz kao kompletan SQL. Bounded escalation/regeneration pravilo mora biti unapred definisano i auditovano; truncation nije isto što i odbijen 429 zahtev.
+- `CTX-001`: proslediti supplied `external_knowledge` dokument kroz loader, pipeline i prompt; bounded loader, odvojena prompt sekcija, checksum/provenance i jednaka dostupnost konteksta u uporedivim arm-ovima. Sedam development i šest test pitanja imaju referencu na dokument.
+- `OPS-001`: objediniti token-aware scheduling, v2 transient-error retry/resume i attempt accounting za nove putanje; proveriti veličinu svakog zahteva prema stvarnim quota limitima. Zabeleženi 8.000 TPM tier može sprečiti veliki prompt plus rezervisani completion; čekanje ne rešava oversized pojedinačni zahtev.
+- `EXP-002`: C0 compact-schema baseline, zatim veći completion budget pri fiksnom effort-u, pa effort pri fiksnom budget-u. 4.096 je početni kandidat za proveru, ne potvrđena optimalna vrednost; 8.192/high nisu automatski nastavak. Ne menjati model i prompt u istom ablation koraku.
+- `REPRO-001`: zabeležiti kompletno resolved okruženje, Python/SQLite verzije i provider identitet; postojeći direct-dependency lock ne smatrati punim transitive lock-om.
+
+**Gate B:** fixture dokazuje da truncated odgovor ne prolazi kao complete; dokument dokazano stiže u prompt sa hash-om; quota/resume provere i relevantni postojeći testovi prolaze. Plaćeni development izveštaj odvaja complete/executable/correct, truncation, input/output tokene, sve pokušaje i wall-clock čekanja. Izbor C0-C2 konfiguracije mora imati uparene dobitke/gubitke i cost obrazloženje; sintaksni uspeh sam nije promotion kriterijum.
+
+### Faza 7C - Semantička tačnost početnog upita
+
+**Status:** `NOT STARTED`
+**Zavisnost:** SEM-001 i korigovani baseline iz 7B za kontrolisanu evaluaciju.
+
+- `LINK-003`: zaštititi complete compact inventar, smanjiti lažne value matches za Boolean/small-numeric vrednosti i dodati confidence/coverage audit. Nijedan primer ne sme dobiti ID-specifično pravilo. B6 pruning ostaje istorijska negativna ablation varijanta.
+- `VALUE-001`: bounded question-directed value lookup, male kategorijalne liste i date-format/range evidence; zadržati sensitive-value politiku i meriti token trošak, umesto neograničenog proširenja svih sample lista.
+- `JOIN-001`: koristiti dokumentovane ili validirane inferred veze uz provenance i confidence; 20/30 baza nema deklarisane FK. Testirati absent-FK slučajeve, composite keys i one-to-many fanout; isto ime kolone nije automatski pouzdana veza.
+- `SEM-002`: typed SemanticPlan sa entity keys, output grain/kolonama, tabelama/JOIN uslovima, populacijom/filterima, intermediate aggregates, imeniocem, date logikom, ordering/ties i expected shape. Validator proverava identifikatore i konzistentnost plana; validan plan ne garantuje tačan odgovor.
+- `GEN-001`: plan-to-SQL single-query B7P u novim konfiguracijama, uz odvojene ablation korake za vrednosti, veze, linker i planer. Retrieval nije preduslov. Beležiti i kompletne, izvršive ali pogrešne odgovore.
+
+**Gate C:** development izveštaj poredi isti scope i fiksna model podešavanja sa korigovanim baseline-om, prikazuje dobitke/gubitke po bazi/familiji, non-empty correctness, semantic kategorije i cenu. Promotion prag i maksimalan broj verzija zadati pre run-a; jedan dodatni pogodak na već korišćenom malom skupu nije sam dovoljan dokaz. Ako nema ubedljivog dobitka, zadržati bolji baseline i negativni rezultat; ne dodavati komponente samo zato što su implementirane.
+
+### Faza 7D - Ograničeni repair i uslovna proširenja
+
+**Status:** `NOT STARTED`
+**Zavisnost:** stabilan first-pass kandidat iz 7C, SAFE-001/002 i OPS-001.
+
+- `REF-002`: najviše jedan repair na actionable sanitizovane binding/execution greške ili proverljive semantic-plan neusaglašenosti; ne samo na failed execution. Čuvati first-pass i final score, popravljene greške i regresije. Nema gold rezultata u feedback-u.
+- `SAFE-003`: preflight realnih DB snapshot/rezultat veličina i zajednički dokumentovan execution budget. Evaluatorov 60s timeout i B7 sandbox 10s/row/byte limiti nisu jednaki; razlikovati resource rejection od pogrešnog SQL-a i ne porediti skraćene rezultate kao kompletne.
+- `RET-003` (`OPTIONAL`): lexical/semantic + SQL-structure retrieval sa raznovrsnim, proverenim trening demonstracijama, token budžetom i DATA-005 firewall-om.
+- `REF-003` (`OPTIONAL`): najviše tri različita plana/kandidata, deduplikacija i izbor bez gold-a, tek kada bolja generacija opravda dodatni trošak. Oracle-union 44/104 postojećih finalnih schema arm-ova nije deployment rezultat.
+- `MODEL-001` / `DSPY-002` (`OPTIONAL`): odvojeni, ograničeni model/optimizer eksperimenti tek posle popravki konteksta i početnog upita. Ne ponavljati skupi B5/B7 neizmenjen u nadi u bolji score.
+- `SEC-003`: proširiti fixture provere parafrazama, dokument/data injection slučajevima i legitimnim pitanjima bliskim keyword filterima; proveriti bezbednost nove putanje i meriti gubitak tačnosti. End-to-end LLM security run ima zaseban budžet i scope; stari 0/10 fixture rezultat nije dokaz opšte otpornosti.
+
+**Gate D:** repair neto dobitak i regresije su izmereni pod istim uslovima; unsafe izlazi se ne oslobađaju radi podizanja executable rate-a. Opcione komponente ulaze u final samo uz prethodno definisan dokaz koristi i prihvatljiv cost. Kada nema koristi, finalni kandidat može ostati jednostavniji first-pass sistem.
+
+### Faza 7E - Nova finalna evaluacija i tvrdnje u radu
+
+**Status:** `NOT STARTED`
+**Zavisnost:** DATA-004/005, izabrani sistem iz 7C/7D, SAFE-003 i SEC-003.
+
+- `RUN-003`: nov freeze/release/config/resource manifest sa korigovanim compact baseline-om, izabranim novim metodom i samo ključnim ablation arm-ovima; unapred fiksirati metric, coverage, resource limits, retry/repair/selection, broj run-ova i ukupni budžet.
+- `RUN-004`: nove predikcije u praznom, posebno verzionisanom direktorijumu; svi pokušaji auditovani, svi arm-ovi kompletirani pre bodovanja. Nema izmene skorova, dropovanja neuspeha ili outcome-selected ponavljanja.
+- `ANALYSIS-002`: reproduktivne tabele/grafikoni; zvanični comparator kao primary, paired poređenja sa multiple-comparison korekcijom, per-database/family rezultati i unapred definisana cluster-bootstrap sensitivity analiza. Fresh i reused scope izveštavati odvojeno.
+- Originalni `run002-v2` ostaje prethodna evaluacija. Novi run može biti poslednji/prikazani finalni sistem. Posle ovog review-a ponovno bodovanje istih 104 pitanja nije nova netaknuta held-out procena.
+- Ako se uvodi jednostavniji application workload, imenovati ga kao poseban benchmark sa unapred zadatim sampling pravilom; njegov procenat nije poboljšanje na Spider2 skupu.
+
+**Gate E:** exact coverage i nezavisna provera bodovanja prolaze; svaka tabela ima provenance i ponovljiv generator; zaključci odgovaraju statistici i stvarnoj izloženosti podataka. Postojeći frozen rezultati se ne prepisuju. Uspešan završetak evaluacije ne zavisi od unapred obećanog procenta tačnosti.
 
 ### Faza 8 - Demo i pisanje master rada
 
 **Trajanje:** 2-3 nedelje
-**Zavisnost:** Faza 7; UI može početi ranije posle Faze 5
+**Zavisnost:** Faza 7E za finalne rezultate; UI integracija može početi posle izbora novog pipeline-a u 7C/7D
 **Status:** `NOT STARTED`
 
 Zadaci:
 
 - povezati finalni pipeline sa Gradio aplikacijom;
+- koristiti isti config/provider/validator/executor kao u novom eksperimentu; root `app.py` je legacy MySQL prototip i nije novi demo;
 - prikazati generisani SQL, validaciju i rezultat;
 - jasno označiti odbijene upite i sandbox režim;
-- ažurirati README i arhitekturu;
+- ažurirati README, arhitekturu i thesis mapping; ukloniti aktuelne tvrdnje da je test još zatvoren, uz očuvanje istorijskih zapisa;
 - napisati metodologiju, rezultate, diskusiju i pretnje validnosti;
 - ispraviti faktografske i terminološke probleme iz prijave rada;
 - pripremiti scenario demonstracije i odbrane.
@@ -551,12 +679,14 @@ Zadaci:
 
 | Odluka | Rok | Podrazumevana preporuka |
 |---|---|---|
-| Glavni evaluacioni benchmark | DONE u `DATA-001` | pinned Spider2-Lite SQLite; custom DB-disjoint split 31 development / 104 test; nije puni leaderboard score |
+| Glavni evaluacioni benchmark | istorijski DATA-001; novi DATA-004 pre paid razvoja | sačuvati originalni 31/104 rezultat; nov family-audited holdout ili jasno imenovan reused-set nastavak, bez leaderboard tvrdnje |
 | SQL dijalekt prve verzije | kraj Faze 1 | SQLite za benchmark, MySQL samo za demo ako je potrebno |
-| Retriever | sredina Faze 4 | embedding retrieval kao baseline, skeleton retrieval kao proširenje |
-| DSPy optimizer | početak Faze 4 | MIPROv2 sa execution-based metrikom |
-| Broj kandidata | početak Faze 5 | 1 za baseline, 3 za verifier konfiguraciju |
-| Broj korekcija | početak Faze 5 | najviše 1; povećati na 2 samo uz dokazanu korist |
+| Retriever | Faza 7D, opciono | TF-IDF je postojeći baseline; novi semantic/structure retrieval samo uz merljivu korist i family firewall |
+| DSPy optimizer | Faza 7D, opciono | novi budžet/validation scope tek posle boljeg first-pass sistema; stari B5 ostaje negativan rezultat |
+| Broj kandidata | EXP-002 / REF-003 freeze | 1 za osnovnu putanju; do 3 samo za zasebnu opravdanu opciju |
+| Broj korekcija | REF-002 freeze | najviše 1, sa merljivim dobitkom i regresijama |
+| Completion budget / effort | EXP-002 pre paid run-a | testirati odvojeno; 4.096 početni kandidat uz provider quota preflight |
+| Trošak i izbor verzije | Gate A i svaki experiment freeze | numerički call/token/cost limiti i promotion pravilo pre rezultata; nema otvorenog search-a |
 | Spider2-Snow proširenje | posle Faze 7 | implementirati samo ako su osnovni rezultati završeni |
 
 ## 13. Registar rizika
@@ -566,25 +696,30 @@ Zadaci:
 | R-01 | Spider 2.0 je prevelik ili zahteva cloud resurse | visoka/visok | prvo koristiti SQLite podskup i jasno navesti obim |
 | R-02 | Model ID više nije dostupan kod providera | srednja/visok | provider adapter, zamenski model i evidentirana verzija |
 | R-03 | DSPy optimizacija je skupa | srednja/srednji | mali development skup, budžet poziva, rani prekid |
-| R-04 | Curenje test podataka kroz retrieval | srednja/visok | Spider2 test je zabranjen u retrieval-u; DB-disjoint manifest i automatski leakage test |
+| R-04 | Curenje ili schema-family preklapanje kroz retrieval/split | potvrđeno preklapanje/visok | DATA-005 proširuje exact-name firewall proverom familija/porekla; razlikovati isti schema potpis od istih odgovora |
 | R-05 | Javni Spider2 primeri su možda bili u LLM pretraining podacima | srednja/srednji | eksplicitno ograničenje u radu; test je held-out iz našeg pipeline-a, ne tvrdimo da je unseen za model |
 | R-06 | Execution metric nagradi slučajno isti rezultat | srednja/srednji | više baza/test-suite evaluacija i analiza grešaka |
 | R-07 | Refiner koristi osetljive DB greške | srednja/visok | sanitizovati poruke i koristiti samo sandbox |
 | R-08 | Previše komponenti ugrozi rok | visoka/visok | faze i MVP granica; Spider2-Snow i kompleksni agent su opcioni |
 | R-09 | API rezultati nisu deterministički | visoka/srednji | temperatura 0, seed gde postoji, više ponavljanja i sačuvani izlazi |
-| R-10 | Ponovljeno podešavanje na svih 31 development primera daje optimističan rezultat | visoka/visok | unapred opisati najviše dve B7P verzije, objaviti sve run-ove, zabraniti ID-specifična pravila i otvoriti test samo jednom posle freeze-a |
+| R-10 | Ponovljeno podešavanje na development i već pregledanom testu daje optimističan rezultat | visoka/visok | DATA-004 beleži izloženost, nov holdout ili eksplicitan reused scope; ograničene verzije pre run-a, svi ishodi i bez ID-specifičnih pravila |
 | R-11 | Validan SQL prikrije semantički pogrešan rezultat | visoka/visok | odvojeno meriti AST/executable rate i EVAL-003; ranker koristi više nezavisnih signala, a acceptance zahteva stvarni accuracy rezultat |
 | R-12 | Binarni execution signal je previše redak za izbor kandidata | visoka/srednji | kombinovati AST validnost, EXPLAIN, sandbox ishod i candidate agreement za rangiranje, ali zadržati EVAL-003 kao primarni acceptance signal |
+| R-13 | Truncation i nedostajući dokumenti proizvode neupotrebljive/neutemeljene odgovore | potvrđeno/visok | LLM-003 i CTX-001 pre većeg modelskog eksperimenta |
+| R-14 | Veći token budget ne staje u provider kvotu | visoka/visok | OPS-001 request preflight, token rezervacije, bounded retries i ukupni budžet |
+| R-15 | Sintaksni repair ili ranker prikriju preostale semantic greške | visoka/visok | SEM-001/002, odvojeni first-pass/final score, repair regresije i output-grain/denominator provere |
+| R-16 | Različiti sandbox limiti ili guardrails iskrive poređenje | srednja/visok | SAFE-003 zajednička politika i SEC-003 odvojena bezbednosna/accuracy analiza |
 
 ## 14. Tracker zadataka
 
 Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu na projektu.
 
-**Sažetak stanja:** Faze 0-6 i RUN-001 su završeni. B6R je primary arm među šest zamrznutih finalnih konfiguracija; analiza je unapred definisana, a held-out rezultati još ne postoje. Sledeći je RUN-002. Semantički/B7P zadaci ostaju `DEFERRED`.
+**Sažetak stanja:** RUN-002 v2 je završen: B6R 34/104, statistika postoji, ANALYSIS-001 closeout je delimičan. Plan 4.0 reaktivira semantički rad i uvodi zaseban ciklus 7A-7E. `DONE` u istorijskim redovima označava tadašnji ugovor, ne odsustvo problema iz review-a. Za nezavršene taskove poslednja kolona navodi traženi dokaz, ne postojeći rezultat.
 
 | Task ID | Zadatak | Faza | Prioritet | Status | Zavisnost | Dokaz završetka |
 |---|---|---:|---|---|---|---|
 | PLAN-001 | Arhitektura i roadmap | 0 | P0 | DONE | - | ovaj dokument |
+| PLAN-002 | Uskladiti plan sa završenom evaluacijom i review-om | 7A | P0 | DONE | RUN-002 | plan 4.0, review od 2. oktobra i ADR-021 |
 | REPO-001 | Kreirati novu strukturu repozitorijuma | 0 | P0 | DONE | PLAN-001 | `text2sql/` struktura i 5 testova |
 | REPO-002 | Zaključati zavisnosti i dodati `.env.example` | 0 | P0 | DONE | REPO-001 | offline editable instalacija prolazi; Phase 0 nema runtime zavisnosti |
 | REPO-003 | Premestiti stare notebookove u legacy | 0 | P1 | DONE | REPO-001 | `notebooks/legacy/` sa notebookovima i starim demo kodom |
@@ -602,25 +737,44 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | SCHEMA-002 | Implementirati M-Schema | 3 | P0 | DONE | SCHEMA-001 | 31/31 B2 predikcija; 2/31 tačna, 22/31 executable; scored report i checksumovani artefakti |
 | LINK-001 | Implementirati extractive schema linking | 3 | P1 | DONE | SCHEMA-002 | frozen B6: 31/31, 1/31 tačan, 27/31 executable; prediction/report/audit checksumovi i dokumentovan negativni rezultat |
 | LINK-002 | Implementirati recall-first schema-linking repair | 3 | P1 | DONE | LINK-001 | frozen B6R: 31/31, 6/31 tačnih, 25/31 executable; 94.140/15.806 tokena, prediction/report checksumovi i analiza grešaka |
-| RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | DONE | DATA-001 | pinned Spider 1.0 train 7.000/140, index SHA-256 `82ee39e0...0389e`, full Spider2 ID/DB/question firewall i 8 testova |
+| RET-001 | Napraviti train-only retrieval indeks | 4 | P0 | DONE | DATA-001 | pinned Spider 1.0 train 7.000/140, index SHA-256 `82ee39e0...0389e`, exact ID/DB-name/question firewall i 8 testova; family audit je DATA-005 |
 | RET-002 | Implementirati random i similarity few-shot | 4 | P0 | DONE | RET-001 | B3 4/31 i B4 5/31; oba 23/31 executable; frozen config/audit/prediction/report checksumovi |
 | DSPY-001 | Definisati i optimizovati DSPy program | 4 | P1 | DONE | RET-002, EVAL-001 | MIPROv2 best validation 2/10; frozen B5 31/31, 4/31 tačna, 28/31 executable; program/manifest/prediction/report checksumovi |
 | SAFE-001 | Implementirati SQL AST validator | 5 | P0 | DONE | SCHEMA-001 | `safe001-sqlite-v1`, parsed AST/hash, SQLite authorizer nad praznom kanonskom šemom, CLI, JOIN/subquery/aggregate/window/CTE i adversarial testovi |
 | SAFE-002 | Implementirati read-only sandbox executor | 5 | P0 | DONE | SAFE-001, EVAL-001 | `safe002-sqlite-v1`, Linux worker, SQL hash/revalidation, izolovan snapshot, deadline/memory/row/byte limiti, sanitizovane greške, CLI i 20 testova |
 | REF-001 | Implementirati izbor kandidata i refiner B7 | 5 | P1 | DONE | SAFE-002, LLM-002 | 31/31 checkpoint, verifikovan EVAL-003 5/31, first-pass 4/31, repair 0/3; checksum manifest i operativna ograničenja u B7 results |
-| SEM-001 | Napraviti upareni semantic-error corpus za B1/B6R/B4/B5 | posle originalnog roadmap-a | P2 | DEFERRED | završetak aktivnog roadmap-a | vratiti samo kroz novu eksplicitnu odluku |
-| SEM-002 | Implementirati typed SemanticPlan i validator plana | posle originalnog roadmap-a | P2 | DEFERRED | SEM-001 | arhivirana ranija implementacija nije deo master-a |
-| RET-003 | Implementirati Spider1 train-only SQL-skeleton retrieval | posle originalnog roadmap-a | P2 | DEFERRED | SEM-001, RET-001 | arhivirana ranija implementacija nije deo master-a |
-| MODEL-001 | Proveriti capability modela za B7P | posle originalnog roadmap-a | P2 | DEFERRED | SEM-002, RET-003, LINK-002 | nema novih paid B7P poziva u aktivnom planu |
-| GEN-001 | Implementirati i evaluirati single-query B7P | posle originalnog roadmap-a | P2 | DEFERRED | SEM-002, RET-003, MODEL-001 | nije deo aktivne Faze 5 |
+| SEM-001 | Upareni razvojni semantic-error corpus i zasebna post-test dijagnostika | 7A | P0 | DONE | PLAN-002; DATA-004 za konačan scope | 155 paired dev + 104 odvojena post-test zapisa, 12 ručnih B6R anotacija; evidence/confidence i unclassified ostaju eksplicitni, bez inference gold-a |
+| SEM-002 | Typed SemanticPlan i validator plana | 7C | P0 | NOT STARTED | SEM-001, CTX-001 | entity/grain/filter/aggregate/denominator/output plan i nezavisni semantic regression testovi |
+| RET-003 | Family-audited semantic/SQL-structure retrieval | 7D | P2 | OPTIONAL | DATA-005, RET-001, GEN-001 | zaseban matched comparison, token budžet i audit svih demonstracija |
+| MODEL-001 | Ograničeni capability/model comparison | 7D | P2 | OPTIONAL | GEN-001, OPS-001 | unapred zamrznute alternative, isti zadaci/kontekst i cost/quality rezultat |
+| GEN-001 | Single-query B7P nad korigovanim kontekstom | 7C | P0 | NOT STARTED | SEM-002, EXP-002, LINK-003, VALUE-001, JOIN-001 | odvojene ablation varijante, upareni dobici/gubici po bazi i Gate C odluka |
 | SEC-001 | Definisati threat model i adversarial skup | 6 | P0 | DONE | SAFE-002 | checksumovan sintetički fixture i 16-case benign/adversarial corpus |
 | SEC-002 | Implementirati i evaluirati guardrails | 6 | P0 | DONE | SEC-001 | S0 5/10 napada; S1 0/10, benign FP 0/6; checksumovan report |
 | RUN-001 | Zamrznuti finalne konfiguracije | 7 | P0 | DONE | sve obavezne faze | šest test config-a, statistički plan, verifier/analyzer, deterministički manifest, release tag |
-| RUN-002 | Pokrenuti finalne eksperimente | 7 | P0 | NOT STARTED | RUN-001 | sirovi rezultati |
-| ANALYSIS-001 | Statistika, grafikoni i analiza grešaka | 7 | P0 | NOT STARTED | RUN-002 | generisani izveštaji |
-| APP-001 | Povezati finalni pipeline sa Gradio UI | 8 | P1 | NOT STARTED | SAFE-002 | demo scenario prolazi |
-| THESIS-001 | Ažurirati metodologiju i teorijski deo | 8 | P0 | NOT STARTED | DATA-001 | pregledana poglavlja |
-| THESIS-002 | Napisati rezultate, diskusiju i ograničenja | 8 | P0 | NOT STARTED | ANALYSIS-001 | finalna poglavlja |
+| RUN-002 | Pokrenuti originalne finalne eksperimente | 7 | P0 | DONE | RUN-001 | run002-v2: 6 × 104 predikcije, izveštaji, manifest i final-analysis JSON/CSV |
+| ANALYSIS-001 | Closeout originalne statistike, grafikona i grešaka | 7 | P0 | IN PROGRESS | RUN-002 | statistika i review postoje; sistematične anotacije i publikacijski grafikoni preostaju |
+| DATA-004 | Protokol nastavka, izloženost podataka i novi/reused evaluacioni scope | 7A | P0 | DONE | PLAN-002, DATA-005 | recovery-development-v2: 31 dev/104 reused ID-jeva, numerički draft budget i selection pravila; paid zabranjen do odobrenja; nov holdout se ne tvrdi |
+| DATA-005 | Schema-family/provenance audit i prošireni retrieval firewall | 7A | P0 | DONE | PLAN-002, RET-001 | konzervativni filter izbacuje 454/7000 primera iz šest baza; 28 target familija; hash/drift i selector regresije; originalni indeks sačuvan |
+| LLM-003 | Completion status i bounded truncation politika | 7B | P0 | DONE | LLM-002 | complete-sql-v1: non-stop/empty odbijen, usage/fingerprint/transport count očuvani; bez automatske regeneracije; fixture i CLI regresije |
+| CTX-001 | Supplied document loader i prompt propagation | 7B | P0 | DONE | DATA-003 | osam pinned dokumenata, bounded loader, example-aware API/CLI i hash/provenance; 31 pripremljen prompt, sedam sa dokumentom |
+| OPS-001 | Zajednički quota/retry/resume ugovor za nove run-ove | 7B | P0 | IN PROGRESS | LLM-003, RUN-002 | batch CLI i end-to-end resume/scoring testovi završeni; 93-request mock replay bez duplikata; stvarni account quota/overhead čeka korisnikovu potvrdu/live evidenciju |
+| EXP-002 | Korigovani compact baseline i budget/effort ablations | 7B | P0 | IN PROGRESS | DATA-004, LLM-003, CTX-001, OPS-001 | free-tier-run-v1 i runnable prepare/generate/score komande; 93 zahteva, 31 primer po arm-u; nema novih model skorova/Gate B odluke |
+| REPRO-001 | Potpuno resolved okruženje i runtime evidencija | 7B | P1 | IN PROGRESS | REPO-002 | installed-packages/runtime/source/resource/artifact snapshot postoji; nov portable transitive lock nije završen |
+| LINK-003 | Recall-first linking bez slučajnih numeričkih value matches | 7C | P1 | NOT STARTED | SEM-001, LINK-002 | misleading-number/absent-FK testovi, coverage audit i zaseban accuracy rezultat |
+| VALUE-001 | Relevantne vrednosti, kategorije i date evidence | 7C | P0 | NOT STARTED | SEM-001, SCHEMA-002 | bounded lookup, sensitive-value politika, provenance i cost/accuracy ablation |
+| JOIN-001 | Dokumentovane/validirane inferred JOIN veze | 7C | P0 | NOT STARTED | SEM-001, SCHEMA-001 | evidence/confidence, composite-key/fanout testovi i absent-FK pokrivenost |
+| SAFE-003 | Uskladiti execution resource politiku novih arm-ova | 7D | P0 | NOT STARTED | SAFE-002, DATA-004 | DB/result preflight, odvojeni timeout/truncated/resource statusi i uporedivi limiti |
+| REF-002 | Jedan actionable execution/semantic repair | 7D | P0 | NOT STARTED | GEN-001, SAFE-003, OPS-001 | first-pass/final paired score, repair uspeh/regresije, gold-free feedback |
+| REF-003 | Različiti planovi/kandidati i kontrolisani izbor | 7D | P2 | OPTIONAL | GEN-001, REF-002 | do 3 kandidata, deduplikacija, odvojeni oracle/selector score i cost |
+| DSPY-002 | Novi ograničeni optimizer eksperiment | 7D | P2 | OPTIONAL | GEN-001, DATA-005, OPS-001 | novi development folds i budžet; zamrznut program sa pozitivnim ili negativnim rezultatom |
+| SEC-003 | Bezbednosne regresije nove putanje i proširen corpus | 7D | P1 | NOT STARTED | GEN-001, SAFE-003, SEC-002 | paraphrase/document/data injection i benign cases; odvojeni end-to-end scope/budžet |
+| RUN-003 | Zamrznuti novu finalnu evaluaciju | 7E | P0 | NOT STARTED | DATA-004, DATA-005, GEN-001, REF-002, SAFE-003, SEC-003, REPRO-001 | novi release/config/resource/statistical manifest; opciona proširenja ne blokiraju |
+| RUN-004 | Izvršiti novu finalnu evaluaciju | 7E | P0 | NOT STARTED | RUN-003 | novi append-only run, svi arm-ovi generisani pre scoring-a, exact coverage |
+| ANALYSIS-002 | Analiza i prikaz novog finalnog sistema | 7E | P0 | NOT STARTED | RUN-004 | primarni score, paired/corrected statistika, cluster sensitivity, sve regresije i reused/fresh oznake |
+| DOC-001 | Uskladiti aktuelnu dokumentaciju i označiti legacy entry point-e | 8 | P1 | NOT STARTED | GEN-001, DATA-004 | README/architecture/thesis mapping prikazuju stvarni status i ograničenja |
+| APP-001 | Povezati izabrani pipeline sa Gradio UI | 8 | P1 | NOT STARTED | GEN-001, SAFE-003, SEC-003 | isti config i execution putanja kao izabrani finalni arm; SQL/result/refusal demo |
+| THESIS-001 | Ažurirati metodologiju i teorijski deo | 8 | P0 | NOT STARTED | DATA-004, DATA-005 | pregledana poglavlja sa schema-family i test-reuse ograničenjima |
+| THESIS-002 | Napisati rezultate, diskusiju i ograničenja | 8 | P0 | NOT STARTED | ANALYSIS-001, ANALYSIS-002 | originalni i novi rezultati imaju provenance, prikaz odgovara statistici |
 
 ## 15. Pravila praćenja napretka
 
@@ -674,7 +828,21 @@ Task je `DONE` samo ako:
 - rezultat može da ponovi druga osoba prema README-u;
 - promena je povezana sa odgovarajućim istraživačkim pitanjem.
 
-## 16. Prvi sprint
+## 16. Sprintovi
+
+### Aktivni sledeći sprint - protokol i najdirektnije popravke
+
+**Status:** `IN PROGRESS`. Data/protocol priprema, runnable batch CLI i njegovi offline testovi završeni. Korisnik ima komande za Groq Free run; API pozivi i pravo model poređenje nisu pokrenuti. Detalji: [komande eksperimenta](run-recovery-experiment.md).
+
+Tri glavna cilja:
+
+1. `DATA-005` -> `DATA-004`: verzionisati schema-family audit, razvojni/evaluacioni scope i budžet; započeti provider-free SEM-001 error corpus. Prednost ima 31-example development; eventualno korišćenje starih 104 pitanja mora biti označeno kao post-test razvoj.
+2. `LLM-003` + `CTX-001`: dokazati offline da incomplete odgovor ne prolazi kao kompletan i da referentni dokument stiže u prompt. Ovi zadaci mogu teći paralelno sa protokolom.
+3. `OPS-001` + `EXP-002`: runnable batch CLI, integracioni generation/resume/scoring testovi i komande su završeni. Potvrditi stvarne account limite i pokrenuti izmereno poređenje na Groq Free posle Gate A i offline dela Gate B; quota exhaustion znači pauzu, ne automatski upgrade ili dodatni trošak.
+
+Izlaz sprinta su pregledljiv protokol, konkretne popravke sa relevantnim testovima i konfiguracije spremne za ograničeno development poređenje. Veći model search, DSPy compile, multi-candidate run i nova finalna evaluacija nisu deo ovog sprinta.
+
+### Istorijski prvi sprint
 
 **Status sprinta:** `DONE` - infrastrukturni cilj i odluka `DATA-001` su završeni.
 
@@ -707,11 +875,11 @@ Dobiti čistu, instalabilnu osnovu projekta i jedan mali end-to-end eksperiment 
 
 ### Minimalno uspešan master projekat
 
-MVP obuhvata faze 0-3, osnovni retrieval iz Faze 4, AST/sandbox iz Faze 5, ograničenu bezbednosnu evaluaciju i finalne eksperimente. Mora sadržati najmanje B0, B1, B2, B4, B6 i S1 konfiguracije.
+Originalni MVP pokriven je infrastrukturom i završenim B0/B1/B2/B4/B6/B6R i S1 eksperimentima; demo/pisanje još nisu završeni. Minimum nastavka po planu 4.0 su protokol i family audit, completion/document popravke, korigovani baseline, semantic-error corpus i single-query planner, jedna evaluirana repair varijanta, bezbednosne regresije i jasno imenovana nova evaluacija. Finalni sistem bira se po dokazanoj koristi: neuspešna dodatna komponenta ne mora biti uključena.
 
 ### Poželjni prošireni cilj
 
-Proširena verzija dodaje DSPy B5, tri kandidata i refiner B7, detaljan adversarial generator i eventualnu Spider2-Snow evaluaciju.
+Prošireni nastavak dodaje novi structural/semantic retrieval, različite planove/kandidate, veći model/optimizer search i eventualnu Spider2-Snow evaluaciju. Istorijski B5/B7 rezultati već postoje i ne predstavljaju nezavršen razlog za automatsko ponavljanje.
 
 Ako rok postane kritičan, prvo se odlažu Spider2-Snow, kompleksni multi-agent pristup i dodatni modeli. Ne odlažu se zvanična evaluacija, sprečavanje data leakage-a, reproduktivnost i read-only sandbox.
 
@@ -1205,3 +1373,67 @@ statistički plan, pa tek onda jednokratno otvaranje zatvorenog test skupa.
 
 Sledeće: RUN-002 resource preflight, zatim jednokratna generacija svih šest
 arm-ova pre bilo kakvog bodovanja test skupa.
+
+### 2026-10-02 - Završen finalni run evidentiran; plan 4.0 posle review-a
+
+Završeno i provereno tokom review-a:
+
+- RUN-002 v2 već ima 624/624 predikcije, šest report-a i JSON/CSV statistiku; B6R 34/104 (32,69%), B1 25/104, B2 28/104, B4 30/104, B6 10/104, B0 4/104;
+- 216 offline testova, dependency check i postojeći v2 freeze prolaze pre dokumentacionog update-a;
+- pinned official comparator nad sačuvanim query rezultatima potvrđuje svih 624 ishoda; to nije novo izvršavanje svih upita;
+- review dokumentuje 49 B6R result mismatch i 21 execution error, ignorisani completion status, izostavljene dokumente, schema/value probleme i schema-family preklapanja;
+- PLAN-002: ažurirani statusi, arhitektura, novi backlog/zavisnosti/gates, rizici i sledeći sprint; ADR-021 beleži metodološku odluku.
+
+Odluke:
+
+- originalni run-ovi i njihovi negativni rezultati ostaju očuvani; nove implementacije/konfiguracije imaju nov identitet;
+- SEM-001/002 i GEN-001 su aktivni `NOT STARTED` zadaci; arhivirana implementacija se ne računa kao završena;
+- prvo korigovani single-query baseline i semantička tačnost; retrieval/model/DSPy/multi-candidate proširenja su uslovna;
+- korišćenje pregledanog testa evidentira se kao reuse; za novu untouched generalizaciju potreban je zaseban family-audited holdout;
+- update plana ne uključuje provider pozive, implementaciju ili nove skorove.
+
+Sledeće:
+
+1. DATA-005/DATA-004 i početak development SEM-001;
+2. offline LLM-003 i CTX-001, paralelno sa protokolom;
+3. OPS-001 i EXP-002 konfiguracije, pa ograničeno poređenje kada gate-ovi prođu.
+
+### 2026-10-03 - Prva implementacija nastavka; plan 4.1
+
+- LLM-003 DONE: Groq čuva finish reason, usage/reasoning detalje, fingerprint i broj transport pokušaja; incomplete/empty odgovor nema prihvaćenog kandidata. Nema automatske regeneracije niti povećanja budget-a. CLI čuva neuspešan pokušaj i vraća exit 1.
+- CTX-001 DONE: osam hash-pinned dokumenata, bounded UTF-8 loader, example-aware generation API i CLI propagacija; prompt i audit sadrže dokument/verziju/hash. Stari frozen runner-i nisu prepravljeni u nove eksperimente.
+- DATA-004 IN PROGRESS: recovery-development-v1 ima tačno 31 development i 104 reviewed test ID-ja. Paid/retrieval/gold-in-generation su isključeni; fresh holdout nije rezervisan, finalni scope/budget/selection još nisu definisani.
+- DATA-005 IN PROGRESS: automatski schema-family audit nad 30 target i 140 train baza potvrđuje četiri exact i tri partial retrieval preklapanja, jedan cross-split kandidat i 20 baza bez deklarisanih FK. Potrebni su adjudikacija i enforced exclusions.
+- `artifacts/development/recovery001-offline` sadrži 31 prompt (sedam sa dokumentima), source/resource hash-eve i audit. Provider calls = 0; prediction SQL executions = 0; paid_run_ready = false.
+- 240/240 offline testova prolazi. Istorijski freeze se proverava nad arhiviranim `text2sql-final-v2.1` i pinned generated fixture-om; poseban test potvrđuje da source drift ostaje odbijen. Originalni manifesti/skorovi nisu menjani.
+
+Sledeće: završiti DATA-004/005, započeti SEM-001 i OPS-001, pa implementirati i izmeriti EXP-002. Nema novog skora niti tvrdnje o poboljšanoj tačnosti. Detalji: [development recovery](development-recovery.md), [ADR-022](decisions.md#adr-022---reject-incomplete-completions-and-prepare-pinned-task-context-offline).
+
+### 2026-10-03 - Besplatan nastavak do granice model poziva; plan 4.2
+
+- Korisnik je odobrio besplatan rad i tražio obaveštenje pre paid koraka. Nije poslat nijedan model zahtev; offline entry point nema live režim.
+- DATA-005: konzervativno isključene sve overlap familije, 454 od 7000 retrieval primera; preostalo 6546. Policy/source/audit hash-evi štite filter, a oba selektora imaju regresije. Definisano 28 target familija.
+- DATA-004: recovery-development-v2 eksplicitno bira reused-set evaluaciju originalnih 104 pitanja; razvoj/selection ostaje 31 primer. Numeric caps i promotion kriterijumi postoje pre novih ishoda.
+- SEM-001: 155 paired dev zapisa B1/B2/B4/B5/B6R, 104 zasebna B6R post-test zapisa, 12 ručnih dev anotacija vezanih za SQL hash. Nejasni uzroci nisu predstavljeni kao dokazani.
+- OPS-001: testiran durable journal, reserve/replay, hard caps, quota defer, 429-only retry i pipeline adapter. Live quota/pricing i request-template overhead ostaju nepotvrđeni.
+- EXP-002: C0 1024/low, C1 3072/low, C2 3072/medium; 4096 odbačen pre run-a zbog lokalnog quota preflight-a. Draft limit $3, 186 pokušaja, 1,5M tokena; paid disabled. Svih 93 planirana zahteva staje u zabeleženi quota scenario uz pinned local tokenizer i allowance.
+- `artifacts/development/recovery002-offline` sadrži sve promptove, audit/filter manifest, budžet, odvojenu analizu, installed-package snapshot i checksums. Priprema prošla sa blokiranim socket konekcijama. Javni tokenizer prethodno preuzet i checksumovan bez model poziva.
+- 266/266 testova prolazi. Originalni finalni rezultat je i dalje B6R 34/104; nema novog skora.
+
+Sledeći eksperimentalni korak zahteva API. Pre toga potvrditi account quota/pricing i overhead, dobiti izričito odobrenje i zamrznuti live run identitet. Kasniji planner/value/join/repair zadaci čekaju korigovani baseline. [Offline handoff](free-work-handoff.md) beleži implementaciju, reprodukciju i ograničenja.
+
+### 2026-10-03 - Razjašnjen Groq Free i preostala runner implementacija; plan 4.3
+
+- Ranije označavanje sledećeg eksperimenta kao nužno plaćenog bilo je pogrešno: model postoji na Groq Free planu. API quota se može obnavljati tokom više dana; upgrade nije uslov eksperimenta.
+- Ranije formulacije o završenoj lokalnoj pripremi nisu značile završen runnable batch runner. OPS-001 ostaje IN PROGRESS dok se ne završe besplatna CLI integracija, checkpoint/resume, odvojeno bodovanje i integracioni testovi.
+- Sledeći isporučivi rezultat su proverene komande koje korisnik može sam da pokrene sa svojim Free nalogom. Razdvojiti live/API dozvolu od dozvole stvarnog troška; $3 je samo raniji draft zaštitnog limita.
+- Promenjena dokumentacija, bez izmene konfiguracija, enable flag-ova, istorijskih rezultata ili model poziva. Poslednja provera implementacije ostaje 266 testova; dokumentacioni update nije nova evaluacija.
+
+### 2026-10-03 - Runnable Free experiment komande; plan 4.4
+
+- Dodat `text2sql.development.run`: prepare, generate/resume, status i odvojeni score. Novi `free-tier-run-v1.json` zadržava C0/C1/C2 i offline protokol; stari enable flag-ovi se ne menjaju.
+- API poziv zahteva `--allow-api --confirm-free-plan` i lokalni env ključ. Free potvrda je izjava korisnika o njegovoj organizaciji, ne automatska billing provera. Nema upgrade-a ili paid fallback-a.
+- Prepare zamrzava prompt/config/source/environment/database/document/gold/evaluator hash-eve. Generacija ne dobija gold vrednosti i ne izvršava SQL. Potrebni su svi terminalni ishodi pre bodovanja; failures ostaju u imenitelju.
+- Lokalni score koristi bounded SAFE-002 i tačnu pinned official comparison funkciju sa pandas gold CSV-ovima. Jednaki limiti za C0/C1/C2 su zamrznuti u config-u; razlikuju se od istorijskih report-a, što se eksplicitno navodi. Scoring ima checkpoint/resume i paired promotion izveštaj.
+- 281/281 testova prolazi. Real-input mock rehearsal svih 93 zahteva prošao je sa blokiranim mrežnim konekcijama; ponovljeni generate zadržava tačno 93 reservations. Fixture scoring/resume prošao. Nema Groq poziva ni stvarnog accuracy rezultata.
+- Sledeće: korisnik može pokrenuti [dokumentovane komande](run-recovery-experiment.md), zadržati isti run direktorijum pri pauzi i po završetku podeliti report/scores za analizu.

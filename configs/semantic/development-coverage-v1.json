@@ -1,0 +1,348 @@
+{
+  "version": "semantic-coverage-v1",
+  "scope": "reviewed development only; annotations never used for per-question inference routing",
+  "evidence": "question text and semantic-plan-v1 operator inventory; no saved SQL or gold results used",
+  "records": [
+    {
+      "example_id": "local009",
+      "question_sha256": "da2b3697f8b46b83c733cfb85a7673997ab2f3fb1965a5db38e2667fd7d9dd21",
+      "db_id": "Airlines",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "JSON extraction",
+        "coordinate parsing",
+        "trigonometric distance"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local010",
+      "question_sha256": "db43956945d8a4a366bc9c75f5062612cf79e7f5f24bb0d14fb2556afdbc0b09",
+      "db_id": "Airlines",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "JSON extraction",
+        "distance calculation",
+        "conditional buckets"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local068",
+      "question_sha256": "3a13f22e24f0b7f21fe07c765c9e1692f9df99a58a9bc95a708d905ec86a3e7c",
+      "db_id": "city_legislation",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "running SUM window",
+        "difference arithmetic for growth"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local070",
+      "question_sha256": "5c4f040a63a868335e4ed5a83728c2a5d44e83196c1e67b77eb5a6b982b49f21",
+      "db_id": "city_legislation",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "date difference / gap arithmetic",
+        "case conversion"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local071",
+      "question_sha256": "8a70e90cb366550d7cea2743e09b257da10218a1ccd0e8ccf833ce4f9e6c7e58",
+      "db_id": "city_legislation",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "date difference / gap arithmetic"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local072",
+      "question_sha256": "0119487ec0cedeb851288f45b32baa22d96883d1f2b52b0608f63663759e8d9d",
+      "db_id": "city_legislation",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "date difference / gap arithmetic",
+        "conditional capital numerator"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local167",
+      "question_sha256": "81786e31f10657c4293c714e6b0d96f285cbcde70295932cb66cc100ee573599",
+      "db_id": "city_legislation",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "year expansion / interval service condition"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local168",
+      "question_sha256": "8da2865f230a6a558724e7038561fc42694241d1a12581da5830f5458ac9bf1f",
+      "db_id": "city_legislation",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "top-three skill selection with descending window or LIMIT"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local169",
+      "question_sha256": "faa78ff79ce23425cd69e8a0d7e538c79a83c8f4fff9fc7337cece9999e9cb75",
+      "db_id": "city_legislation",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "period/calendar expansion",
+        "date construction and interval joins"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local170",
+      "question_sha256": "f3ad83ee68d4ea4e513df261ea0004e5930e28e4a3b198fe57c233496f81ded5",
+      "db_id": "city_legislation",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "period expansion",
+        "date construction and interval joins"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local171",
+      "question_sha256": "a6557ba67d49645b5aa47151a2b7ea2e54dc1951e04bd00f75573228b22788ab",
+      "db_id": "city_legislation",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "period expansion",
+        "date construction and interval joins"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local202",
+      "question_sha256": "7440b37c413ca5a0db5e18f652df712f392d2460592776aff37af4aad1125acd",
+      "db_id": "city_legislation",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "top-ten ranking",
+        "column-to-column percentage comparison"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local244",
+      "question_sha256": "04c496540fa975c97580de25aabda1c5b03dc472d364a075ef6ef8303ec9e00e",
+      "db_id": "music",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "conditional duration buckets",
+        "duration conversion arithmetic"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local269",
+      "question_sha256": "522c97f1b4d35201ea5614356c148fbb973b6727b187924a51d4f58367ce7f3d",
+      "db_id": "oracle_sql",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "recursive hierarchy",
+        "quantity multiplication",
+        "root/leaf exclusion"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local270",
+      "question_sha256": "513be58715f98b194000727d16e13e4db522a8c500650b7396006d61b0d62009",
+      "db_id": "oracle_sql",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "recursive hierarchy",
+        "quantity multiplication",
+        "root exclusion"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local272",
+      "question_sha256": "9cdceee502d474675c0d1b2b3969a61d947c45b5865f63c58a8094959c9dc8b2",
+      "db_id": "oracle_sql",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "running quantity SUM",
+        "interval overlap",
+        "scalar min/max arithmetic"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local273",
+      "question_sha256": "deca9108d2eca9db9ac2acfc075f4bf4947ef9ad696f9fd7b7e10e910b60e10e",
+      "db_id": "oracle_sql",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "running quantity SUM",
+        "interval overlap"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local274",
+      "question_sha256": "8da604e60f41d21406500b1cba8c0df6510b0db5208b1d88162876f7afe3d941",
+      "db_id": "oracle_sql",
+      "status": "interpretation_unresolved",
+      "required_capabilities": [
+        "FIFO allocation if not already represented by picking records"
+      ],
+      "confidence": "Question does not establish whether stored picks or recomputed allocation is intended; no reference inspected"
+    },
+    {
+      "example_id": "local275",
+      "question_sha256": "02e3b3f23eba06476b2fe87e27d434a1213289565fc8f776cf5bd0b8fc542de4",
+      "db_id": "oracle_sql",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "centered moving AVG window",
+        "seasonality adjustment"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local277",
+      "question_sha256": "a31570c21e45bad0048284459f4cf46028d6c2848b524e577525f21eebdeb099",
+      "db_id": "oracle_sql",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "seasonality windows",
+        "weighted regression arithmetic"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local279",
+      "question_sha256": "9a278c320cea43f246094cfedd938520d366a7e091ffbd0334bd251dbe0e8e91",
+      "db_id": "oracle_sql",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "recursive monthly recurrence",
+        "conditional restocking",
+        "absolute difference"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local286",
+      "question_sha256": "6984c77bb8ecb4c45b4c94fbaac0a8fb6bec9abf6863b606ae77cc9630e189ae",
+      "db_id": "electronic_sales",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "date difference for packing time"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local309",
+      "question_sha256": "4ec8748446179e5576e0d3e30269e5519b8eed1e1f72e80cd03382bde83318a8",
+      "db_id": "f1",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "full-name concatenation"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local310",
+      "question_sha256": "1848ef0900628ad3f7a9de297018a535d6f882cafe70f8c642e5093e2a799767",
+      "db_id": "f1",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "addition of driver and constructor totals",
+        "top-three selection"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local311",
+      "question_sha256": "a37969f2b8e4179d30f5c7a7347bcc3f494b7fa9a8ce4dd3c8fdc1cb6dcc4f02",
+      "db_id": "f1",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "addition of driver and constructor points",
+        "top-three selection"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local335",
+      "question_sha256": "5f96d67419d0cdce7de9831fdc194c9881c09dad64ca6ee4bf3fc77f13d892a1",
+      "db_id": "f1",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "top-five constructor selection"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local336",
+      "question_sha256": "7a196b3b1986b80ffe1205b81a86a8aa7feb36d6a66c170e6ac40cce4fdbe49c",
+      "db_id": "f1",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "pairwise position comparison",
+        "conditional event classes"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local344",
+      "question_sha256": "a970546f6c4f6c0f6e23975eeed1938c39a004ecb492f62a85602385f44ebac5",
+      "db_id": "f1",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "pairwise position comparison",
+        "conditional event classes"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local354",
+      "question_sha256": "88ade5cebe2558176800fb373d1e7d923de47f65f3aecdbf50e7adf34c1ed182",
+      "db_id": "f1",
+      "status": "candidate_unproven",
+      "required_capabilities": [
+        "distinct rounds",
+        "first/last round equijoins",
+        "same-constructor matching"
+      ],
+      "confidence": "May fit grouped min/max and staged equijoins; no independent contract or compiled full-task witness yet"
+    },
+    {
+      "example_id": "local355",
+      "question_sha256": "0c72026bc08804d64ad7c6a2fd73d3188bff2468f08d5f43adca183446610b53",
+      "db_id": "f1",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "gap arithmetic",
+        "adjacent-row column comparison"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    },
+    {
+      "example_id": "local356",
+      "question_sha256": "619d1a54cfa07ff557d51d79d338be3afdd10f12ede95f609304a1358971517e",
+      "db_id": "f1",
+      "status": "missing_operations",
+      "required_capabilities": [
+        "pairwise position comparison",
+        "full-name concatenation"
+      ],
+      "confidence": "question-visible requirement; not an impossibility proof for all possible rewrites"
+    }
+  ]
+}

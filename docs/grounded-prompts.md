@@ -1,5 +1,7 @@
 # Grounded SQLite prompts
 
+**Current status (2026-10-12):** grounded002 is complete: C0 6/31, C1 8/31, C2 13/31. The commands below describe the historical v2 experiment; do not resume it under changed source. The next prepared run is [calculation004](validator-semantic-handoff-2026-10-12.md), with a [frozen protocol](calculation-experiment-2026-10-12.md). Original prompts/results remain unchanged.
+
 The next prompt experiment uses `grounded-sqlite-v2`, implemented in
 `src/text2sql/prompting/grounded.py`. The user runs all model API calls. The agent
 may prepare prompts, inspect local databases, run mocks/tests, and score locally.

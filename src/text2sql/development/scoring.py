@@ -86,8 +86,10 @@ def summarize(records: list[dict], identity: dict, reservations: list[dict]) -> 
                                          and not r.get("execution", {}).get("truncated") for r in rows),
                        "reserved_usd_at_artificial_ceiling": str(costs), "by_database": dict(by_database)}
     comparisons = []
-    eligible = ["C0"]
+    eligible = [arms[0]]
     for baseline, candidate in (("C0", "C1"), ("C1", "C2"), ("C0", "C2")):
+        if baseline not in by_arm or candidate not in by_arm:
+            continue
         gains = [i for i, r in by_arm[candidate].items() if r["correct"] and not by_arm[baseline][i]["correct"]]
         losses = [i for i, r in by_arm[baseline].items() if r["correct"] and not by_arm[candidate][i]["correct"]]
         net_by_family = defaultdict(int)
@@ -116,7 +118,7 @@ def score_run(root: Path, directory: Path, manifest: dict) -> int:
     if identity["mock"]:
         raise ValueError("Mock rehearsals are not model experiments and cannot produce benchmark scores")
     if not (directory / "generation.json").exists():
-        raise ValueError("Finish all three arms before scoring; resume generation first")
+        raise ValueError("Finish all configured arms before scoring; resume generation first")
     with RequestJournal(directory / "requests.jsonl", {"expected_ids": identity["expected_ids"],
                         "run_sha256": manifest["identity_sha256"]}, Limits(**identity["limits"])) as journal:
         generation = validate_generation(directory, manifest, journal)

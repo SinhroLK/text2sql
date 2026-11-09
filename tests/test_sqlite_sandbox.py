@@ -58,6 +58,7 @@ class SQLiteSandboxTest(unittest.TestCase):
 
     def test_legitimate_cte_window_aggregate_and_empty_result(self):
         queries = [
+            ("WITH start AS (SELECT DISTINCT customer_id FROM orders) SELECT count(*) FROM start", ((2,),)),
             ("WITH x AS (SELECT total_amount FROM orders) SELECT SUM(total_amount) FROM x", ((195.5,),)),
             ("SELECT row_number() OVER (ORDER BY customer_id) FROM customers", ((1,), (2,))),
             ("WITH RECURSIVE x(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM x WHERE n<3) SELECT n FROM x", ((1,), (2,), (3,))),

@@ -15,7 +15,7 @@ from text2sql.domain import SchemaSnapshot
 from text2sql.schema.canonical import validate_canonical_schema
 
 
-SQL_VALIDATOR_VERSION = "safe001-sqlite-v1"
+SQL_VALIDATOR_VERSION = "safe001-sqlite-v2"
 
 _FORBIDDEN_KEYWORDS = frozenset(
     {
@@ -184,6 +184,12 @@ class _AuthorizationAudit:
                     f"System table {table_name!r} is not allowed",
                 )
                 return sqlite3.SQLITE_DENY
+            # SQLite reports some COUNT(*) reads over derived relations with
+            # an empty column and no database. These are not physical reads.
+            # SQLite resolves lexical CTE scope; all underlying physical reads
+            # still pass through this authorizer, without a CTE-name allowlist.
+            if database_name is None and argument_two == "":
+                return sqlite3.SQLITE_OK
             canonical_table = self.allowed_tables.get(folded_table)
             if canonical_table is None:
                 self.denied_issue = SQLValidationIssue(
@@ -245,7 +251,7 @@ class SQLiteSQLValidator:
         statement = statements[0]
         ast = _build_ast(statement)
         ast_hash = _ast_sha256(ast)
-        statement_type = statement.get_type().upper()
+        statement_type = _statement_type(statement)
         issue = self._validate_ast_policy(statement, statement_type)
         if issue:
             return self._invalid(sql_hash, issue, statement_type, ast, ast_hash)
@@ -405,6 +411,33 @@ class SQLiteSQLValidator:
             issues=(issue,),
             ast=ast,
         )
+
+
+def _statement_type(statement: Statement) -> str:
+    kind = statement.get_type().upper()
+    if kind != "UNKNOWN":
+        return kind
+    # sqlparse can misclassify keyword-named CTEs. Inspect only top-level
+    # DML after WITH, then still require authorized SQLite compilation.
+    tokens = [t for t in statement.flatten()
+              if not t.is_whitespace and t.ttype not in Token.Comment]
+    if not tokens or tokens[0].normalized.upper() != "WITH":
+        return kind
+    depth = 0
+    for index, token in enumerate(tokens[1:], start=1):
+        if token.ttype is Token.Punctuation:
+            if token.value == "(":
+                depth += 1
+            elif token.value == ")":
+                depth -= 1
+        if depth == 0 and token.ttype in Token.Keyword.DML:
+            # A legal SQLite CTE name such as START is tagged DML by
+            # sqlparse. AS or a column list identifies the declaration.
+            if (token.normalized.upper() != "SELECT" and index + 1 < len(tokens)
+                    and tokens[index + 1].normalized.upper() in {"AS", "("}):
+                continue
+            return token.normalized.upper()
+    return kind
 
 
 def _find_forbidden_function(token: SQLToken) -> str | None:

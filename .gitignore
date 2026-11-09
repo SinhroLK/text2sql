@@ -39,3 +39,6 @@ artifacts/dspy/**/checkpoints/
 # Distribution
 build/
 dist/
+
+# Local historical verification tree (contains copied source and hardlinked data)
+artifacts/development/validator-scope-v2/frozen-root/

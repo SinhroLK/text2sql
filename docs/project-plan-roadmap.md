@@ -1,12 +1,12 @@
 # Text-to-SQL master projekat: arhitektura i roadmap
 
 **Tema:** Prevođenje prirodnog jezika u SQL upite korišćenjem velikih jezičkih modela
-**Verzija plana:** 4.6
-**Datum:** 11. oktobar 2026.
+**Verzija plana:** 4.10
+**Datum:** 13. oktobar 2026.
 **Status projekta:** Faze 0-6, RUN-001 i RUN-002 su `DONE`. Originalni finalni run v2 ima svih 624 predikcija i statističku analizu; B6R je najbolji sa 34/104 (32,69%). Faza 7 ostaje `IN PROGRESS` zbog preostalog analitičkog closeout-a. Aktivni nastavak su nove Faze 7A-7E: protokol i dijagnostika, kompletan ulaz/izlaz modela, semantička tačnost, ograničena korekcija i nova finalna evaluacija. Semantičko planiranje je vraćeno u aktivni backlog.
-**Poslednja provera:** 11. oktobar — 302/302 offline testova prolazi. Originalni `recovery-live001` je završen i bodovan: C0 7/31, C1 5/31, C2 9/31; predefinisano pravilo zadržava C0 jer C2 ima samo dva neto dobitka. Nova verzija prompta `grounded-sqlite-v2` dodaje stvarne vrednosti, SQLite mogućnosti i SQL semantičke provere uz kompletnu šemu i dokumente. Svih 31 promptova prolazi lokalni audit; najveća rezervacija zahteva je 7.176 tokena u okviru limita 7.200. Mock rehearsal svih 93 zahteva prolazi uz blokiranu mrežu, a ponavljanje ne menja journal. `recovery-grounded002` je pripremljen bez API poziva; nova tačnost još nije izmerena. Detalji: [novi promptovi i komande](grounded-prompts.md).
+**Poslednja provera:** 13. oktobar — GEN-001 offline response/contract/JSON/plan/SQL/sandbox/scoring integracija i durable resume rehearsal završeni; 353/353 testova prolazi (12 novih). Feasibility gate nije prošao: 29/31 pitanja ima uočene nedostajuće operacije, jedno nerešenu interpretaciju i jedno nedokazanu pokrivenost; nema nezavisno pregledanih benchmark contract-a. Bez pravih contract-a već 11/31 zahteva prelazi recorded 7200-token limit (maksimum 8035). Grounded v2 C2 13/31 ostaje baseline; nema novog model rezultata. [GEN-001 offline audit](gen001-offline-preflight-2026-10-13.md).
 
-**Sledeći konkretan rad:** korisnik pokreće `generate --run-dir artifacts/development/recovery-grounded002 --allow-api --confirm-free-plan --wait`, zatim lokalni `score`. Direktorijum je već pripremljen; ne ponavljati `prepare`. Uporediti nove i stare rezultate za iste C0/C1/C2 postavke. Odvojeno ostaje audit validatora zbog ranije uočenih odbijanja SQL-a koji SQLite može da kompajlira. Nova finalna evaluacija i semantic planner/repair zavise od ovih nalaza.
+**Sledeći konkretan rad:** ne pokretati model run za trenutni semantic-plan-v1. GEN-001 ostaje IN PROGRESS zbog coverage/provenance/quota gate-ova. Sledeći mogući engineering milestone je zasebna v2 podrška za generalne arithmetic/conditional/window/date operacije, sintetička provera i ponovljen coverage/quota audit; bez arbitrary-SQL fallback-a ili ID-specifičnih pravila. Potrebno je posebno rešiti poreklo nezavisnog task contract-a. Nema novog API direktorijuma niti komande za generation.
 
 **API izvršavanje:** sve model API pozive pokreće isključivo korisnik; asistent priprema kod/komande i radi lokalne testove. Raniji v1 probe `recovery-grounded001` je zaustavljen: dva neuspeha konekcije i jedan završen odgovor, bez zaključka o tačnosti. Journal i izvorni promptovi su sačuvani; taj direktorijum se ne nastavlja sa novim kodom. Plaćeni koraci zahtevaju prethodno obaveštenje korisniku, bez automatskog upgrade-a ili paid fallback-a.
 
@@ -18,6 +18,10 @@ Prethodni run-ovi, freeze-ovi i istorijski dnevnik ostaju dokaz ranijih odluka. 
 
 | Verzija | Datum | Promena |
 |---|---|---|
+| 4.10 | 13. oktobar 2026. | GEN-001 offline runner i resume/scoring rehearsal; 353 testa; coverage/contract/quota gates failed, bez novog model run-a. |
+| 4.9 | 13. oktobar 2026. | SEM-002 offline v1, typed contract/checker i ograničeni SQL compiler; 341 test, sintetički SAFE-002 rehearsal; GEN-001 coverage/provenance/quota gate-ovi ostaju. |
+| 4.8 | 13. oktobar 2026. | Calculation004 12/31 naspram 13/31; promotion odbijen, grounded v2 C2 ostaje; proverena analiza bez API poziva ili izmene frozen izvora. |
+| 4.7 | 12. oktobar 2026. | Završen grounded002 C2 13/31; validator v2, odvojena reevaluacija, 315 testova i pripremljen calculation004 single-factor eksperiment. |
 | 4.6 | 11. oktobar 2026. | Završen baseline 7/31, 5/31, 9/31; grounded-sqlite-v2, 302 testa, audit 31 prompta i 93-request offline rehearsal; sve model API pozive pokreće korisnik. |
 | 4.5 | 3. oktobar 2026. | Korisnikov live run 47/93; ispravljen dnevni quota accounting uz očuvanje odgovora i operational amendment; 285 testova; nastavak istog run-a, zatim scoring. |
 | 4.4 | 3. oktobar 2026. | Runnable Free CLI: prepare/generate-resume/status/score; zamrznuti resursi i execution limiti, 281 test, 93-request mock rehearsal; bez Groq poziva ili novih model skorova. |
@@ -605,7 +609,7 @@ Zadaci:
 
 ### Faza 7B - Kompletan model input/output i korigovani baseline
 
-**Status:** `IN PROGRESS` — LLM-003/CTX-001 završeni; runnable batch CLI, journal, quota pause/resume, odvojeni scoring i integracioni testovi završeni. EXP-002 može koristiti Free plan; model poređenje nije izvršeno, stvarni account limiti/overhead nisu potvrđeni live pozivom.
+**Status:** `IN PROGRESS` — LLM-003/CTX-001 završeni; runnable batch CLI, journal, quota pause/resume, odvojeni scoring i integracioni testovi završeni. EXP-002 poređenja su završena, uključujući negativan calculation004 rezultat; OPS-001 account-limit/overhead potvrda i REPRO-001 portable lock ostaju otvoreni.
 **Zavisnost:** Gate A za paid rad; offline LLM-003/CTX-001 mogu paralelno sa 7A.
 
 - `LLM-003`: beležiti finish reason, dostupnu reasoning/completion usage evidenciju i backend fingerprint; ne prihvatati nonempty `length` izlaz kao kompletan SQL. Bounded escalation/regeneration pravilo mora biti unapred definisano i auditovano; truncation nije isto što i odbijen 429 zahtev.
@@ -618,7 +622,7 @@ Zadaci:
 
 ### Faza 7C - Semantička tačnost početnog upita
 
-**Status:** `NOT STARTED`
+**Status:** `IN PROGRESS` — SEM-002 offline v1 završen za eksplicitno podržani jezik plana; GEN-001 live integracija i coverage/provenance/quota provere nisu završene.
 **Zavisnost:** SEM-001 i korigovani baseline iz 7B za kontrolisanu evaluaciju.
 
 - `LINK-003`: zaštititi complete compact inventar, smanjiti lažne value matches za Boolean/small-numeric vrednosti i dodati confidence/coverage audit. Nijedan primer ne sme dobiti ID-specifično pravilo. B6 pruning ostaje istorijska negativna ablation varijanta.
@@ -744,10 +748,10 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | SAFE-002 | Implementirati read-only sandbox executor | 5 | P0 | DONE | SAFE-001, EVAL-001 | `safe002-sqlite-v1`, Linux worker, SQL hash/revalidation, izolovan snapshot, deadline/memory/row/byte limiti, sanitizovane greške, CLI i 20 testova |
 | REF-001 | Implementirati izbor kandidata i refiner B7 | 5 | P1 | DONE | SAFE-002, LLM-002 | 31/31 checkpoint, verifikovan EVAL-003 5/31, first-pass 4/31, repair 0/3; checksum manifest i operativna ograničenja u B7 results |
 | SEM-001 | Upareni razvojni semantic-error corpus i zasebna post-test dijagnostika | 7A | P0 | DONE | PLAN-002; DATA-004 za konačan scope | 155 paired dev + 104 odvojena post-test zapisa, 12 ručnih B6R anotacija; evidence/confidence i unclassified ostaju eksplicitni, bez inference gold-a |
-| SEM-002 | Typed SemanticPlan i validator plana | 7C | P0 | NOT STARTED | SEM-001, CTX-001 | entity/grain/filter/aggregate/denominator/output plan i nezavisni semantic regression testovi |
+| SEM-002 | Typed SemanticPlan i validator plana | 7C | P0 | DONE | SEM-001, CTX-001 | Offline semantic-plan-v1: typed plan + nezavisan contract, scope/grain/population/join/date/denominator provere; 26 novih testova i SAFE-002 sintetički rehearsal. Bounded v1, bez tvrdnje o NLP ispravnosti ili 31/31 coverage. |
 | RET-003 | Family-audited semantic/SQL-structure retrieval | 7D | P2 | OPTIONAL | DATA-005, RET-001, GEN-001 | zaseban matched comparison, token budžet i audit svih demonstracija |
 | MODEL-001 | Ograničeni capability/model comparison | 7D | P2 | OPTIONAL | GEN-001, OPS-001 | unapred zamrznute alternative, isti zadaci/kontekst i cost/quality rezultat |
-| GEN-001 | Single-query B7P nad korigovanim kontekstom | 7C | P0 | NOT STARTED | SEM-002, EXP-002, LINK-003, VALUE-001, JOIN-001 | odvojene ablation varijante, upareni dobici/gubici po bazi i Gate C odluka |
+| GEN-001 | Single-query B7P nad korigovanim kontekstom | 7C | P0 | IN PROGRESS | SEM-002, EXP-002, LINK-003, VALUE-001, JOIN-001 | Offline typed-response integracija i 7-case synthetic resume/scoring gotovi; 353 testa. Live readiness failed: 29 missing-operation pitanja, 0 reviewed contract-a, 11/31 lower-bound request oversized. Nema novog live run-a/Gate C accuracy odluke. |
 | SEC-001 | Definisati threat model i adversarial skup | 6 | P0 | DONE | SAFE-002 | checksumovan sintetički fixture i 16-case benign/adversarial corpus |
 | SEC-002 | Implementirati i evaluirati guardrails | 6 | P0 | DONE | SEC-001 | S0 5/10 napada; S1 0/10, benign FP 0/6; checksumovan report |
 | RUN-001 | Zamrznuti finalne konfiguracije | 7 | P0 | DONE | sve obavezne faze | šest test config-a, statistički plan, verifier/analyzer, deterministički manifest, release tag |
@@ -758,7 +762,7 @@ Ova tabela predstavlja aktivni backlog i ažurira se pri svakom značajnom radu 
 | LLM-003 | Completion status i bounded truncation politika | 7B | P0 | DONE | LLM-002 | complete-sql-v1: non-stop/empty odbijen, usage/fingerprint/transport count očuvani; bez automatske regeneracije; fixture i CLI regresije |
 | CTX-001 | Supplied document loader i prompt propagation | 7B | P0 | DONE | DATA-003 | osam pinned dokumenata, bounded loader, example-aware API/CLI i hash/provenance; 31 pripremljen prompt, sedam sa dokumentom |
 | OPS-001 | Zajednički quota/retry/resume ugovor za nove run-ove | 7B | P0 | IN PROGRESS | LLM-003, RUN-002 | batch CLI i end-to-end resume/scoring testovi završeni; 93-request mock replay bez duplikata; stvarni account quota/overhead čeka korisnikovu potvrdu/live evidenciju |
-| EXP-002 | Korigovani compact baseline i budget/effort ablations | 7B | P0 | IN PROGRESS | DATA-004, LLM-003, CTX-001, OPS-001 | free-tier-run-v1 i runnable prepare/generate/score komande; 93 zahteva, 31 primer po arm-u; nema novih model skorova/Gate B odluke |
+| EXP-002 | Korigovani compact baseline i budget/effort ablations | 7B | P0 | DONE | DATA-004, LLM-003, CTX-001, OPS-001 | Završeni C0/C1/C2 baseline i grounded002; calculation004 12/31 ne prolazi gate prema grounded C2 13/31. Eksperimentalni scope zatvoren sa negativnim rezultatom; OPS/REPRO i finalna generalizacija ostaju zasebno otvoreni. |
 | REPRO-001 | Potpuno resolved okruženje i runtime evidencija | 7B | P1 | IN PROGRESS | REPO-002 | installed-packages/runtime/source/resource/artifact snapshot postoji; nov portable transitive lock nije završen |
 | LINK-003 | Recall-first linking bez slučajnih numeričkih value matches | 7C | P1 | NOT STARTED | SEM-001, LINK-002 | misleading-number/absent-FK testovi, coverage audit i zaseban accuracy rezultat |
 | VALUE-001 | Relevantne vrednosti, kategorije i date evidence | 7C | P0 | NOT STARTED | SEM-001, SCHEMA-002 | bounded lookup, sensitive-value politika, provenance i cost/accuracy ablation |
@@ -838,7 +842,7 @@ Tri glavna cilja:
 
 1. `DATA-005` -> `DATA-004`: verzionisati schema-family audit, razvojni/evaluacioni scope i budžet; započeti provider-free SEM-001 error corpus. Prednost ima 31-example development; eventualno korišćenje starih 104 pitanja mora biti označeno kao post-test razvoj.
 2. `LLM-003` + `CTX-001`: dokazati offline da incomplete odgovor ne prolazi kao kompletan i da referentni dokument stiže u prompt. Ovi zadaci mogu teći paralelno sa protokolom.
-3. `OPS-001` + `EXP-002`: runnable batch CLI, integracioni generation/resume/scoring testovi i komande su završeni. Potvrditi stvarne account limite i pokrenuti izmereno poređenje na Groq Free posle Gate A i offline dela Gate B; quota exhaustion znači pauzu, ne automatski upgrade ili dodatni trošak.
+3. `EXP-002` poređenja su završena; zadržati grounded v2 C2 nakon negativnog calculation004. `OPS-001`: analizirati dokumentovane rate-limit exhaustion ishode i potvrditi account limite pre zasebne promene scheduler-a; bez prepravljanja završenih run-ova.
 
 Izlaz sprinta su pregledljiv protokol, konkretne popravke sa relevantnim testovima i konfiguracije spremne za ograničeno development poređenje. Veći model search, DSPy compile, multi-candidate run i nova finalna evaluacija nisu deo ovog sprinta.
 
@@ -1437,3 +1441,34 @@ Sledeći eksperimentalni korak zahteva API. Pre toga potvrditi account quota/pri
 - Lokalni score koristi bounded SAFE-002 i tačnu pinned official comparison funkciju sa pandas gold CSV-ovima. Jednaki limiti za C0/C1/C2 su zamrznuti u config-u; razlikuju se od istorijskih report-a, što se eksplicitno navodi. Scoring ima checkpoint/resume i paired promotion izveštaj.
 - 281/281 testova prolazi. Real-input mock rehearsal svih 93 zahteva prošao je sa blokiranim mrežnim konekcijama; ponovljeni generate zadržava tačno 93 reservations. Fixture scoring/resume prošao. Nema Groq poziva ni stvarnog accuracy rezultata.
 - Sledeće: korisnik može pokrenuti [dokumentovane komande](run-recovery-experiment.md), zadržati isti run direktorijum pri pauzi i po završetku podeliti report/scores za analizu.
+
+### 2026-10-12 - Validator scope i sledeći kontrolisani eksperiment
+
+- Očuvani completed run-ovi; frozen-root omogućava strogu istorijsku proveru bez zaobilaženja source hash-eva.
+- SAFE-001 v2 popravlja dve potvrđene false-rejection klase; comment politika i SAFE-002 limiti ostaju.
+- 315 offline testova prolazi; nezavisni sintetički primeri razdvajaju potvrđene semantičke greške od reference ambiguity.
+- Calculation v3 menja samo instrukcioni blok, uz tačan frozen v2 kontekst i C2 3072/medium. Provider-free priprema i mock su završeni.
+- Nastavak: korisnički Free generate, zatim lokalni score i unapred definisan paired/family gate. Novi untouched skup ostaje obavezan pre nove finalne tvrdnje.
+
+### 2026-10-13 - Calculation004 analiza završena
+
+- 12/31 tačnih, 11 nonempty, 22 executable; jedan dobitak i dva gubitka prema grounded C2. Predefinisani promotion gate nije prošao.
+- Tri genuine SQL rejection-a i tri comment-policy rejection-a; dve execution timeout greške, jedan rate-limit retry exhaustion, nula truncation-a među 30 odgovora.
+- Rezultati i promptovi ostaju očuvani; reproducible audit proverava frozen resurse i potvrđuje samo planiranu instrukcionu promenu.
+- EXP-002 zatvoren sa izmerenim pozitivnim/negativnim rezultatima; SEM-002 nije implementiran ovim promptom. Nema novih model API poziva, commit-a ili push-a.
+
+### 2026-10-13 - SEM-002 offline v1 završen
+
+- Dodat `text2sql.semantic`: strogi versioned JSON/dataclass plan, nezavisan task contract i hashovani validation receipt; valid plan nije execution dozvola.
+- Grain/scope/population provere pokrivaju distinct-day window i first-term/active-filter regresije; outer-join filter i composite-key kontraprimeri su testirani.
+- Determinističko lowering za ograničeni jezik i dalje zahteva SAFE-001; fixture izvršavanje koristi SAFE-002, ne direktan bypass. Rekurzija i složeni algoritmi nisu podržani.
+- 341/341 testova i mrežno blokiran sintetički rehearsal prolaze; nula model poziva, nula benchmark predikcija. Istorijski run-ovi nisu promenjeni.
+- Sledeće: GEN-001 coverage, nezavisni contract provenance, quota i integracija, pa tek nov frozen eksperiment koji pokreće korisnik.
+
+### 2026-10-13 - GEN-001 offline integracija i negativan feasibility rezultat
+
+- Dodati full JSON response schema i contract-provenance binding bez promene istorijskih promptova; raw responses su odvojeni od izvedenog SQL-a.
+- Frozen synthetic journal/generation/scoring adapter čuva sve neuspehe; finalni rehearsal002 potvrđuje partial resume i idempotent replay kroz postojeći SAFE-002 i pinned comparator.
+- Coverage svih 31 pitanja: 29 missing operations, 1 interpretation unresolved, 1 candidate unproven; 0 demonstrated supported i 0 reviewed benchmark contracts.
+- Request audit bez stvarnih contract-a već prelazi recorded 7200-token limit za 11/31 (maksimum 8035); kompletna šema/dokumenti nisu izbačeni.
+- 353/353 testova prolazi. GEN-001 ostaje IN PROGRESS; nema model poziva, novih benchmark predikcija, paid koraka, commit-a ili push-a.

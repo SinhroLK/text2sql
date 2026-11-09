@@ -176,3 +176,58 @@ class SQLiteSQLValidatorTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class CTEScopeRegressionTest(unittest.TestCase):
+    setUp = SQLiteSQLValidatorTest.setUp
+    tearDown = SQLiteSQLValidatorTest.tearDown
+    assert_valid = SQLiteSQLValidatorTest.assert_valid
+
+    def test_count_star_derived_reads_and_physical_provenance(self):
+        for sql in (
+            'WITH cohort AS (SELECT DISTINCT customer_id FROM orders) SELECT count(*) FROM cohort',
+            'WITH cohort AS MATERIALIZED (SELECT customer_id FROM orders), total AS (SELECT count(*) n FROM cohort) SELECT n FROM total',
+            'SELECT count(*) FROM (SELECT DISTINCT customer_id FROM orders)',
+            'WITH a AS (SELECT * FROM b), b AS (SELECT DISTINCT customer_id FROM orders) SELECT count(*) FROM a',
+            'WITH a AS (SELECT 1) SELECT (WITH a AS (SELECT DISTINCT customer_id FROM orders) SELECT count(*) FROM a) FROM a',
+        ):
+            with self.subTest(sql=sql):
+                result = self.assert_valid(sql)
+                self.assertIn('orders', result.referenced_tables)
+                self.assertNotIn('cohort', result.referenced_tables)
+
+    def test_keyword_cte_names_and_column_lists(self):
+        for sql in (
+            'WITH RECURSIVE data(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM data WHERE n<3) SELECT n FROM data',
+            'WITH data AS (SELECT 1 n), full AS (SELECT n FROM data) SELECT * FROM full',
+            'WITH start AS (SELECT 1 n) SELECT * FROM start',
+            'WITH start AS (SELECT 1 n) SELECT (n) FROM start',
+            'WITH "select"(n) AS (SELECT 1) SELECT * FROM "select"',
+        ):
+            self.assert_valid(sql)
+
+    def test_cte_scope_cannot_hide_disallowed_operations(self):
+        for sql in (
+            'WITH a AS (SELECT 1) DELETE FROM orders',
+            'WITH a AS (SELECT 1) UPDATE orders SET status=\'x\'',
+            'WITH a AS (SELECT 1) INSERT INTO orders(order_id) SELECT * FROM a',
+            'WITH a AS (SELECT 1) VALUES(2)',
+            'WITH a AS (SELECT * FROM sqlite_master) SELECT count(*) FROM a',
+            'WITH a AS (SELECT load_extension(\'x\')) SELECT * FROM a',
+            'WITH a AS (SELECT * FROM pragma_table_info(\'orders\')) SELECT * FROM a',
+            'WITH a AS (SELECT ?) SELECT * FROM a',
+            'WITH a AS (SELECT 1) SELECT * FROM a -- comment',
+            'WITH a AS (SELECT 1) SELECT * FROM a; DELETE FROM orders',
+            'SELECT * FROM (WITH hidden AS (SELECT 1) SELECT * FROM hidden), hidden',
+            'WITH orders AS (SELECT * FROM main.missing) SELECT count(*) FROM orders',
+            'WITH a AS (SELECT customer_id FROM orders) SELECT status FROM a',
+            'WITH a AS (SELECT 1) SELECT count(DISTINCT order_id) OVER () FROM orders',
+        ):
+            with self.subTest(sql=sql):
+                self.assertFalse(self.validator.validate(sql, self.schema).valid)
+
+    def test_no_database_exception_is_only_for_columnless_reads(self):
+        from text2sql.security.sql_validator import _AuthorizationAudit
+        audit = _AuthorizationAudit({'orders': 'orders'})
+        self.assertEqual(audit.authorize(sqlite3.SQLITE_READ, 'derived', '', None, None), sqlite3.SQLITE_OK)
+        for column, database in (('secret',None),('', 'main'),('', 'temp')):
+            self.assertEqual(audit.authorize(sqlite3.SQLITE_READ, 'missing', column, database, None), sqlite3.SQLITE_DENY)

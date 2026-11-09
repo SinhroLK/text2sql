@@ -1,0 +1,103 @@
+{
+  "expected_shape": "rows",
+  "final_step": "ordered",
+  "order_by": [
+    {
+      "column": "day",
+      "direction": "asc"
+    }
+  ],
+  "output_columns": [
+    "day",
+    "sequence"
+  ],
+  "output_grain": [
+    "day"
+  ],
+  "steps": [
+    {
+      "filters": [],
+      "group_by": [],
+      "inputs": [
+        {
+          "alias": "e",
+          "kind": "table",
+          "source": "events"
+        }
+      ],
+      "joins": [],
+      "name": "days",
+      "operation": "distinct",
+      "outputs": [
+        {
+          "args": [
+            {
+              "column": "day",
+              "relation": "e"
+            }
+          ],
+          "date_format": "",
+          "literal": "",
+          "name": "day",
+          "op": "column",
+          "unit": "",
+          "window": null,
+          "zero_denominator": ""
+        }
+      ]
+    },
+    {
+      "filters": [],
+      "group_by": [],
+      "inputs": [
+        {
+          "alias": "d",
+          "kind": "step",
+          "source": "days"
+        }
+      ],
+      "joins": [],
+      "name": "ordered",
+      "operation": "window",
+      "outputs": [
+        {
+          "args": [
+            {
+              "column": "day",
+              "relation": "d"
+            }
+          ],
+          "date_format": "",
+          "literal": "",
+          "name": "day",
+          "op": "column",
+          "unit": "",
+          "window": null,
+          "zero_denominator": ""
+        },
+        {
+          "args": [],
+          "date_format": "",
+          "literal": "",
+          "name": "sequence",
+          "op": "row_number",
+          "unit": "",
+          "window": {
+            "frame": "rows",
+            "order_by": [
+              {
+                "column": "day",
+                "relation": "d"
+              }
+            ],
+            "partition_by": [],
+            "require_unique_order": true
+          },
+          "zero_denominator": ""
+        }
+      ]
+    }
+  ],
+  "ties": "deterministic",
+  "version": "semantic-plan-v1"
+}

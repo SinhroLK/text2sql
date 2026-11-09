@@ -13,6 +13,8 @@ from text2sql.prompting.grounded import _name
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'artifacts/development/recovery-live001'
+ARCHIVED_ROOT = ROOT / 'artifacts/development/validator-scope-v2/frozen-root'
+RESOURCE_ROOT = ARCHIVED_ROOT if ARCHIVED_ROOT.exists() else ROOT
 
 
 @unittest.skipUnless((SOURCE/'run.json').exists(), 'Local benchmark resources not installed')
@@ -20,7 +22,7 @@ class GroundedDevelopmentAudit(unittest.TestCase):
     def test_all_31_prompts_preserve_context_and_fit_quota(self):
         with tempfile.TemporaryDirectory() as temp, patch.object(socket, 'socket', side_effect=AssertionError('network forbidden')):
             directory = Path(temp)/'run'
-            manifest = prepare_grounded_run(ROOT, SOURCE, directory, mock=True)
+            manifest = prepare_grounded_run(RESOURCE_ROOT, SOURCE, directory, mock=True)
             identity = manifest['identity']
             audit = json.loads((directory/'prompt-audit.json').read_text())['records']
             budget = json.loads((directory/'budget.json').read_text())
